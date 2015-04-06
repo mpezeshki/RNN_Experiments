@@ -78,8 +78,10 @@ print 'Starting training ...'
 main_loop.run()
 
 generate = theano.function([x], y_hat)
+# takes 4 time steps
 initial_seq = generate(inputs[0, :4, 0:1, :])
 generated_seq = inputs[0, :4, 0, :]
+# takes the last output after 4 time steps
 next = initial_seq[-1:, :, :]
 for i in range(200):
     next = generate(next)
