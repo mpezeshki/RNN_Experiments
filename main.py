@@ -12,7 +12,7 @@ from blocks.algorithms import (GradientDescent, Scale,
 from blocks.extensions.monitoring import TrainingDataMonitoring
 from blocks.main_loop import MainLoop
 from blocks.extensions import FinishAfter, Printing
-from blocks.bricks.recurrent import SimpleRecurrent
+from blocks.bricks.recurrent import LSTM
 from blocks.graph import ComputationGraph
 from datasets import single_bouncing_ball, save_as_gif
 
@@ -30,11 +30,11 @@ y = tensor.tensor3('y', dtype=floatX)
 
 x_to_h = Linear(name='x_to_h',
                 input_dim=x_dim,
-                output_dim=h_dim)
+                output_dim=4 * h_dim)
 x_transform = x_to_h.apply(x)
-rnn = SimpleRecurrent(activation=Tanh(),
-                      dim=h_dim, name="rnn")
-h = rnn.apply(x_transform)
+lstm = LSTM(activation=Tanh(),
+            dim=h_dim, name="lstm")
+h, c = lstm.apply(x_transform)
 h_to_o = Linear(name='h_to_o',
                 input_dim=h_dim,
                 output_dim=x_dim)
@@ -43,9 +43,11 @@ sigm = Sigmoid()
 y_hat = sigm.apply(y_hat)
 y_hat.name = 'y_hat'
 
-# only for generation B x h_dim
+# only for generation
 h_initial = tensor.tensor3('h_initial', dtype=floatX)
-h_testing = rnn.apply(x_transform, h_initial, iterate=False)
+c_initial = tensor.tensor3('c_initial', dtype=floatX)
+h_testing, c_testing = lstm.apply(x_transform, h_initial,
+                                  c_initial, iterate=False)
 y_hat_testing = h_to_o.apply(h_testing)
 y_hat_testing = sigm.apply(y_hat_testing)
 y_hat_testing.name = 'y_hat_testing'
@@ -53,7 +55,7 @@ y_hat_testing.name = 'y_hat_testing'
 cost = SquaredError().apply(y, y_hat)
 cost.name = 'SquaredError'
 # Initialization
-for brick in (rnn, x_to_h, h_to_o):
+for brick in (lstm, x_to_h, h_to_o):
     brick.weights_init = IsotropicGaussian(0.01)
     brick.biases_init = Constant(0)
     brick.initialize()
@@ -86,18 +88,25 @@ main_loop = MainLoop(data_stream=stream, algorithm=algorithm,
 print 'Starting training ...'
 main_loop.run()
 
-generate1 = theano.function([x], [y_hat, h])
-generate2 = theano.function([x, h_initial], [y_hat_testing, h_testing])
+generate1 = theano.function([x], [y_hat, h, c])
+generate2 = theano.function([x, h_initial, c_initial],
+                            [y_hat_testing, h_testing, c_testing])
 initial_seq = inputs[0, :20, 0:1, :]
-current_output, current_hidden = generate1(initial_seq)
-current_output, current_hidden = current_output[-1:], current_hidden[-1:]
+current_output, current_hidden, current_cell = generate1(initial_seq)
+current_output = current_output[-1:]
+current_hidden = current_hidden[-1:]
+current_cell = current_cell[-1:]
 generated_seq = initial_seq[:, 0]
 next_input = current_output
 prev_state = current_hidden
+prev_cell = current_cell
 for i in range(200):
-    current_output, current_hidden = generate2(next_input, prev_state)
+    current_output, current_hidden, current_cell = generate2(next_input,
+                                                             prev_state,
+                                                             prev_cell)
     next_input = current_output
     prev_state = current_hidden
+    prev_cell = current_cell
     generated_seq = numpy.vstack((generated_seq, current_output[:, 0]))
 print generated_seq.shape
 save_as_gif(generated_seq.reshape(generated_seq.shape[0],

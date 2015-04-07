@@ -4,7 +4,7 @@ from images2gif import writeGif
 
 def gaussian(grid, pos, s=0.75):
     return numpy.exp(-((grid[0] - pos[0]) ** 2 +
-                       (grid[1] - pos[1]) ** 2) /
+                       (grid[1] - pos[0]) ** 2) /
                      2 * s ** 2)
 
 
