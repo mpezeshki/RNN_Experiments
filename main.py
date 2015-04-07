@@ -2,7 +2,7 @@ import theano
 import numpy
 from theano import tensor
 from blocks.model import Model
-from blocks.bricks import Linear, Tanh
+from blocks.bricks import Linear, Tanh, Sigmoid
 from blocks.bricks.cost import SquaredError
 from blocks.initialization import IsotropicGaussian, Constant
 from fuel.datasets import IterableDataset
@@ -39,12 +39,15 @@ h_to_o = Linear(name='h_to_o',
                 input_dim=h_dim,
                 output_dim=x_dim)
 y_hat = h_to_o.apply(h)
+sigm = Sigmoid()
+y_hat = sigm.apply(y_hat)
 y_hat.name = 'y_hat'
 
 # only for generation B x h_dim
 h_initial = tensor.tensor3('h_initial', dtype=floatX)
 h_testing = rnn.apply(x_transform, h_initial, iterate=False)
 y_hat_testing = h_to_o.apply(h_testing)
+y_hat_testing = sigm.apply(y_hat_testing)
 y_hat_testing.name = 'y_hat_testing'
 
 cost = SquaredError().apply(y, y_hat)
@@ -59,7 +62,7 @@ print 'Bulding training process...'
 algorithm = GradientDescent(cost=cost,
                             params=ComputationGraph(cost).parameters,
                             step_rule=CompositeRule([StepClipping(10.0),
-                                                     Scale(5)]))
+                                                     Scale(4)]))
 monitor_cost = TrainingDataMonitoring([cost],
                                       prefix="train",
                                       after_epoch=True)
