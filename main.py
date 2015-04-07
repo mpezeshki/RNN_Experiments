@@ -19,7 +19,7 @@ from datasets import single_bouncing_ball, save_as_gif
 floatX = theano.config.floatX
 
 
-n_epochs = 20
+n_epochs = 90
 x_dim = 225
 h_dim = 600
 
@@ -40,6 +40,12 @@ h_to_o = Linear(name='h_to_o',
                 output_dim=x_dim)
 y_hat = h_to_o.apply(h)
 y_hat.name = 'y_hat'
+
+# only for generation B x h_dim
+h_initial = tensor.tensor3('h_initial', dtype=floatX)
+h_testing = rnn.apply(x_transform, h_initial, iterate=False)
+y_hat_testing = h_to_o.apply(h_testing)
+y_hat_testing.name = 'y_hat_testing'
 
 cost = SquaredError().apply(y, y_hat)
 cost.name = 'SquaredError'
@@ -77,15 +83,19 @@ main_loop = MainLoop(data_stream=stream, algorithm=algorithm,
 print 'Starting training ...'
 main_loop.run()
 
-generate = theano.function([x], y_hat)
-# takes 4 time steps
-initial_seq = generate(inputs[0, :4, 0:1, :])
-generated_seq = inputs[0, :4, 0, :]
-# takes the last output after 4 time steps
-next = initial_seq[-1:, :, :]
+generate1 = theano.function([x], [y_hat, h])
+generate2 = theano.function([x, h_initial], [y_hat_testing, h_testing])
+initial_seq = inputs[0, :20, 0:1, :]
+current_output, current_hidden = generate1(initial_seq)
+current_output, current_hidden = current_output[-1:], current_hidden[-1:]
+generated_seq = initial_seq[:, 0]
+next_input = current_output
+prev_state = current_hidden
 for i in range(200):
-    next = generate(next)
-    generated_seq = numpy.vstack((generated_seq, next[:, 0]))
+    current_output, current_hidden = generate2(next_input, prev_state)
+    next_input = current_output
+    prev_state = current_hidden
+    generated_seq = numpy.vstack((generated_seq, current_output[:, 0]))
 print generated_seq.shape
 save_as_gif(generated_seq.reshape(generated_seq.shape[0],
                                   numpy.sqrt(generated_seq.shape[1]),
