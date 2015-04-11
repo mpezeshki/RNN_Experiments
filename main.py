@@ -1,10 +1,9 @@
 import theano
 import numpy
 from theano import tensor
-from blocks.model import Model
-from blocks.bricks import Linear, Tanh, Sigmoid
+from blocks.bricks import Linear, Rectifier, Sigmoid
 from blocks.bricks.cost import SquaredError
-from blocks.initialization import IsotropicGaussian, Constant
+from blocks.initialization import IsotropicGaussian, Constant, Identity
 from fuel.datasets import IterableDataset
 from fuel.streams import DataStream
 from blocks.algorithms import (GradientDescent, Scale,
@@ -12,7 +11,8 @@ from blocks.algorithms import (GradientDescent, Scale,
 from blocks.extensions.monitoring import TrainingDataMonitoring
 from blocks.main_loop import MainLoop
 from blocks.extensions import FinishAfter, Printing
-from blocks.bricks.recurrent import SimpleRecurrent
+# from blocks.bricks.recurrent import SimpleRecurrent
+from models import AERecurrent
 from blocks.graph import ComputationGraph
 from datasets import single_bouncing_ball, save_as_gif
 
@@ -32,9 +32,9 @@ x_to_h = Linear(name='x_to_h',
                 input_dim=x_dim,
                 output_dim=h_dim)
 x_transform = x_to_h.apply(x)
-rnn = SimpleRecurrent(activation=Tanh(),
-                      dim=h_dim, name="rnn")
-h = rnn.apply(x_transform)
+ae_rnn = AERecurrent(activation=Rectifier(),
+                     dim=h_dim, name='ae_rnn')
+h, curr_h, recons_h = ae_rnn.apply(x_transform)
 h_to_o = Linear(name='h_to_o',
                 input_dim=h_dim,
                 output_dim=x_dim)
@@ -45,18 +45,27 @@ y_hat.name = 'y_hat'
 
 # only for generation B x h_dim
 h_initial = tensor.tensor3('h_initial', dtype=floatX)
-h_testing = rnn.apply(x_transform, h_initial, iterate=False)
+h_testing, _, _ = ae_rnn.apply(x_transform, h_initial, iterate=False)
 y_hat_testing = h_to_o.apply(h_testing)
 y_hat_testing = sigm.apply(y_hat_testing)
 y_hat_testing.name = 'y_hat_testing'
 
-cost = SquaredError().apply(y, y_hat)
+
+alpha = 0.0
+generation_cost = SquaredError().apply(y, y_hat)
+generation_cost.name = 'generation_cost'
+recons_cost = SquaredError().apply(curr_h, recons_h)
+recons_cost.name = 'recons_cost'
+cost = generation_cost + alpha * recons_cost
 cost.name = 'SquaredError'
 # Initialization
-for brick in (rnn, x_to_h, h_to_o):
+for brick in (x_to_h, h_to_o):
     brick.weights_init = IsotropicGaussian(0.01)
     brick.biases_init = Constant(0)
     brick.initialize()
+ae_rnn.weights_init = Identity()
+ae_rnn.biases_init = Constant(0)
+ae_rnn.initialize()
 
 print 'Bulding training process...'
 algorithm = GradientDescent(cost=cost,
@@ -66,6 +75,12 @@ algorithm = GradientDescent(cost=cost,
 monitor_cost = TrainingDataMonitoring([cost],
                                       prefix="train",
                                       after_epoch=True)
+monitor_g_cost = TrainingDataMonitoring([generation_cost],
+                                        prefix="train_g",
+                                        after_epoch=True)
+monitor_r_cost = TrainingDataMonitoring([recons_cost],
+                                        prefix="train_r",
+                                        after_epoch=True)
 
 # S x T x B x F
 inputs = single_bouncing_ball(10, 10, 200, 15, 2)
@@ -76,12 +91,12 @@ dataset = IterableDataset({'x': inputs,
                            'y': outputs})
 stream = DataStream(dataset)
 
-model = Model(cost)
 main_loop = MainLoop(data_stream=stream, algorithm=algorithm,
                      extensions=[monitor_cost,
+                                 monitor_g_cost,
+                                 monitor_r_cost,
                                  FinishAfter(after_n_epochs=n_epochs),
-                                 Printing()],
-                     model=model)
+                                 Printing()])
 
 print 'Starting training ...'
 main_loop.run()
