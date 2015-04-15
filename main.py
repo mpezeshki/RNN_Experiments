@@ -15,24 +15,24 @@ from blocks.extensions import FinishAfter, Printing
 from models import AERecurrent
 from blocks.graph import ComputationGraph
 from datasets import single_bouncing_ball, save_as_gif
-import pylab
-import matplotlib.cm as cm
-m = pylab.figure()
-m.show()
+# import pylab
+# import matplotlib.cm as cm
+# m = pylab.figure()
+# m.show()
 
 
 floatX = theano.config.floatX
 
 
-@theano.compile.ops.as_op(itypes=[tensor.dmatrix],
-                          otypes=[tensor.dmatrix])
-def test_func(x):
-    s = numpy.dot(x.T, x)
-    s = 1 / (1 + numpy.exp(-5 * x))
-    pylab.imshow(s, interpolation='nearest', cmap=cm.Greys_r)
-    pylab.draw()
-
-    return x
+# @theano.compile.ops.as_op(itypes=[tensor.dmatrix],
+#                           otypes=[tensor.dmatrix])
+# def test_func(x):
+#     s = numpy.dot(x.T, x)
+#     s = 1 / (1 + numpy.exp(-5 * x))
+#     pylab.imshow(s, interpolation='nearest', cmap=cm.Greys_r)
+#     pylab.draw()
+#
+#     return x
 
 n_epochs = 150
 x_dim = 225
@@ -96,11 +96,11 @@ monitor_g_cost = TrainingDataMonitoring([generation_cost],
 monitor_r_cost = TrainingDataMonitoring([ae_cost],
                                         prefix="train_r",
                                         after_epoch=True)
-test = test_func(ae_rnn.params[0])
-test.name = 'test'
-monitor__test = TrainingDataMonitoring([test],
-                                       prefix="test",
-                                       after_epoch=True)
+# test = test_func(ae_rnn.params[0])
+# test.name = 'test'
+# monitor__test = TrainingDataMonitoring([test],
+#                                        prefix="test",
+#                                        after_epoch=True)
 
 # S x T x B x F
 inputs = single_bouncing_ball(10, 10, 200, 15, 2)
