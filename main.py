@@ -34,7 +34,7 @@ floatX = theano.config.floatX
 #
 #     return x
 
-n_epochs = 150
+n_epochs = 400
 x_dim = 225
 h_dim = 600
 
