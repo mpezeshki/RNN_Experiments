@@ -19,7 +19,9 @@ def parse_args():
                         choices=['rms_prop', 'adam', 'sgd'],
                         default='adam')
     parser.add_argument('--rnn_type', choices=['lstm', 'simple'],
-                        default='lstm')
+                        default='simple')
+    parser.add_argument('--dataset', choices=['wikipedia', 'penntree'],
+                        default='penntree')
     return parser.parse_args()
 
 

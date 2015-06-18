@@ -64,7 +64,9 @@ def build_model(vocab_size, args, dtype=floatX):
     cross_entropy.name = "cross_entropy"
 
     # TODO: add regularisation for the cost
-    cost = cross_entropy
+    # the log(1) is here in order to differentiate the two variables
+    # for monitoring
+    cost = cross_entropy + tensor.log(1)
     cost.name = "regularized_cost"
 
     # Initialize the model
@@ -76,7 +78,7 @@ def build_model(vocab_size, args, dtype=floatX):
     bias.biases_init = initialization.Constant(0)
     bias.initialize()
 
-    rnn.weights_init = initialization.IsotropicGaussian(0.1)
+    rnn.weights_init = initialization.Orthogonal()
     rnn.initialize()
 
     output_layer.weights_init = initialization.IsotropicGaussian(0.1)

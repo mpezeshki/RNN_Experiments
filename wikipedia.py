@@ -30,36 +30,48 @@ class MakeRecurrent(Transformer):
         return (x, target)
 
 
-def get_character():
-    path = os.path.join(config.data_path, 'wikipedia-text',
-                        'char_level_enwik8.npz')
+def get_character(dataset):
+    if dataset == "wikipedia":
+        path = os.path.join(config.data_path, 'wikipedia-text',
+                            'char_level_enwik8.npz')
+    elif dataset == "penntree":
+        path = os.path.join(config.data_path, 'PennTreebankCorpus',
+                            'char_level_penntree.npz')
     data = numpy.load(path)
     return data["vocab"]
 
 
-def get_stream_char(which_set, time_length):
-    path = os.path.join(config.data_path, 'wikipedia-text',
-                        'char_level_enwik8.npz')
+def get_stream_char(dataset, which_set, time_length):
+    if dataset == "wikipedia":
+        path = os.path.join(config.data_path, 'wikipedia-text',
+                            'char_level_enwik8.npz')
+    elif dataset == "penntree":
+        path = os.path.join(config.data_path, 'PennTreebankCorpus',
+                            'char_level_penntree.npz')
     data = numpy.load(path)
-    train = data[which_set]
+    dataset = data[which_set]
 
-    dataset = IndexableDataset({'features': [train]})
+    dataset = IndexableDataset({'features': [dataset]})
     stream = DataStream(dataset, iteration_scheme=SequentialExampleScheme(1))
     stream = MakeRecurrent(time_length, stream)
     return stream
 
 
-def get_minibatch_char(mini_batch_size, time_length):
-    train_stream = get_stream_char("train", time_length)
+def get_minibatch_char(dataset, mini_batch_size, time_length):
+    train_stream = get_stream_char(dataset, "train", time_length)
     train_stream = Batch(train_stream,
                          iteration_scheme=ConstantScheme(mini_batch_size))
-    valid_stream = get_stream_char("valid", time_length)
+    valid_stream = get_stream_char(dataset, "valid", time_length)
     valid_stream = Batch(valid_stream,
                          iteration_scheme=ConstantScheme(mini_batch_size))
     return train_stream, valid_stream
 
 if __name__ == "__main__":
     # Test
-    train_stream, valid_stream = get_minibatch_char(10, 200)
+    dataset = "penntree"
+    voc = get_character(dataset)
+    train_stream, valid_stream = get_minibatch_char(dataset, 10, 200)
+
+    print(voc)
     print(next(train_stream.get_epoch_iterator()))
     print(next(valid_stream.get_epoch_iterator()))

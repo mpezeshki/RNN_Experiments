@@ -9,7 +9,8 @@ if __name__ == "__main__":
     time_length = 200
     args = parse_args()
 
-    train_stream, valid_stream = get_minibatch_char(mini_batch_size,
+    train_stream, valid_stream = get_minibatch_char(args.dataset,
+                                                    mini_batch_size,
                                                     time_length)
     cost, cross_entropy = build_model(vocab_size, args)
     train_model(cost, cross_entropy, train_stream, valid_stream, args)
