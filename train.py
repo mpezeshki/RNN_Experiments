@@ -1,6 +1,6 @@
 import logging
 
-from blocks.algorithm import GradientDescent
+from blocks.algorithms import GradientDescent
 from blocks.extensions import Printing
 from blocks.extensions.monitoring import (
     TrainingDataMonitoring, DataStreamMonitoring)

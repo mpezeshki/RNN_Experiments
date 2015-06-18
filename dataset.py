@@ -1,5 +1,4 @@
 import os
-from collections import OrderedDict
 
 import numpy
 from fuel import config

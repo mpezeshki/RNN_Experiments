@@ -19,7 +19,7 @@ def parse_args():
     parser.add_argument('--clipping', type=float, default=argparse.SUPPRESS)
     parser.add_argument('--algorithm',
                         choices=['rms_prop', 'adam', 'sgd'],
-                        default='sgd')
+                        default='adam')
     parser.add_argument('rnn_type', choices=['lstm', 'simple'], default='lstm')
     return parser.parse_args()
 
