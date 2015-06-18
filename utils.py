@@ -8,15 +8,12 @@ floatX = theano.config.floatX
 
 def parse_args():
     parser = argparse.ArgumentParser(description='RNN experiment')
-    parser.add_argument('--save_path', type=str, default=argparse.SUPPRESS)
-    parser.add_argument('--load_path', type=str, default=argparse.SUPPRESS)
-    parser.add_argument('--input_dim', type=int, default=None)
-    parser.add_argument('--state_dim', type=int, default=None)
-    parser.add_argument('--target_dim', type=int, default=None)
-    parser.add_argument('--epochs', type=int, default=None)
+    parser.add_argument('--save_path', type=str, default="/media/win/Users/Eloi")
+    # parser.add_argument('--load_path', type=str, default=argparse.SUPPRESS)
+    parser.add_argument('--state_dim', type=int, default=1000)
     parser.add_argument('--learning_rate', type=float, default=1e-3)
     parser.add_argument('--momentum', type=float, default=0.9)
-    parser.add_argument('--clipping', type=float, default=argparse.SUPPRESS)
+    parser.add_argument('--clipping', type=float, default=10)
     parser.add_argument('--algorithm',
                         choices=['rms_prop', 'adam', 'sgd'],
                         default='adam')

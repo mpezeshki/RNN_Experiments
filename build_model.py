@@ -4,7 +4,7 @@ import theano
 from theano import tensor
 
 from blocks import initialization
-from blocks.bricks import Linear, Tanh, Softmax
+from blocks.bricks import Linear, Tanh, Softmax, Bias
 from blocks.bricks.recurrent import LSTM, SimpleRecurrent
 from blocks.bricks.lookup import LookupTable
 
@@ -17,7 +17,7 @@ def build_model(vocab_size, args, dtype=floatX):
     logger.info('Building model ...')
 
     context = 20
-    state_dim = int(args.state_dim)
+    state_dim = args.state_dim
     rnn_type = args.rnn_type
 
     # Symbolic variables
@@ -28,18 +28,20 @@ def build_model(vocab_size, args, dtype=floatX):
     if rnn_type == "lstm":
         lookup = LookupTable(length=vocab_size, dim=4 * state_dim,
                              name='lookup')
-        rnn = LSTM(dim=state_dim)
+        bias = Bias(4 * state_dim)
+        rnn = LSTM(dim=state_dim, activation=Tanh())
 
     elif rnn_type == "simple":
         lookup = LookupTable(length=vocab_size, dim=state_dim, name='lookup')
+        bias = Bias(state_dim)
         rnn = SimpleRecurrent(dim=state_dim, activation=Tanh())
 
-    lookup.has_bias = True
     output_layer = Linear(
         input_dim=state_dim, output_dim=vocab_size, name="output_layer")
 
     # Return 3D Tensor: Batch X Time X embedding_dim
-    pre_rnn = lookup.apply(x)
+    pre_rnn = bias.apply(lookup.apply(x))
+
     # Give time as the first index: Time X Batch X embedding_dim
     pre_rnn = pre_rnn.dimshuffle(1, 0, 2)
 
@@ -72,6 +74,8 @@ def build_model(vocab_size, args, dtype=floatX):
     lookup.bias_init = initialization.Constant(0)
     lookup.initialize()
 
+    bias.bias_init = initialization.Constant(0)
+    bias.initialize()
     rnn.weights_init = initialization.IsotropicGaussian(0.1)
     rnn.initialize()
 
