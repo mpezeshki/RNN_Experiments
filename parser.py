@@ -7,6 +7,7 @@ def parse_args():
     parser.add_argument('--time_length', type=int, defaut=200)
     parser.add_argument('--load_path', type=str, default=argparse.SUPPRESS)
     parser.add_argument('--save_path', type=str, default=argparse.SUPPRESS)
+    parser.add_argument('--patience', type=int, defaut=5)
     parser.add_argument('--state_dim', type=int, default=1000)
     parser.add_argument('--learning_rate', type=float, default=1e-3)
     parser.add_argument('--momentum', type=float, default=0.9)
