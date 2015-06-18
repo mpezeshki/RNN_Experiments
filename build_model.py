@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 def build_model(vocab_size, args, dtype=floatX):
     logger.info('Building model ...')
 
-    context = 20
+    context = args.context
     state_dim = args.state_dim
     rnn_type = args.rnn_type
 
