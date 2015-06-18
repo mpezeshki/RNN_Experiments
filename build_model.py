@@ -71,11 +71,11 @@ def build_model(vocab_size, args, dtype=floatX):
     logger.info('Initializing...')
 
     lookup.weights_init = initialization.IsotropicGaussian(0.1)
-    lookup.bias_init = initialization.Constant(0)
     lookup.initialize()
 
-    bias.bias_init = initialization.Constant(0)
+    bias.biases_init = initialization.Constant(0)
     bias.initialize()
+
     rnn.weights_init = initialization.IsotropicGaussian(0.1)
     rnn.initialize()
 
