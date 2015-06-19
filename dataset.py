@@ -30,25 +30,23 @@ class MakeRecurrent(Transformer):
         return (x, target)
 
 
-def get_character(dataset):
+def get_data(dataset):
     if dataset == "wikipedia":
         path = os.path.join(config.data_path, 'wikipedia-text',
                             'char_level_enwik8.npz')
     elif dataset == "penntree":
         path = os.path.join(config.data_path, 'PennTreebankCorpus',
                             'char_level_penntree.npz')
-    data = numpy.load(path)
+    return numpy.load(path, 'rb')
+
+
+def get_character(dataset):
+    data = get_data(dataset)
     return data["vocab"]
 
 
 def get_stream_char(dataset, which_set, time_length):
-    if dataset == "wikipedia":
-        path = os.path.join(config.data_path, 'wikipedia-text',
-                            'char_level_enwik8.npz')
-    elif dataset == "penntree":
-        path = os.path.join(config.data_path, 'PennTreebankCorpus',
-                            'char_level_penntree.npz')
-    data = numpy.load(path)
+    data = get_data(dataset)
     dataset = data[which_set]
 
     dataset = IndexableDataset({'features': [dataset]})
@@ -58,19 +56,23 @@ def get_stream_char(dataset, which_set, time_length):
 
 
 def get_minibatch_char(dataset, mini_batch_size, time_length):
+    data = get_data(dataset)
+    vocab_size = data['vocab_size']
+
     train_stream = get_stream_char(dataset, "train", time_length)
     train_stream = Batch(train_stream,
                          iteration_scheme=ConstantScheme(mini_batch_size))
     valid_stream = get_stream_char(dataset, "valid", time_length)
     valid_stream = Batch(valid_stream,
                          iteration_scheme=ConstantScheme(mini_batch_size))
-    return train_stream, valid_stream
+    return train_stream, valid_stream, vocab_size
 
 if __name__ == "__main__":
     # Test
     dataset = "penntree"
     voc = get_character(dataset)
-    train_stream, valid_stream = get_minibatch_char(dataset, 10, 200)
+    train_stream, valid_stream, vocab_size = get_minibatch_char(dataset,
+                                                                10, 200)
 
     print(voc)
     print(next(train_stream.get_epoch_iterator()))
