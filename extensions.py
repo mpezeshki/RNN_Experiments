@@ -3,6 +3,9 @@ from blocks.dump import MainLoopDumpManager
 from blocks.extensions import SimpleExtension
 from blocks.extensions.monitoring import MonitoringExtension
 from scipy.linalg import svd
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.table import Table
 
 
 class EarlyStopping(SimpleExtension):
@@ -87,3 +90,37 @@ class SvdExtension(SimpleExtension, MonitoringExtension):
             w_svd = svd(network.children[0].W.get_value())
             self.main_loop.log.current_row['last_layer_W_svd' +
                                            network.name] = w_svd[1]
+
+
+def probability_plot(prob, alphabet_list, target, top_n_probabilities=5):
+    # target = ['a', 'b', 'c', 'd', 'e', 'f', 'a', 'b', 'c', 'd']
+    # prob = np.random.uniform(low=0, high=1, size=(10, 6))  # T x C
+    sorted_prob = np.zeros(prob.shape)
+    sorted_indices = np.zeros(prob.shape)
+    for i in range(prob.shape[0]):
+        sorted_prob[i, :] = np.sort(prob[i, :])
+        sorted_indices[i, :] = np.argsort(prob[i, :])
+    concatenated = np.zeros((prob.shape[0], prob.shape[1], 2))
+    concatenated[:, :, 0] = sorted_prob[:, ::-1]
+    concatenated[:, :, 1] = sorted_indices[:, ::-1]
+
+    fig, ax = plt.subplots()
+    ax.set_axis_off()
+    tb = Table(ax, bbox=[0, 0, 1, 1])
+
+    ncols = concatenated.shape[0]
+    width, height = 1.0 / (ncols + 1), 1.0 / (top_n_probabilities + 1)
+
+    for (i, j), v in np.ndenumerate(concatenated[:, :top_n_probabilities, 0]):
+        tb.add_cell(j + 1, i, height, width,
+                    text=alphabet_list[concatenated[i, j, 1].astype('int')],
+                    loc='center', facecolor=(1,
+                                             1 - concatenated[i, j, 0],
+                                             1 - concatenated[i, j, 0]))
+    for i, char in enumerate(target):
+        tb.add_cell(0, i, height, width,
+                    text=char,
+                    loc='center', facecolor='green')
+    ax.add_table(tb)
+
+    plt.show()
