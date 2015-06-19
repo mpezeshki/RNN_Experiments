@@ -1,5 +1,5 @@
 from theano import tensor
-from theano import ifelse
+from theano.ifelse import ifelse
 
 from blocks.bricks import Initializable
 from blocks.bricks.base import application, lazy
@@ -100,11 +100,14 @@ class ClockworkBase(BaseRecurrent, Initializable):
                                                name="initial_state"))
         add_role(self.params[1], INITIAL_STATE)
 
+        self.params.append(shared_floatx_zeros((1,), name="initial_time"))
+        add_role(self.params[2], INITIAL_STATE)
+
     def _initialize(self):
         self.weights_init.initialize(self.W, self.rng)
 
-    @recurrent(sequences=['inputs', 'mask', 'time'], states=['states'],
-               outputs=['states'], contexts=[])
+    @recurrent(sequences=['inputs', 'mask'], states=['states', 'time'],
+               outputs=['states', 'time'], contexts=[])
     def apply(self, inputs=None, states=None, time=None, mask=None):
         """Apply the simple transition.
         Parameters
@@ -117,19 +120,21 @@ class ClockworkBase(BaseRecurrent, Initializable):
             A 1D binary array in the shape (batch,) which is 1 if
             there is data available, 0 if not. Assumed to be 1-s
             only if not given.
-        time : :class:`~tensor.TensorVarialbe`
+        time : :class:`~tensor.TensorVariable`
             A number representing the time steps currently computed
         """
-        next_states = ifelse(
-            tensor.eq(time % self.period, 0),
-            self.children[0].apply(inputs + tensor.dot(states, self.W)),
-            states
-        )
+        next_states = ifelse(tensor.eq(time[0, 0] % self.period, 0),
+                             self.children[0].apply(
+                                 inputs + tensor.dot(states, self.W)),
+                             states)
+
         if mask:
             next_states = (mask[:, None] * next_states +
                            (1 - mask[:, None]) * states)
-        return next_states
+
+        return next_states, time + 1
 
     @application(outputs=apply.states)
     def initial_states(self, batch_size, *args, **kwargs):
-        return tensor.repeat(self.params[1][None, :], batch_size, 0)
+        return [tensor.repeat(self.params[1][None, :], batch_size, 0),
+                self.params[2][None, :]]

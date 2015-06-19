@@ -104,14 +104,12 @@ def build_model(vocab_size, args, dtype=floatX):
                 kwargs['inputs' + suffix] = pre_rnn[d]
             else:
                 kwargs['inputs' + suffix] = pre_rnn
-            if rnn_type == "clockwork":
-                kwargs['time' + suffix] = tensor.arange(time_length)
 
     # Apply the RNN to the inputs
     h = rnn.apply(low_memory=True, **kwargs)
     # h = [state_1, cell_1, state_2, cell_2 ...]
 
-    if rnn_type == "lstm":
+    if rnn_type in ["lstm", "clockwork"]:
         h = h[::2]
     # h = [state_1, state_2, state_3 ...]
 
