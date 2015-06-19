@@ -22,7 +22,7 @@ def parse_args():
                         choices=['rms_prop', 'adam', 'sgd'],
                         default='adam')
     parser.add_argument('--rnn_type', choices=['lstm', 'simple', 'clockwork'],
-                        default='simple')
+                        default='lstm')
     parser.add_argument('--dataset', choices=['wikipedia', 'penntree'],
                         default='penntree')
 
