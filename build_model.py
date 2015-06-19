@@ -5,9 +5,11 @@ import theano
 from theano import tensor
 
 from blocks import initialization
-from blocks.bricks import Linear, Tanh, Softmax, Bias
+from blocks.bricks import Linear, Tanh, Softmax
+from blocks.bricks.parallel import Fork
 from blocks.bricks.recurrent import LSTM, SimpleRecurrent, RecurrentStack
-from blocks.bricks.lookup import LookupTable
+
+from bricks import LookupTable
 
 floatX = theano.config.floatX
 logging.basicConfig(level='INFO')
@@ -15,13 +17,18 @@ logger = logging.getLogger(__name__)
 
 
 # TODO: clean this function, split it in several pieces maybe
-# TODO: handle skip_connections
 def build_model(vocab_size, args, dtype=floatX):
     logger.info('Building model ...')
 
     # Parameters for the model
     context = args.context
     state_dim = args.state_dim
+    rnn_type = args.rnn_type
+
+    if rnn_type == "lstm":
+        virtual_dim = 4 * state_dim
+    else:
+        virtual_dim = state_dim
     rnn_type = args.rnn_type
     layers = args.layers
     skip_connections = args.skip_connections
@@ -31,16 +38,14 @@ def build_model(vocab_size, args, dtype=floatX):
     y = tensor.lmatrix('targets')
 
     # Build the model
+    lookup = LookupTable(length=vocab_size, dim=virtual_dim, name='lookup')
+    # fork = Fork(output_names=[], input_dim=, output_dims=[],
+    # prototype=lookup)
     if rnn_type == "lstm":
-        lookup = LookupTable(length=vocab_size, dim=4 * state_dim,
-                             name='lookup')
-        bias = Bias(4 * state_dim)
         transitions = [LSTM(dim=state_dim, activation=Tanh())
                        for _ in range(layers)]
 
     elif rnn_type == "simple":
-        lookup = LookupTable(length=vocab_size, dim=state_dim, name='lookup')
-        bias = Bias(state_dim)
         transitions = [SimpleRecurrent(dim=state_dim, activation=Tanh())
                        for _ in range(layers)]
 
@@ -51,7 +56,7 @@ def build_model(vocab_size, args, dtype=floatX):
         output_dim=vocab_size, name="output_layer")
 
     # Return 3D Tensor: Batch X Time X embedding_dim
-    pre_rnn = bias.apply(lookup.apply(x))
+    pre_rnn = lookup.apply(x)
 
     # Give time as the first index: Time X Batch X embedding_dim
     pre_rnn = pre_rnn.dimshuffle(1, 0, 2)
@@ -93,10 +98,8 @@ def build_model(vocab_size, args, dtype=floatX):
     logger.info('Initializing...')
 
     lookup.weights_init = initialization.IsotropicGaussian(0.1)
+    lookup.biases_init = initialization.Constant(0)
     lookup.initialize()
-
-    bias.biases_init = initialization.Constant(0)
-    bias.initialize()
 
     rnn.weights_init = initialization.Orthogonal()
     rnn.biases_init = initialization.Constant(0)
