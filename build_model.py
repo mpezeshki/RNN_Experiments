@@ -5,7 +5,7 @@ import theano
 from theano import tensor
 
 from blocks import initialization
-from blocks.bricks import Linear, Tanh, Softmax
+from blocks.bricks import Linear, Tanh, Softmax, FeedforwardSequence
 from blocks.bricks.parallel import Fork
 from blocks.bricks.recurrent import LSTM, SimpleRecurrent, RecurrentStack
 
@@ -26,6 +26,7 @@ def build_model(vocab_size, args, dtype=floatX):
     rnn_type = args.rnn_type
     layers = args.layers
     skip_connections = args.skip_connections
+    time_length = args.time_length
 
     if rnn_type == "lstm":
         virtual_dim = 4 * state_dim
@@ -48,9 +49,14 @@ def build_model(vocab_size, args, dtype=floatX):
             output_names.append("inputs" + suffix)
             output_dims.append(virtual_dim)
 
-    fork = Fork(output_names=output_names, input_dim=vocab_size,
+    lookup = LookupTable(length=vocab_size, dim=virtual_dim)
+    lookup.weights_init = initialization.IsotropicGaussian(0.1)
+    lookup.biases_init = initialization.Constant(0)
+
+    fork = Fork(output_names=output_names, input_dim=time_length,
                 output_dims=output_dims,
-                prototype=LookupTable(length=vocab_size, dim=virtual_dim))
+                prototype=FeedforwardSequence(
+                    [lookup.apply]))
 
     if rnn_type == "lstm":
         transitions = [LSTM(dim=state_dim, activation=Tanh())
@@ -67,8 +73,11 @@ def build_model(vocab_size, args, dtype=floatX):
 
     rnn = RecurrentStack(transitions, skip_connections=skip_connections)
 
+    # If skip_connections: dim = layers * state_dim
+    # else: dim = state_dim
     output_layer = Linear(
-        input_dim=layers * state_dim,
+        input_dim=skip_connections * layers *
+        state_dim + (1 - skip_connections) * state_dim,
         output_dim=vocab_size, name="output_layer")
 
     # Return list of 3D Tensor, one for each layer
@@ -91,9 +100,12 @@ def build_model(vocab_size, args, dtype=floatX):
         else:
             suffix = ''
         if d == 0 or skip_connections:
-            kwargs['inputs' + suffix] = pre_rnn[d]
+            if skip_connections:
+                kwargs['inputs' + suffix] = pre_rnn[d]
+            else:
+                kwargs['inputs' + suffix] = pre_rnn
             if rnn_type == "clockwork":
-                kwargs['time' + suffix] = tensor.arange(args.time_length)
+                kwargs['time' + suffix] = tensor.arange(time_length)
 
     # Apply the RNN to the inputs
     h = rnn.apply(low_memory=True, **kwargs)
@@ -104,7 +116,10 @@ def build_model(vocab_size, args, dtype=floatX):
     # h = [state_1, state_2, state_3 ...]
 
     if layers > 1:
-        h = tensor.concatenate(h, axis=2)
+        if skip_connections:
+            h = tensor.concatenate(h, axis=2)
+        else:
+            h = h[-1]
 
     presoft = output_layer.apply(h[context:, :, :])
     # Define the cost
@@ -127,8 +142,6 @@ def build_model(vocab_size, args, dtype=floatX):
     # Initialize the model
     logger.info('Initializing...')
 
-    fork.weights_init = initialization.IsotropicGaussian(0.1)
-    fork.biases_init = initialization.Constant(0)
     fork.initialize()
 
     rnn.weights_init = initialization.Orthogonal()
