@@ -5,7 +5,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='RNN_experiment')
     parser.add_argument('--mini_batch_size', type=int, default=5)
     parser.add_argument('--time_length', type=int, default=200)
-    parser.add_argupent('--context', type=int, default=20)
+    parser.add_argument('--context', type=int, default=20)
     parser.add_argument('--load_path', type=str, default=argparse.SUPPRESS)
     parser.add_argument('--save_path', type=str, default=argparse.SUPPRESS)
     parser.add_argument('--patience', type=int, default=5)
