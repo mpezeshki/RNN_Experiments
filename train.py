@@ -59,8 +59,8 @@ def train_model(cost, cross_entropy, train_stream, valid_stream, args):
             DataStreamMonitoring([cost, cross_entropy],
                                  valid_stream, prefix='valid'),
             Checkpoint(args.save_path, after_epoch=True),
-            EarlyStopping(cost, args.patience, args.save_path)
-            Printing(),
+            EarlyStopping(cost, args.patience, args.save_path),
+            Printing()
         ]
     )
     main_loop.run()
