@@ -38,9 +38,21 @@ def build_model(vocab_size, args, dtype=floatX):
     y = tensor.lmatrix('targets')
 
     # Build the model
-    lookup = LookupTable(length=vocab_size, dim=virtual_dim, name='lookup')
-    # fork = Fork(output_names=[], input_dim=, output_dims=[],
-    # prototype=lookup)
+    output_names = []
+    output_dims = []
+    for d in range(layers):
+        if d > 0:
+            suffix = '_' + str(d)
+        else:
+            suffix = ''
+        if d == 0 or skip_connections:
+            output_names.append("inputs" + suffix)
+            output_dims.append(virtual_dim)
+
+    fork = Fork(output_names=output_names, input_dim=vocab_size,
+                output_dims=output_dims,
+                prototype=LookupTable(length=vocab_size, dim=virtual_dim))
+
     if rnn_type == "lstm":
         transitions = [LSTM(dim=state_dim, activation=Tanh())
                        for _ in range(layers)]
@@ -55,15 +67,27 @@ def build_model(vocab_size, args, dtype=floatX):
         input_dim=layers * state_dim,
         output_dim=vocab_size, name="output_layer")
 
-    # Return 3D Tensor: Batch X Time X embedding_dim
-    pre_rnn = lookup.apply(x)
+    # Return list of 3D Tensor, one for each layer
+    # (Batch X Time X embedding_dim)
+    pre_rnn = fork.apply(x)
 
-    # Give time as the first index: Time X Batch X embedding_dim
-    pre_rnn = pre_rnn.dimshuffle(1, 0, 2)
+    # Give time as the first index for each element in the list:
+    # (Time X Batch X embedding_dim)
+    if skip_connections:
+        for t in range(len(pre_rnn)):
+            pre_rnn[t] = pre_rnn[t].dimshuffle(1, 0, 2)
+    else:
+        pre_rnn = pre_rnn.dimshuffle(1, 0, 2)
 
     # Prepare inputs for the RNN
     kwargs = OrderedDict()
-    kwargs['inputs'] = pre_rnn
+    for d in range(layers):
+        if d > 0:
+            suffix = '_' + str(d)
+        else:
+            suffix = ''
+        if d == 0 or skip_connections:
+            kwargs['inputs' + suffix] = pre_rnn[d]
 
     # Apply the RNN to the inputs
     h = rnn.apply(low_memory=True, **kwargs)
@@ -97,9 +121,9 @@ def build_model(vocab_size, args, dtype=floatX):
     # Initialize the model
     logger.info('Initializing...')
 
-    lookup.weights_init = initialization.IsotropicGaussian(0.1)
-    lookup.biases_init = initialization.Constant(0)
-    lookup.initialize()
+    fork.weights_init = initialization.IsotropicGaussian(0.1)
+    fork.biases_init = initialization.Constant(0)
+    fork.initialize()
 
     rnn.weights_init = initialization.Orthogonal()
     rnn.biases_init = initialization.Constant(0)

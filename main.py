@@ -10,9 +10,6 @@ if __name__ == "__main__":
     mini_batch_size = args.mini_batch_size
     time_length = args.time_length
 
-    # TODO handle skip_connections
-    assert not args.skip_connections
-
     # Prepare data
     train_stream, valid_stream, vocab_size = get_minibatch_char(
         dataset, mini_batch_size, time_length)
