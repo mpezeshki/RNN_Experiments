@@ -107,12 +107,19 @@ def build_model(vocab_size, args, dtype=floatX):
 
     # Apply the RNN to the inputs
     h = rnn.apply(low_memory=True, **kwargs)
-    # h = [state_1, cell_1, state_2, cell_2 ...]
 
+    # In the LSTM case:
+    # h = [state_1, cell_1, state_2, cell_2 ...]
+    # In the Clockwork case:
+    # h = [state_1, time_1, state2, time_2 ...]
     if rnn_type in ["lstm", "clockwork"]:
         h = h[::2]
+
+    # Now we have correctly:
     # h = [state_1, state_2, state_3 ...]
 
+    # If we have skip connections, concatenate all the states
+    # Else only consider the state of the highest layer
     if layers > 1:
         if skip_connections:
             h = tensor.concatenate(h, axis=2)

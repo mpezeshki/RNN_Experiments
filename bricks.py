@@ -72,6 +72,8 @@ class LookupTable(Initializable):
         return self.W[indices.flatten()].reshape(output_shape) + self.b
 
 
+# Very similar to the SimpleRecurrent implementation. But the computation is
+# made one ever `period` time steps. This brick carries the time as a state
 class ClockworkBase(BaseRecurrent, Initializable):
 
     @lazy(allocation=['dim'])
@@ -123,10 +125,10 @@ class ClockworkBase(BaseRecurrent, Initializable):
         time : :class:`~tensor.TensorVariable`
             A number representing the time steps currently computed
         """
-        next_states = ifelse(tensor.eq(time[0, 0] % self.period, 0),
-                             self.children[0].apply(
-                                 inputs + tensor.dot(states, self.W)),
-                             states)
+        next_states = tensor.switch(tensor.eq(time[0, 0] % self.period, 0),
+                                    self.children[0].apply(
+            inputs + tensor.dot(states, self.W)),
+            states)
 
         if mask:
             next_states = (mask[:, None] * next_states +

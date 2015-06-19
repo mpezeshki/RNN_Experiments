@@ -8,8 +8,8 @@ def parse_args():
     parser.add_argument('--context', type=int, default=20)
     parser.add_argument('--load_path', type=str, default=argparse.SUPPRESS)
     parser.add_argument('--save_path', type=str,
-                        # default="/data/lisatmp3/zablocki")
-                        default="/media/win/Users/Eloi/tmp")
+                        default="/data/lisatmp3/zablocki")
+                        # default="/media/win/Users/Eloi/tmp")
     parser.add_argument('--patience', type=int, default=5)
     parser.add_argument('--state_dim', type=int, default=100)
     parser.add_argument('--layers', type=int, default=3)
