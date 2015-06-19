@@ -14,9 +14,8 @@ if __name__ == "__main__":
     assert not args.skip_connections
 
     # Prepare data
-    (train_stream,
-     valid_stream,
-     vocab_size) = get_minibatch_char(dataset, mini_batch_size, time_length)
+    train_stream, valid_stream, vocab_size = get_minibatch_char(
+        dataset, mini_batch_size, time_length)
 
     # Build the model
     cost, cross_entropy = build_model(vocab_size, args)
