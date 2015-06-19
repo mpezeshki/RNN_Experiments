@@ -15,7 +15,7 @@ from blocks.extensions.saveload import Checkpoint
 from blocks.graph import ComputationGraph
 from blocks.main_loop import MainLoop
 from blocks.model import Model
-from extensions import EarlyStopping
+# from extensions import EarlyStopping
 
 floatX = theano.config.floatX
 logging.basicConfig(level='INFO')
@@ -52,11 +52,11 @@ def train_model(cost, cross_entropy, train_stream, valid_stream, args):
     algorithm = GradientDescent(cost=cost, step_rule=step_rule,
                                 params=cg.parameters)
 
-    # Creating 'best' folder for saving the best model.
-    best_path = os.path.join(args.save_path, 'best')
-    if not os.path.exists(best_path):
-        os.mkdir(best_path)
-    early_stopping = EarlyStopping(cost, args.patience, args.save_path)
+    # # Creating 'best' folder for saving the best model.
+    # best_path = os.path.join(args.save_path, 'best')
+    # if not os.path.exists(best_path):
+    #     os.mkdir(best_path)
+    # early_stopping = EarlyStopping(cost, args.patience, args.save_path)
     main_loop = MainLoop(
         model=model,
         data_stream=train_stream,
@@ -66,7 +66,7 @@ def train_model(cost, cross_entropy, train_stream, valid_stream, args):
             DataStreamMonitoring([cost, cross_entropy],
                                  valid_stream, prefix='valid'),
             Checkpoint(args.save_path, after_epoch=True),
-            early_stopping,
+            # early_stopping,
             Printing()
         ]
     )
