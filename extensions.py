@@ -1,5 +1,5 @@
 # Credits to Cesar Laurent
-from blocks.dump import MainLoopDumpManager
+from blocks.serialization import secure_dump
 from blocks.extensions import SimpleExtension
 from blocks.extensions.monitoring import MonitoringExtension
 from scipy.linalg import svd
@@ -13,6 +13,7 @@ class EarlyStopping(SimpleExtension):
     and early stops the experiment if the quantity has not been better
     since `patience` number of epochs. It also saves the best best model
     so far.
+
     Parameters
     ----------
     record_name : str
@@ -29,12 +30,14 @@ class EarlyStopping(SimpleExtension):
         A function that takes the current value and the best so far
         and return the best of two. By default :func:`min`, which
         corresponds to tracking the minimum value.
+
     Attributes
     ----------
     best_name : str
         The name of the status record to keep the best value so far.
     notification_name : str
         The name used for the notification
+
     """
     def __init__(self, record_name, patience, path, notification_name=None,
                  choose_best=min, **kwargs):
@@ -47,15 +50,13 @@ class EarlyStopping(SimpleExtension):
         self.counter = 0
         self.path = path
         self.patience = patience
-        self.manager = MainLoopDumpManager(self.path)
         kwargs.setdefault("after_epoch", True)
         super(EarlyStopping, self).__init__(**kwargs)
 
     def _dump(self):
         try:
-            self.main_loop.log.current_row['saved_best_to'] = (
-                self.manager.folder)
-            self.manager.dump(self.main_loop)
+            self.main_loop.log.current_row['saved_best_to'] = self.path
+            secure_dump(self.main_loop, self.path)
         except Exception:
             self.main_loop.log.current_row['saved_best_to'] = None
             raise
