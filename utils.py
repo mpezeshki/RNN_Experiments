@@ -10,17 +10,17 @@ def parse_args():
     parser.add_argument('--save_path', type=str,
                         default="/data/lisatmp3/zablocki")
     parser.add_argument('--patience', type=int, default=5)
-    parser.add_argument('--state_dim', type=int, default=1000)
+    parser.add_argument('--state_dim', type=int, default=100)
     parser.add_argument('--layers', type=int, default=2)
     parser.add_argument('--skip_connections', choices=[True, False],
-                        default=False)
+                        default=True)
     parser.add_argument('--learning_rate', type=float, default=1e-3)
     parser.add_argument('--momentum', type=float, default=0.9)
     parser.add_argument('--clipping', type=float, default=10)
     parser.add_argument('--algorithm',
                         choices=['rms_prop', 'adam', 'sgd'],
                         default='adam')
-    parser.add_argument('--rnn_type', choices=['lstm', 'simple'],
+    parser.add_argument('--rnn_type', choices=['lstm', 'simple', 'clockwork'],
                         default='simple')
     parser.add_argument('--dataset', choices=['wikipedia', 'penntree'],
                         default='penntree')

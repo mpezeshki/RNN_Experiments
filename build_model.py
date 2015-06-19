@@ -58,6 +58,9 @@ def build_model(vocab_size, args, dtype=floatX):
     elif rnn_type == "simple":
         transitions = [SimpleRecurrent(dim=state_dim, activation=Tanh())
                        for _ in range(layers)]
+
+    # Note that this order of the periods makes faster modules flow in slower
+    # ones with is the opposite of the original paper
     elif rnn_type == "clockwork":
         transitions = [ClockworkBase(dim=state_dim, activation=Tanh(),
                                      period=2 ** i) for i in range(layers)]
@@ -89,6 +92,8 @@ def build_model(vocab_size, args, dtype=floatX):
             suffix = ''
         if d == 0 or skip_connections:
             kwargs['inputs' + suffix] = pre_rnn[d]
+            if rnn_type == "clockwork":
+                kwargs['time' + suffix] = tensor.arange(args.time_length)
 
     # Apply the RNN to the inputs
     h = rnn.apply(low_memory=True, **kwargs)
