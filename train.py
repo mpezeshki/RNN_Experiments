@@ -8,7 +8,7 @@ import theano
 
 from blocks.algorithms import (Adam, CompositeRule, GradientDescent,
                                Momentum, RMSProp, StepClipping)
-from blocks.extensions import Printing
+from blocks.extensions import Printing, ProgressBar
 from blocks.extensions.monitoring import (
     TrainingDataMonitoring, DataStreamMonitoring)
 from blocks.extensions.saveload import Checkpoint
@@ -57,7 +57,7 @@ def train_model(cost, cross_entropy, train_stream, valid_stream, args):
     if not os.path.exists(best_path):
         os.mkdir(best_path)
     early_stopping = EarlyStopping('valid_cross_entropy',
-                                   args.patience, args.save_path)
+                                   args.patience, best_path)
     main_loop = MainLoop(
         model=model,
         data_stream=train_stream,
@@ -68,7 +68,8 @@ def train_model(cost, cross_entropy, train_stream, valid_stream, args):
                                  valid_stream, prefix='valid'),
             Checkpoint(args.save_path, after_epoch=True),
             early_stopping,
-            Printing()
+            Printing(),
+            ProgressBar()
         ]
     )
     main_loop.run()
