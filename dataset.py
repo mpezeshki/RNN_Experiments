@@ -45,26 +45,35 @@ def get_character(dataset):
     return data["vocab"]
 
 
-def get_stream_char(dataset, which_set, time_length):
+def get_stream_char(dataset, which_set, time_length, total_train_chars=None):
     data = get_data(dataset)
     dataset = data[which_set]
+    if total_train_chars is not None:
+        dataset = dataset[:total_train_chars]
+    else:
+        total_train_chars = dataset.shape[0]
 
     dataset = IndexableDataset({'features': [dataset]})
     stream = DataStream(dataset, iteration_scheme=SequentialExampleScheme(1))
     stream = MakeRecurrent(time_length, stream)
-    return stream
+    return stream, total_train_chars
 
 
-def get_minibatch_char(dataset, mini_batch_size, time_length):
+def get_minibatch_char(dataset, mini_batch_size,
+                       time_length, total_train_chars=None):
     data = get_data(dataset)
     vocab_size = data['vocab_size']
 
-    train_stream = get_stream_char(dataset, "train", time_length)
-    train_stream = Batch(train_stream,
-                         iteration_scheme=ConstantScheme(mini_batch_size))
-    valid_stream = get_stream_char(dataset, "valid", time_length)
-    valid_stream = Batch(valid_stream,
-                         iteration_scheme=ConstantScheme(mini_batch_size))
+    train_stream, train_num_examples = get_stream_char(
+        dataset, "train", time_length, total_train_chars)
+    train_stream = Batch(
+        train_stream,
+        iteration_scheme=ConstantScheme(mini_batch_size, train_num_examples))
+    valid_stream, valid_num_examples = get_stream_char(
+        dataset, "valid", time_length)
+    valid_stream = Batch(
+        valid_stream,
+        iteration_scheme=ConstantScheme(mini_batch_size, valid_num_examples))
     return train_stream, valid_stream, vocab_size
 
 if __name__ == "__main__":
