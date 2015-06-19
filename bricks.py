@@ -1,7 +1,12 @@
+from theano import tensor
+from theano import ifelse
+
 from blocks.bricks import Initializable
 from blocks.bricks.base import application, lazy
-from blocks.roles import add_role, WEIGHT, BIAS
-from blocks.utils import check_theano_variable, shared_floatx_nans
+from blocks.bricks.recurrent import BaseRecurrent, recurrent
+from blocks.roles import add_role, WEIGHT, BIAS, INITIAL_STATE
+from blocks.utils import (
+    check_theano_variable, shared_floatx_nans, shared_floatx_zeros)
 
 
 class LookupTable(Initializable):
@@ -65,3 +70,66 @@ class LookupTable(Initializable):
         output_shape = [indices.shape[i]
                         for i in range(indices.ndim)] + [self.dim]
         return self.W[indices.flatten()].reshape(output_shape) + self.b
+
+
+class ClockworkBase(BaseRecurrent, Initializable):
+
+    @lazy(allocation=['dim'])
+    def __init__(self, dim, period, activation, **kwargs):
+        super(ClockworkBase, self).__init__(**kwargs)
+        self.dim = dim
+        self.period = period
+        self.children = [activation]
+
+    @property
+    def W(self):
+        return self.params[0]
+
+    def get_dim(self, name):
+        if name == 'mask':
+            return 0
+        if name in (ClockworkBase.apply.sequences +
+                    ClockworkBase.apply.states):
+            return self.dim
+        return super(ClockworkBase, self).get_dim(name)
+
+    def _allocate(self):
+        self.params.append(shared_floatx_nans((self.dim, self.dim), name="W"))
+        add_role(self.params[0], WEIGHT)
+        self.params.append(shared_floatx_zeros((self.dim,),
+                                               name="initial_state"))
+        add_role(self.params[1], INITIAL_STATE)
+
+    def _initialize(self):
+        self.weights_init.initialize(self.W, self.rng)
+
+    @recurrent(sequences=['inputs', 'mask', 'time'], states=['states'],
+               outputs=['states'], contexts=[])
+    def apply(self, inputs=None, states=None, time=None, mask=None):
+        """Apply the simple transition.
+        Parameters
+        ----------
+        inputs : :class:`~tensor.TensorVariable`
+            The 2D inputs, in the shape (batch, features).
+        states : :class:`~tensor.TensorVariable`
+            The 2D states, in the shape (batch, features).
+        mask : :class:`~tensor.TensorVariable`
+            A 1D binary array in the shape (batch,) which is 1 if
+            there is data available, 0 if not. Assumed to be 1-s
+            only if not given.
+        time : :class:`~tensor.TensorVarialbe`
+            A number representing the time steps currently computed
+        """
+        next_states = ifelse(
+            tensor.eq(time % self.period, 0),
+            self.children[0].apply(inputs + tensor.dot(states, self.W)),
+            states
+        )
+        if mask:
+            next_states = (mask[:, None] * next_states +
+                           (1 - mask[:, None]) * states)
+        return next_states
+
+    @application(outputs=apply.states)
+    def initial_states(self, batch_size, *args, **kwargs):
+        return tensor.repeat(self.params[1][None, :], batch_size, 0)

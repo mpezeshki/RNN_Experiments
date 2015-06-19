@@ -9,7 +9,7 @@ from blocks.bricks import Linear, Tanh, Softmax
 from blocks.bricks.parallel import Fork
 from blocks.bricks.recurrent import LSTM, SimpleRecurrent, RecurrentStack
 
-from bricks import LookupTable
+from bricks import LookupTable, ClockworkBase
 
 floatX = theano.config.floatX
 logging.basicConfig(level='INFO')
@@ -24,14 +24,13 @@ def build_model(vocab_size, args, dtype=floatX):
     context = args.context
     state_dim = args.state_dim
     rnn_type = args.rnn_type
+    layers = args.layers
+    skip_connections = args.skip_connections
 
     if rnn_type == "lstm":
         virtual_dim = 4 * state_dim
     else:
         virtual_dim = state_dim
-    rnn_type = args.rnn_type
-    layers = args.layers
-    skip_connections = args.skip_connections
 
     # Symbolic variables
     x = tensor.lmatrix('features')
@@ -56,10 +55,12 @@ def build_model(vocab_size, args, dtype=floatX):
     if rnn_type == "lstm":
         transitions = [LSTM(dim=state_dim, activation=Tanh())
                        for _ in range(layers)]
-
     elif rnn_type == "simple":
         transitions = [SimpleRecurrent(dim=state_dim, activation=Tanh())
                        for _ in range(layers)]
+    elif rnn_type == "clockwork":
+        transitions = [ClockworkBase(dim=state_dim, activation=Tanh(),
+                                     period=2 ** i) for i in range(layers)]
 
     rnn = RecurrentStack(transitions, skip_connections=skip_connections)
 
