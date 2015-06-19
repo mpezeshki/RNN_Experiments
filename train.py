@@ -13,7 +13,8 @@ from blocks.extensions.saveload import Checkpoint
 from blocks.graph import ComputationGraph
 from blocks.main_loop import MainLoop
 from blocks.model import Model
-from extensions import EarlyStopping
+# TODO Change the "Dump" in this extensions as it has been moved in blocks
+# from extensions import EarlyStopping
 
 floatX = theano.config.floatX
 logging.basicConfig(level='INFO')
@@ -59,7 +60,7 @@ def train_model(cost, cross_entropy, train_stream, valid_stream, args):
             DataStreamMonitoring([cost, cross_entropy],
                                  valid_stream, prefix='valid'),
             Checkpoint(args.save_path, after_epoch=True),
-            EarlyStopping(cost, args.patience, args.save_path)
+            # EarlyStopping(cost, args.patience, args.save_path),
             Printing(),
         ]
     )
