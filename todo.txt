@@ -1,0 +1,6 @@
+Test the code
+Initialize the LSTM with Orthogonal (remove connections from cell to gates)
+Check the warning saying that we are not learning on all the parameters of the model
+Make a google doc for the ran experiments (and all the setups)
+Add regularization?
+Add some fancy extensions? Decrease learning_rate when training...

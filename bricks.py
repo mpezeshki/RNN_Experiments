@@ -73,7 +73,7 @@ class LookupTable(Initializable):
 
 
 # Very similar to the SimpleRecurrent implementation. But the computation is
-# made one ever `period` time steps. This brick carries the time as a state
+# made one every `period` time steps. This brick carries the time as a state
 class ClockworkBase(BaseRecurrent, Initializable):
 
     @lazy(allocation=['dim'])
