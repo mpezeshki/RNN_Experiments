@@ -65,10 +65,11 @@ def train_model(cost, cross_entropy, train_stream, valid_stream, args):
         extensions=[
             TrainingDataMonitoring([cost], prefix='train'),
             DataStreamMonitoring([cost, cross_entropy],
-                                 valid_stream, prefix='valid'),
+                                 valid_stream, prefix='valid',
+                                 every_n_batches=1000),
             Checkpoint(args.save_path, after_epoch=True),
             early_stopping,
-            Printing(),
+            Printing(every_n_batches=1000),
             ProgressBar()
         ]
     )
