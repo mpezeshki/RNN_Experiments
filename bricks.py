@@ -1,9 +1,11 @@
+import numpy
+
 from theano import tensor
 
-from blocks.bricks import Initializable, Tanh
+from blocks.bricks import Initializable, Tanh, Logistic
 from blocks.bricks.base import application, lazy
 from blocks.bricks.recurrent import BaseRecurrent, recurrent
-from blocks.initialization import IsotropicGaussian, Constant
+# from blocks.initialization import IsotropicGaussian, Constant
 from blocks.roles import add_role, WEIGHT, BIAS, INITIAL_STATE
 from blocks.utils import (
     check_theano_variable, shared_floatx_nans, shared_floatx_zeros)
@@ -146,93 +148,89 @@ class ClockworkBase(BaseRecurrent, Initializable):
 
 class SoftGatedRecurrent(BaseRecurrent, Initializable):
 
-    """The traditional recurrent transition.
-    The most well-known recurrent transition: a matrix multiplication,
-    optionally followed by a non-linearity.
-    Parameters
-    ----------
-    dim : int
-        The dimension of the hidden state
-    activation : :class:`.Brick`
-        The brick to apply as activation.
-    Notes
-    -----
-    See :class:`.Initializable` for initialization parameters.
-    """
     @lazy(allocation=['dim'])
-    def __init__(self, dim, dim_prev_layer, activation, **kwargs):
+    def __init__(self, dim, activation=None, gate_activation=None,
+                 **kwargs):
         super(SoftGatedRecurrent, self).__init__(**kwargs)
         self.dim = dim
-        self.gate_activation = Tanh()
-        self.children = [activation, self.gate_activation]
-        self.dim_prev_layer = dim_prev_layer
+
+        if not activation:
+            activation = Tanh()
+        if not gate_activation:
+            gate_activation = Logistic()
+        self.activation = activation
+        self.gate_activation = gate_activation
+
+        self.children = [activation, gate_activation]
 
     @property
-    def W(self):
+    def state_to_state(self):
         return self.params[0]
 
     @property
-    def W_g(self):
-        return self.params[2]
-
-    @property
-    def b_g(self):
-        return self.params[3]
+    def matrix_gate(self):
+        return self.params[1]
 
     def get_dim(self, name):
         if name == 'mask':
             return 0
-        if name in (SoftGatedRecurrent.apply.sequences +
-                    SoftGatedRecurrent.apply.states):
+        if name in ['inputs', 'states', 'gate_inputs']:
             return self.dim
         return super(SoftGatedRecurrent, self).get_dim(name)
 
     def _allocate(self):
-        self.params.append(shared_floatx_nans((self.dim, self.dim), name="W"))
-        add_role(self.params[0], WEIGHT)
+        self.params.append(shared_floatx_nans((self.dim, self.dim),
+                           name='state_to_state'))
+        self.params.append(shared_floatx_nans((2 * self.dim, 1),
+                           name='matrix_gate'))
         self.params.append(shared_floatx_zeros((self.dim,),
-                                               name="initial_state"))
-        add_role(self.params[1], INITIAL_STATE)
-
-        self.params.append(
-            shared_floatx_nans((self.dim + self.dim_prev_layer, self.dim),
-                               name="W_g"))
-        add_role(self.params[2], WEIGHT)
-
-        self.params.append(shared_floatx_nans((self.dim,), name="b_g"))
-        add_role(self.params[3], BIAS)
+                           name="initial_state"))
+        for i in range(2):
+            if self.params[i]:
+                add_role(self.params[i], WEIGHT)
+        add_role(self.params[2], INITIAL_STATE)
 
     def _initialize(self):
-        self.weights_init.initialize(self.W, self.rng)
-        self.weights_init.initialize(self.W_g, self.rng)
-        self.biases_init.initialize(self.b_g, self.rng)
+        self.weights_init.initialize(self.state_to_state, self.rng)
+        self.weights_init.initialize(self.matrix_gate, self.rng)
 
-    @recurrent(sequences=['inputs', 'mask'], states=['states'],
-               outputs=['states'], contexts=[])
-    def apply(self, inputs=None, states=None, mask=None):
-        """Apply the simple transition.
+    @recurrent(sequences=['mask', 'inputs', 'gate_inputs'],
+               states=['states'], outputs=['states'], contexts=[])
+    def apply(self, inputs, gate_inputs, states, mask=None):
+        """Apply the gated recurrent transition.
         Parameters
         ----------
-        inputs : :class:`~tensor.TensorVariable`
-            The 2D inputs, in the shape (batch, features).
         states : :class:`~tensor.TensorVariable`
-            The 2D states, in the shape (batch, features).
+            The 2 dimensional matrix of current states in the shape
+            (batch_size, dim). Required for `one_step` usage.
+        inputs : :class:`~tensor.TensorVariable`
+            The 2 dimensional matrix of inputs in the shape (batch_size,
+            dim)
+        gate_inputs : :class:`~tensor.TensorVariable`
+            The 2 dimensional matrix of inputs to the gates in the
+            shape (batch_size, dim).
         mask : :class:`~tensor.TensorVariable`
-            A 1D binary array in the shape (batch,) which is 1 if
-            there is data available, 0 if not. Assumed to be 1-s
-            only if not given.
+            A 1D binary array in the shape (batch,) which is 1 if there is
+            data available, 0 if not. Assumed to be 1-s only if not given.
+        Returns
+        -------
+        output : :class:`~tensor.TensorVariable`
+            Next states of the network.
         """
-
-        # Compute the gate value
-        gate_input = tensor.concatenate((inputs, states), axis=1)
+        a = tensor.concatenate((gate_inputs, states), axis=1)
         gate_value = self.gate_activation.apply(
-            tensor.dot(gate_input, self.W_g) + self.b_g)
+            a.dot(self.matrix_gate))
 
-        next_states = inputs + tensor.dot(states, self.W)
-        next_states = self.children[0].apply(next_states)
+        # TODO: Find a way to remove the follwing "hack".
+        # Simply removing the two next lines won't work
+        gate_value = gate_value[:, 0]
+        gate_value = gate_value[:, None]
 
-        # Apply the gating
-        next_states = gate_value * next_states + (1 - gate_value) * states
+        next_states = self.activation.apply(
+            states.dot(self.state_to_state) + inputs)
+
+        next_states = (next_states * gate_value +
+                       states * (1 - gate_value))
 
         if mask:
             next_states = (mask[:, None] * next_states +
@@ -241,7 +239,7 @@ class SoftGatedRecurrent(BaseRecurrent, Initializable):
 
     @application(outputs=apply.states)
     def initial_states(self, batch_size, *args, **kwargs):
-        return tensor.repeat(self.params[1][None, :], batch_size, 0)
+        return [tensor.repeat(self.params[2][None, :], batch_size, 0)]
 
 
 class LSTM(BaseRecurrent, Initializable):

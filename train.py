@@ -58,7 +58,7 @@ def train_model(cost, cross_entropy, train_stream, valid_stream, args):
         os.mkdir(best_path)
     early_stopping = EarlyStopping('valid_cross_entropy',
                                    args.patience, best_path,
-                                   every_n_batches=1000)
+                                   every_n_batches=args.monitoring_freq)
     main_loop = MainLoop(
         model=model,
         data_stream=train_stream,
@@ -67,10 +67,11 @@ def train_model(cost, cross_entropy, train_stream, valid_stream, args):
             TrainingDataMonitoring([cost], prefix='train'),
             DataStreamMonitoring([cost, cross_entropy],
                                  valid_stream, prefix='valid',
-                                 every_n_batches=1000),
-            Checkpoint(args.save_path, every_n_batches=1000, after_epoch=True),
+                                 every_n_batches=args.monitoring_freq),
+            Checkpoint(args.save_path, every_n_batches=args.monitoring_freq,
+                       after_epoch=True),
             early_stopping,
-            Printing(every_n_batches=1000),
+            Printing(every_n_batches=args.monitoring_freq),
             ProgressBar()
         ]
     )

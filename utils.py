@@ -1,4 +1,8 @@
 import argparse
+import logging
+
+logging.basicConfig(level='INFO')
+logger = logging.getLogger(__name__)
 
 
 def parse_args():
@@ -9,8 +13,8 @@ def parse_args():
     parser.add_argument('--tot_num_char', type=int, default=None)
     parser.add_argument('--load_path', type=str, default=argparse.SUPPRESS)
     parser.add_argument('--save_path', type=str,
-                        default="/data/lisatmp3/zablocki")
-                        # default="/media/win/Users/Eloi/tmp")
+                        # default="/data/lisatmp3/zablocki")
+                        default="/media/win/Users/Eloi/tmp")
     parser.add_argument('--patience', type=int, default=10)
     parser.add_argument('--state_dim', type=int, default=100)
     parser.add_argument('--layers', type=int, default=3)
@@ -26,10 +30,13 @@ def parse_args():
                         default='clockwork')
     parser.add_argument('--dataset', choices=['wikipedia', 'penntree'],
                         default='penntree')
-
+    parser.add_argument('--gating_type', choices=['none', 'soft', 'hard'],
+                        default='soft')
+    parser.add_argument('--monitoring_freq', type=int, default=100)
     args = parser.parse_args()
-    print "\n" + "#" * 40
+
+    logger.info("\n" + "#" * 40)
     for arg in vars(args):
-        print '\"' + str(arg) + '\" \t: ' + str(vars(args)[arg])
-    print "#" * 40 + "\n"
+        logger.info('\"' + str(arg) + '\" \t: ' + str(vars(args)[arg]))
+    logger.info("#" * 40 + "\n")
     return args

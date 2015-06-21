@@ -46,7 +46,7 @@ def build_model_soft(vocab_size, args, dtype=floatX):
     transitions = [SimpleRecurrent(dim=state_dim, activation=Tanh())]
     for i in range(layers - 1):
         transitions.append(
-            SoftGatedRecurrent(dim=state_dim, dim_prev_layer=state_dim,
+            SoftGatedRecurrent(dim=state_dim,
                                activation=Tanh()))
 
     rnn = RecurrentStack(transitions, skip_connections=False)
