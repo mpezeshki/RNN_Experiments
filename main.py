@@ -12,7 +12,7 @@ if __name__ == "__main__":
 
     # Prepare data
     train_stream, valid_stream, vocab_size = get_minibatch_char(
-        dataset, mini_batch_size, time_length, 50000)
+        dataset, mini_batch_size, time_length, args.tot_num_char)
 
     # Build the model
     cost, cross_entropy = build_model(vocab_size, args)
