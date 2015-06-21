@@ -9,7 +9,7 @@ from blocks.bricks import Linear, Tanh, Softmax, FeedforwardSequence
 from blocks.bricks.parallel import Fork
 from blocks.bricks.recurrent import SimpleRecurrent, RecurrentStack
 
-from bricks import LookupTable
+from bricks import LookupTable, SoftGatedRecurrent
 
 floatX = theano.config.floatX
 logging.basicConfig(level='INFO')
@@ -43,8 +43,11 @@ def build_model_soft(vocab_size, args, dtype=floatX):
                 prototype=FeedforwardSequence(
                     [lookup.apply]))
 
-    transitions = [SimpleRecurrent(dim=state_dim, activation=Tanh())
-                   for _ in range(layers)]
+    transitions = [SimpleRecurrent(dim=state_dim, activation=Tanh())]
+    for i in range(layers - 1):
+        transitions.append(
+            SoftGatedRecurrent(dim=state_dim, dim_prev_layer=state_dim,
+                               activation=Tanh()))
 
     rnn = RecurrentStack(transitions, skip_connections=False)
 
@@ -60,8 +63,7 @@ def build_model_soft(vocab_size, args, dtype=floatX):
     # Give time as the first index for each element in the list:
     # (Time X Batch X embedding_dim)
 
-    for t in range(len(pre_rnn)):
-        pre_rnn[t] = pre_rnn[t].dimshuffle(1, 0, 2)
+    pre_rnn = pre_rnn.dimshuffle(1, 0, 2)
 
     # Prepare inputs for the RNN
     kwargs = OrderedDict()

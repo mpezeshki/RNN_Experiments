@@ -8,10 +8,10 @@ def parse_args():
     parser.add_argument('--context', type=int, default=20)
     parser.add_argument('--load_path', type=str, default=argparse.SUPPRESS)
     parser.add_argument('--save_path', type=str,
-                        default="/data/lisatmp3/zablocki")
-    # default="/media/win/Users/Eloi/tmp")
+                        # default="/data/lisatmp3/zablocki")
+                        default="/media/win/Users/Eloi/tmp")
     parser.add_argument('--patience', type=int, default=5)
-    parser.add_argument('--state_dim', type=int, default=1000)
+    parser.add_argument('--state_dim', type=int, default=100)
     parser.add_argument('--layers', type=int, default=3)
     parser.add_argument('--skip_connections', choices=[True, False],
                         default=True)
@@ -27,5 +27,5 @@ def parse_args():
     parser.add_argument('--dataset', choices=['wikipedia', 'penntree'],
                         default='wikipedia')
     parser.add_argument('--gating_type', choices=['none', 'soft', 'hard'],
-                        default='none')
+                        default='soft')
     return parser.parse_args()

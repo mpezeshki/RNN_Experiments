@@ -1,6 +1,6 @@
 from build_model import build_model
 from build_model_soft import build_model_soft
-from build_model_hard import build_model_hard
+# from build_model_hard import build_model_hard
 from dataset import get_minibatch_char
 from train import train_model
 from utils import parse_args
@@ -23,8 +23,8 @@ if __name__ == "__main__":
     elif args.gating_type == "soft":
         cost, cross_entropy = build_model_soft(vocab_size, args)
 
-    elif args.gating_type == "hard":
-        cost, cross_entropy = build_model_hard(vocab_size, args)
+    # elif args.gating_type == "hard":
+    #     cost, cross_entropy = build_model_hard(vocab_size, args)
 
     # Train the model
     train_model(cost, cross_entropy, train_stream, valid_stream, args)
