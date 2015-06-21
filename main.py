@@ -17,14 +17,7 @@ if __name__ == "__main__":
         dataset, mini_batch_size, time_length, args.tot_num_char)
 
     # Build the model
-    if args.gating_type == "none":
-        cost, cross_entropy = build_model(vocab_size, args)
-
-    elif args.gating_type == "soft":
-        cost, cross_entropy = build_model_soft(vocab_size, args)
-
-    # elif args.gating_type == "hard":
-    #     cost, cross_entropy = build_model_hard(vocab_size, args)
+    cost, cross_entropy = build_model(vocab_size, args)
 
     # Train the model
     train_model(cost, cross_entropy, train_stream, valid_stream, args)
