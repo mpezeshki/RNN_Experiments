@@ -11,7 +11,7 @@ def parse_args():
     parser.add_argument('--save_path', type=str,
                         default="/data/lisatmp3/zablocki")
                         # default="/media/win/Users/Eloi/tmp")
-    parser.add_argument('--patience', type=int, default=5)
+    parser.add_argument('--patience', type=int, default=10)
     parser.add_argument('--state_dim', type=int, default=100)
     parser.add_argument('--layers', type=int, default=3)
     parser.add_argument('--skip_connections', action='store_true',
