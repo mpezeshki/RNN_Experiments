@@ -125,6 +125,8 @@ class ClockworkBase(BaseRecurrent, Initializable):
         time : :class:`~tensor.TensorVariable`
             A number representing the time steps currently computed
         """
+
+        # TODO check which one is faster: switch or ifelse
         next_states = tensor.switch(tensor.eq(time[0, 0] % self.period, 0),
                                     self.children[0].apply(
             inputs + tensor.dot(states, self.W)),
