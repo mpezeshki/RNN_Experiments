@@ -1,7 +1,6 @@
 from theano import tensor
-from theano.ifelse import ifelse
 
-from blocks.bricks import Initializable, MLP, Tanh
+from blocks.bricks import Initializable, Tanh
 from blocks.bricks.base import application, lazy
 from blocks.bricks.recurrent import BaseRecurrent, recurrent
 from blocks.initialization import IsotropicGaussian, Constant
@@ -243,3 +242,70 @@ class SoftGatedRecurrent(BaseRecurrent, Initializable):
     @application(outputs=apply.states)
     def initial_states(self, batch_size, *args, **kwargs):
         return tensor.repeat(self.params[1][None, :], batch_size, 0)
+
+
+class LSTM(BaseRecurrent, Initializable):
+
+    @lazy(allocation=['dim'])
+    def __init__(self, dim, activation=None, **kwargs):
+        super(LSTM, self).__init__(**kwargs)
+        self.dim = dim
+
+        if not activation:
+            activation = Tanh()
+        self.children = [activation]
+
+    def get_dim(self, name):
+        if name == 'inputs':
+            return self.dim * 4
+        if name in ['states', 'cells']:
+            return self.dim
+        if name == 'mask':
+            return 0
+        return super(LSTM, self).get_dim(name)
+
+    def _allocate(self):
+        self.W_state = shared_floatx_nans((self.dim, 4 * self.dim),
+                                          name='W_state')
+        # The underscore is required to prevent collision with
+        # the `initial_state` application method
+        self.initial_state_ = shared_floatx_zeros((self.dim,),
+                                                  name="initial_state")
+        self.initial_cells = shared_floatx_zeros((self.dim,),
+                                                 name="initial_cells")
+        add_role(self.W_state, WEIGHT)
+        add_role(self.initial_state_, INITIAL_STATE)
+        add_role(self.initial_cells, INITIAL_STATE)
+
+        self.params = [
+            self.W_state, self.initial_state_, self.initial_cells]
+
+    def _initialize(self):
+        self.weights_init.initialize(self.params[0], self.rng)
+
+    @recurrent(sequences=['inputs', 'mask'], states=['states', 'cells'],
+               contexts=[], outputs=['states', 'cells'])
+    def apply(self, inputs, states, cells, mask=None):
+        def slice_last(x, no):
+            return x[:, no * self.dim: (no + 1) * self.dim]
+
+        nonlinearity = self.children[0].apply
+
+        activation = tensor.dot(states, self.W_state) + inputs
+        in_gate = tensor.nnet.sigmoid(slice_last(activation, 0))
+        forget_gate = tensor.nnet.sigmoid(slice_last(activation, 1))
+        next_cells = (forget_gate * cells +
+                      in_gate * nonlinearity(slice_last(activation, 2)))
+        out_gate = tensor.nnet.sigmoid(slice_last(activation, 3))
+        next_states = out_gate * nonlinearity(next_cells)
+
+        if mask:
+            next_states = (mask[:, None] * next_states +
+                           (1 - mask[:, None]) * states)
+
+        return next_states, next_cells
+
+    @application(outputs=apply.states)
+    def initial_states(self, batch_size, *args, **kwargs):
+        return [tensor.repeat(self.initial_state_[None, :], batch_size, 0),
+                tensor.repeat(self.initial_cells[None, :], batch_size, 0)]
