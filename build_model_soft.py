@@ -108,7 +108,7 @@ def build_model_soft(vocab_size, args, dtype=floatX):
 
     fork.initialize()
 
-    rnn.weights_init = initialization.Orthogonal(0.1)
+    rnn.weights_init = initialization.Orthogonal()
     rnn.biases_init = initialization.Constant(0)
     rnn.initialize()
 

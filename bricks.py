@@ -138,7 +138,8 @@ class ClockworkBase(BaseRecurrent, Initializable):
             next_states = (mask[:, None] * next_states +
                            (1 - mask[:, None]) * states)
 
-        return next_states, time + 1
+        time = time + tensor.ones_like(time)
+        return next_states, time
 
     @application(outputs=apply.states)
     def initial_states(self, batch_size, *args, **kwargs):
