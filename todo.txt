@@ -1,6 +1,7 @@
 Add regularization?
-
 Add some fancy extensions? Decrease learning_rate when training...
+Shuffle wikipedia articles ?
+Carry hidden state from one mini_batch to another one
 
 Make the script able to load a dumped Model
 
