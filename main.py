@@ -16,7 +16,7 @@ if __name__ == "__main__":
     train_stream, valid_stream, vocab_size = get_minibatch_char(
         dataset, mini_batch_size, time_length, args.tot_num_char)
 
-    if (args.skip_connnections and args.layers == 1):
+    if (args.skip_connections and args.layers == 1):
         raise NotImplementedError
 
     # Build the model

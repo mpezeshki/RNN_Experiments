@@ -42,10 +42,10 @@ class LookupTable(Initializable):
         return self.params[1]
 
     def _allocate(self):
-        W = shared_floatx_nans((self.length, self.dim), name='W')
+        W = shared_floatx_nans((self.length, self.dim), name='W_lookup')
         self.params.append(W)
         add_role(W, WEIGHT)
-        b = shared_floatx_nans((self.dim,), name='W')
+        b = shared_floatx_nans((self.dim,), name='b_lookup')
         self.params.append(b)
         add_role(b, BIAS)
 

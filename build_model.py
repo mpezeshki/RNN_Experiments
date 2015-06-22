@@ -11,6 +11,9 @@ from blocks.bricks.recurrent import LSTM, SimpleRecurrent, RecurrentStack
 
 from bricks import LookupTable, ClockworkBase
 
+from blocks.filter import VariableFilter, get_brick
+from blocks.graph import ComputationGraph
+
 floatX = theano.config.floatX
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
@@ -83,15 +86,16 @@ def build_model(vocab_size, args, dtype=floatX):
     # Return list of 3D Tensor, one for each layer
     # (Batch X Time X embedding_dim)
     pre_rnn = fork.apply(x)
-    pre_rnn.name = "pre_rnn"
 
     # Give time as the first index for each element in the list:
     # (Time X Batch X embedding_dim)
     if skip_connections:
         for t in range(len(pre_rnn)):
             pre_rnn[t] = pre_rnn[t].dimshuffle(1, 0, 2)
+            pre_rnn[t].name = "pre_rnn_" + str(t)
     else:
         pre_rnn = pre_rnn.dimshuffle(1, 0, 2)
+        pre_rnn.name = "pre_rnn"
 
     # Prepare inputs for the RNN
     kwargs = OrderedDict()
@@ -159,5 +163,10 @@ def build_model(vocab_size, args, dtype=floatX):
     output_layer.weights_init = initialization.IsotropicGaussian(0.1)
     output_layer.biases_init = initialization.Constant(0)
     output_layer.initialize()
+
+    cg = ComputationGraph(cost)
+
+    var_filter = VariableFilter()
+    print var_filter(cg.parameters)
 
     return cost, cross_entropy
