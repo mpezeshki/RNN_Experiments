@@ -83,6 +83,7 @@ def build_model(vocab_size, args, dtype=floatX):
     # Return list of 3D Tensor, one for each layer
     # (Batch X Time X embedding_dim)
     pre_rnn = fork.apply(x)
+    pre_rnn.name = "pre_rnn"
 
     # Give time as the first index for each element in the list:
     # (Time X Batch X embedding_dim)
@@ -125,8 +126,10 @@ def build_model(vocab_size, args, dtype=floatX):
             h = tensor.concatenate(h, axis=2)
         else:
             h = h[-1]
+    h.name = "hidden_state"
 
     presoft = output_layer.apply(h[context:, :, :])
+    presoft.name = "presoft"
     # Define the cost
     # Compute the probability distribution
     time, batch, feat = presoft.shape

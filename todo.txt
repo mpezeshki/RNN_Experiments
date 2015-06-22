@@ -3,6 +3,7 @@ Check the warning saying that we are not learning on all the parameters of the m
 Add regularization?
 Add some fancy extensions? Decrease learning_rate when training...
 Graves uses [-1, 1] for gradient clipping (only in the LSTM units)
+Make the script able to load a dumped Model
 
 Link for the google docs:
 https://docs.google.com/spreadsheets/d/1anGdjy2eiV67gzX2jdoYwV65xR-YRokR9msoXcZRSPY/edit?usp=sharing
