@@ -50,6 +50,7 @@ def train_model(cost, cross_entropy, train_stream, valid_stream, args):
 
     step_rule = learning_algorithm(args)
     cg = ComputationGraph(cost)
+    logger.info(cg.parameters)
 
     algorithm = GradientDescent(cost=cost, step_rule=step_rule,
                                 params=cg.parameters)

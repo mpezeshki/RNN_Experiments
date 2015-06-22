@@ -164,9 +164,4 @@ def build_model(vocab_size, args, dtype=floatX):
     output_layer.biases_init = initialization.Constant(0)
     output_layer.initialize()
 
-    cg = ComputationGraph(cost)
-
-    var_filter = VariableFilter()
-    print var_filter(cg.parameters)
-
     return cost, cross_entropy
