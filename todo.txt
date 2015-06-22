@@ -1,6 +1,7 @@
 Add regularization?
+
 Add some fancy extensions? Decrease learning_rate when training...
-Graves uses [-1, 1] for gradient clipping (only in the LSTM units)
+
 Make the script able to load a dumped Model
 
 Link for the google docs:
