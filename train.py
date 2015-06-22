@@ -7,7 +7,7 @@ import numpy as np
 import theano
 
 from blocks.algorithms import (Adam, CompositeRule, GradientDescent,
-                               Momentum, RMSProp, StepClipping)
+                               Momentum, RMSProp, StepClipping, RemoveNotFinite)
 from blocks.extensions import Printing, ProgressBar
 from blocks.extensions.monitoring import (
     TrainingDataMonitoring, DataStreamMonitoring)
@@ -35,11 +35,13 @@ def learning_algorithm(args):
     elif name == 'rms_prop':
         clipping = StepClipping(threshold=np.cast[floatX](clipping_threshold))
         rms_prop = RMSProp(learning_rate=learning_rate)
-        step_rule = CompositeRule([clipping, rms_prop])
+        rm_non_finite = RemoveNotFinite()
+        step_rule = CompositeRule([clipping, rms_prop, rm_non_finite])
     else:
         clipping = StepClipping(threshold=np.cast[floatX](clipping_threshold))
         sgd_momentum = Momentum(learning_rate=learning_rate, momentum=momentum)
-        step_rule = CompositeRule([clipping, sgd_momentum])
+        rm_non_finite = RemoveNotFinite()
+        step_rule = CompositeRule([clipping, sgd_momentum, rm_non_finite])
     return step_rule
 
 
