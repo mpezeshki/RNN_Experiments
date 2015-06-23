@@ -29,6 +29,7 @@ def build_model_cw(vocab_size, args, dtype=floatX):
     time_length = args.time_length
 
     # Symbolic variables
+    # In both cases: Time X Batch
     x = tensor.lmatrix('features')
     y = tensor.lmatrix('targets')
 
@@ -48,6 +49,7 @@ def build_model_cw(vocab_size, args, dtype=floatX):
     lookup.weights_init = initialization.IsotropicGaussian(0.1)
     lookup.biases_init = initialization.Constant(0)
 
+    # Make sure time_length is what we need
     fork = Fork(output_names=output_names, input_dim=time_length,
                 output_dims=output_dims,
                 prototype=FeedforwardSequence(
@@ -68,17 +70,14 @@ def build_model_cw(vocab_size, args, dtype=floatX):
         output_dim=vocab_size, name="output_layer")
 
     # Return list of 3D Tensor, one for each layer
-    # (Batch X Time X embedding_dim)
+    # (Time X Batch X embedding_dim)
     pre_rnn = fork.apply(x)
 
-    # Give time as the first index for each element in the list:
-    # (Time X Batch X embedding_dim)
+    # Give a name to the input of each layer
     if skip_connections:
         for t in range(len(pre_rnn)):
-            pre_rnn[t] = pre_rnn[t].dimshuffle(1, 0, 2)
             pre_rnn[t].name = "pre_rnn_" + str(t)
     else:
-        pre_rnn = pre_rnn.dimshuffle(1, 0, 2)
         pre_rnn.name = "pre_rnn"
 
     # Prepare inputs for the RNN
@@ -120,9 +119,8 @@ def build_model_cw(vocab_size, args, dtype=floatX):
     # Define the cost
     # Compute the probability distribution
     time, batch, feat = presoft.shape
-    presoft = presoft.dimshuffle(1, 0, 2)
     presoft = presoft.reshape((batch * time, feat))
-    y = y[:, context:].flatten()
+    y = y[context:, :].flatten()
 
     cross_entropy = Softmax().categorical_cross_entropy(y, presoft)
     cross_entropy = cross_entropy / tensor.log(2)
