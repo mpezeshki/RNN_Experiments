@@ -25,7 +25,6 @@ def build_model_vanilla(vocab_size, args, dtype=floatX):
     state_dim = args.state_dim
     layers = args.layers
     skip_connections = args.skip_connections
-    time_length = args.time_length
 
     # Symbolic variables
     # In both cases: Time X Batch
@@ -48,8 +47,7 @@ def build_model_vanilla(vocab_size, args, dtype=floatX):
     lookup.weights_init = initialization.IsotropicGaussian(0.1)
     lookup.biases_init = initialization.Constant(0)
 
-    # Make sure time_length is what we need
-    fork = Fork(output_names=output_names, input_dim=time_length,
+    fork = Fork(output_names=output_names, input_dim=args.mini_batch_size,
                 output_dims=output_dims,
                 prototype=FeedforwardSequence(
                     [lookup.apply]))

@@ -13,6 +13,7 @@ def build_fork_lookup(vocab_size, args):
     x = tensor.lmatrix('features')
     virtual_dim = 6
     time_length = 5
+    mini_batch_size = 2
     skip_connections = True
     layers = 3
 

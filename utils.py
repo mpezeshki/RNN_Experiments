@@ -28,7 +28,7 @@ def parse_args():
                         default='adam')
     parser.add_argument('--rnn_type', choices=['lstm', 'simple', 'clockwork',
                                                'soft', 'hard'],
-                        default='clockwork')
+                        default='simple')
     parser.add_argument('--dataset', choices=['wikipedia', 'penntree'],
                         default='penntree')
     parser.add_argument('--monitoring_freq', type=int, default=1000)
