@@ -130,10 +130,8 @@ def build_model(vocab_size, args, dtype=floatX):
             h = tensor.concatenate(h, axis=2)
         else:
             h = h[-1]
-    h.name = "hidden_state"
 
     presoft = output_layer.apply(h[context:, :, :])
-    presoft.name = "presoft"
     # Define the cost
     # Compute the probability distribution
     time, batch, feat = presoft.shape
