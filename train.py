@@ -71,7 +71,7 @@ def train_model(cost, cross_entropy, train_stream, valid_stream,
                                    every_n_batches=args.monitoring_freq)
     extensions.append(early_stopping)
     if args.load_path is not None:
-        extensions.append(Load(args.load_path))
+        extensions.append(Load(args.load_path, load_iteration_states=True))
     extensions.extend([
         TrainingDataMonitoring([cost], prefix='train'),
         DataStreamMonitoring([cost, cross_entropy],
