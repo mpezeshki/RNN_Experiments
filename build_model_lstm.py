@@ -1,5 +1,6 @@
 from collections import OrderedDict
 import logging
+import numpy
 
 import theano
 from theano import tensor
@@ -82,21 +83,41 @@ def build_model_lstm(vocab_size, args, dtype=floatX):
 
     # Prepare inputs for the RNN
     kwargs = OrderedDict()
+    init_states = {}
+    init_cells = {}
     for d in range(layers):
+        init_states[d] = theano.shared(
+            numpy.zeros((args.mini_batch_size, state_dim)).astype(floatX),
+            name='state0_%d' % d)
+        init_cells[d] = theano.shared(
+            numpy.zeros((args.mini_batch_size, state_dim)).astype(floatX),
+            name='cell0_%d' % d)
         if d > 0:
             suffix = '_' + str(d)
         else:
             suffix = ''
-        if d == 0 or skip_connections:
-            if skip_connections:
-                kwargs['inputs' + suffix] = pre_rnn[d]
-            else:
-                kwargs['inputs' + suffix] = pre_rnn
+        if skip_connections:
+            kwargs['inputs' + suffix] = pre_rnn[d]
+        elif d == 0:
+            kwargs['inputs'] = pre_rnn
+        kwargs['states' + suffix] = init_states[d]
+        kwargs['cells' + suffix] = init_cells[d]
 
     # Apply the RNN to the inputs
     h = rnn.apply(low_memory=True, **kwargs)
 
-    # In the LSTM case:
+    last_states = {}
+    last_cells = {}
+    for d in range(layers):
+        last_states[d] = h[2 * d][-1, :, :]
+        last_cells[d] = h[2 * d + 1][-1, :, :]
+
+    # The updates of the hidden states
+    updates = []
+    for d in range(layers):
+        updates.append((init_states[d], last_states[d]))
+        updates.append((init_cells[d], last_states[d]))
+
     # h = [state, cell, state_1, cell_1 ...]
     h = h[::2]
 
@@ -145,4 +166,4 @@ def build_model_lstm(vocab_size, args, dtype=floatX):
     output_layer.biases_init = initialization.Constant(0)
     output_layer.initialize()
 
-    return cost, cross_entropy
+    return cost, cross_entropy, updates

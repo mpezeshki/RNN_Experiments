@@ -16,6 +16,7 @@ logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
 
 
+# TODO add the carrying of hidden state
 # TODO: clean this function, split it in several pieces maybe
 def build_model_soft(vocab_size, args, dtype=floatX):
     logger.info('Building model ...')
@@ -57,14 +58,9 @@ def build_model_soft(vocab_size, args, dtype=floatX):
         output_dim=vocab_size, name="output_layer")
 
     # Return list of 3D Tensor, one for each layer
-    # (Batch X Time X embedding_dim)
+    # (Time X Batch X embedding_dim)
     pre_rnn = fork.apply(x)
     pre_rnn.name = "pre_rnn"
-
-    # Give time as the first index for each element in the list:
-    # (Time X Batch X embedding_dim)
-
-    pre_rnn = pre_rnn.dimshuffle(1, 0, 2)
 
     # Prepare inputs for the RNN
     kwargs = OrderedDict()
@@ -91,9 +87,8 @@ def build_model_soft(vocab_size, args, dtype=floatX):
     # Define the cost
     # Compute the probability distribution
     time, batch, feat = presoft.shape
-    presoft = presoft.dimshuffle(1, 0, 2)
     presoft = presoft.reshape((batch * time, feat))
-    y = y[:, context:].flatten()
+    y = y[context:, :].flatten()
 
     cross_entropy = Softmax().categorical_cross_entropy(y, presoft)
     cross_entropy = cross_entropy / tensor.log(2)

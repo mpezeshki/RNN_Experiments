@@ -1,6 +1,6 @@
 from collections import OrderedDict
 import logging
-
+import numpy
 import theano
 from theano import tensor
 
@@ -79,16 +79,20 @@ def build_model_vanilla(vocab_size, args, dtype=floatX):
 
     # Prepare inputs for the RNN
     kwargs = OrderedDict()
+    init_states = {}
     for d in range(layers):
+        init_states[d] = theano.shared(
+            numpy.zeros((args.mini_batch_size, state_dim)).astype(floatX),
+            name='state0_%d' % d)
         if d > 0:
             suffix = '_' + str(d)
         else:
             suffix = ''
-        if d == 0 or skip_connections:
-            if skip_connections:
-                kwargs['inputs' + suffix] = pre_rnn[d]
-            else:
-                kwargs['inputs' + suffix] = pre_rnn
+        if skip_connections:
+            kwargs['inputs' + suffix] = pre_rnn[d]
+        elif d == 0:
+            kwargs['inputs'] = pre_rnn
+        kwargs['states' + suffix] = init_states[d]
 
     # Apply the RNN to the inputs
     h = rnn.apply(low_memory=True, **kwargs)
@@ -99,12 +103,22 @@ def build_model_vanilla(vocab_size, args, dtype=floatX):
 
     # If we have skip connections, concatenate all the states
     # Else only consider the state of the highest layer
+    last_states = {}
     if layers > 1:
+        # Save all the last states
+        last_states[d] = h[d][-1, :, :]
         if skip_connections:
             h = tensor.concatenate(h, axis=2)
         else:
             h = h[-1]
+    else:
+        last_states[0] = h[-1, :, :]
     h.name = "hidden_state"
+
+    # The updates of the hidden states
+    updates = []
+    for d in range(layers):
+        updates.append((init_states[d], last_states[d]))
 
     presoft = output_layer.apply(h[context:, :, :])
     # Define the cost
@@ -136,4 +150,4 @@ def build_model_vanilla(vocab_size, args, dtype=floatX):
     output_layer.biases_init = initialization.Constant(0)
     output_layer.initialize()
 
-    return cost, cross_entropy
+    return cost, cross_entropy, updates
