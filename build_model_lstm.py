@@ -8,9 +8,9 @@ from theano import tensor
 from blocks import initialization
 from blocks.bricks import Linear, Tanh, Softmax, FeedforwardSequence
 from blocks.bricks.parallel import Fork
-from blocks.bricks.recurrent import LSTM, RecurrentStack
+from blocks.bricks.recurrent import RecurrentStack
 
-from bricks import LookupTable
+from bricks import LookupTable, LSTM
 
 
 floatX = theano.config.floatX

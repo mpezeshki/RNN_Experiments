@@ -106,7 +106,8 @@ def build_model_vanilla(vocab_size, args, dtype=floatX):
     last_states = {}
     if layers > 1:
         # Save all the last states
-        last_states[d] = h[d][-1, :, :]
+        for d in range(layers):
+            last_states[d] = h[d][-1, :, :]
         if skip_connections:
             h = tensor.concatenate(h, axis=2)
         else:

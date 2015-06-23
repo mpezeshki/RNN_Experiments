@@ -37,4 +37,4 @@ if __name__ == "__main__":
         assert(False)
 
     # Train the model
-    train_model(cost, cross_entropy, train_stream, valid_stream, args)
+    train_model(cost, cross_entropy, train_stream, valid_stream, updates, args)
