@@ -65,8 +65,7 @@ def build_model_cw(vocab_size, args, dtype=floatX):
     # If skip_connections: dim = layers * state_dim
     # else: dim = state_dim
     output_layer = Linear(
-        input_dim=skip_connections * layers *
-        state_dim + (1 - skip_connections) * state_dim,
+        input_dim=layers * state_dim,
         output_dim=vocab_size, name="output_layer")
 
     # Return list of 3D Tensor, one for each layer
@@ -115,10 +114,7 @@ def build_model_cw(vocab_size, args, dtype=floatX):
         # Save all the last states
         for d in range(layers):
             last_states[d] = h[d][-1, :, :]
-        if skip_connections:
-            h = tensor.concatenate(h, axis=2)
-        else:
-            h = h[-1]
+        h = tensor.concatenate(h, axis=2)
     else:
         h = h[0]
         last_states[0] = h[-1, :, :]
