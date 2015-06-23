@@ -10,7 +10,6 @@ def parse_args():
     parser.add_argument('--load_path', type=str, default=argparse.SUPPRESS)
     parser.add_argument('--save_path', type=str,
                         default="/data/lisatmp3/zablocki")
-                        # default="/media/win/Users/Eloi/tmp")
     parser.add_argument('--patience', type=int, default=5)
     parser.add_argument('--state_dim', type=int, default=100)
     parser.add_argument('--layers', type=int, default=3)
@@ -23,9 +22,13 @@ def parse_args():
                         choices=['rms_prop', 'adam', 'sgd'],
                         default='adam')
     parser.add_argument('--rnn_type', choices=['lstm', 'simple', 'clockwork'],
-                        default='clockwork')
-    parser.add_argument('--dataset', choices=['wikipedia', 'penntree'],
+                        default='lstm')
+    parser.add_argument('--dataset', choices=['wikipedia', 'penntree', 'text'],
                         default='penntree')
+    parser.add_argument('--train_path', type=str,
+                        default="/data/lisatmp3/zablocki/train.txt")
+    parser.add_argument('--valid_path', type=str,
+                        default="/data/lisatmp3/zablocki/valid.txt")
 
     args = parser.parse_args()
     print "\n" + "#" * 40

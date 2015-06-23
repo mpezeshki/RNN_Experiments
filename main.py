@@ -1,6 +1,4 @@
 from build_model import build_model
-from build_model_soft import build_model_soft
-# from build_model_hard import build_model_hard
 from dataset import get_minibatch_char
 from train import train_model
 from utils import parse_args
@@ -14,7 +12,7 @@ if __name__ == "__main__":
 
     # Prepare data
     train_stream, valid_stream, vocab_size = get_minibatch_char(
-        dataset, mini_batch_size, time_length, args.tot_num_char)
+        dataset, mini_batch_size, time_length, args)
 
     # Build the model
     cost, cross_entropy = build_model(vocab_size, args)

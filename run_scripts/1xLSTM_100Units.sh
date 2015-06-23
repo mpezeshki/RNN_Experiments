@@ -1,1 +1,1 @@
-THEANO_FLAGS='device=gpu0, floatX=float32' python main.py --state_dim 100 --time_length 40 --mini_batch_size 5 --layers 1 --tot_num_char 50000
+THEANO_FLAGS='device=gpu0, floatX=float32' python main.py --state_dim 10 --mini_batch_size 1 --layers 1 --dataset text

@@ -15,7 +15,7 @@ from blocks.extensions.saveload import Checkpoint
 from blocks.graph import ComputationGraph
 from blocks.main_loop import MainLoop
 from blocks.model import Model
-from extensions import EarlyStopping
+from extensions import EarlyStopping, TextGenerationExtension
 
 floatX = theano.config.floatX
 logging.basicConfig(level='INFO')
@@ -66,10 +66,14 @@ def train_model(cost, cross_entropy, train_stream, valid_stream, args):
             TrainingDataMonitoring([cost], prefix='train'),
             DataStreamMonitoring([cost, cross_entropy],
                                  valid_stream, prefix='valid',
-                                 every_n_batches=1000),
+                                 every_n_batches=10),
             Checkpoint(args.save_path, after_epoch=True),
             early_stopping,
-            Printing(every_n_batches=1000),
+            TextGenerationExtension(generation_length=100,
+                                    initial_text_length=args.context,
+                                    every_n_batches=1,
+                                    dataset=args.dataset),
+            Printing(every_n_batches=1),
             ProgressBar()
         ]
     )

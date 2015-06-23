@@ -6,6 +6,9 @@ from scipy.linalg import svd
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.table import Table
+import theano
+import numpy
+from dataset import get_character
 
 
 class EarlyStopping(SimpleExtension):
@@ -80,6 +83,58 @@ class EarlyStopping(SimpleExtension):
         if self.counter >= self.patience:
             self.main_loop.log.current_row['training_finish_requested'] = True
         self.main_loop.log.current_row['patience'] = self.counter
+
+
+class TextGenerationExtension(SimpleExtension):
+    def __init__(self, generation_length, initial_text_length,
+                 dataset, **kwargs):
+        self.generation_length = generation_length
+        self.initial_text_length = initial_text_length
+        self.dataset = dataset
+        super(TextGenerationExtension, self).__init__(**kwargs)
+
+    def do(self, *args):
+        variables = self.main_loop.model.variables
+        inputs = [variable for variable in variables
+                  if variable.name == 'features']
+        outputs = [variable for variable in variables
+                   if variable.name == 'presoft']
+        generate = theano.function(inputs, outputs)
+
+        # +1 is for one output (consider context)
+        # batch x time
+        INPUTS = next(self.main_loop.data_stream.get_epoch_iterator(
+        ))[0][0:1, :self.initial_text_length + 1]
+        INIT = INPUTS
+        # time x batch x features
+        OUTPUTS = generate(INPUTS)[0][-1:, :, :]
+        generated_probabilities = OUTPUTS
+        # time x batch
+        generated_argmax = numpy.argmax(generated_probabilities, axis=2)
+        for i in range(self.generation_length):
+            # time x batch --> batch x time
+            generated_argmax = generated_argmax.reshape(
+                generated_argmax.shape[1], generated_argmax.shape[0])
+            INPUTS = numpy.hstack([INPUTS, generated_argmax])
+            # time x batch x features
+            OUTPUTS = generate(INPUTS)[0][-1:, :, :]
+            generated_probabilities = numpy.vstack([
+                generated_probabilities, OUTPUTS])
+            # time x batch
+            generated_argmax = numpy.argmax(generated_probabilities, axis=2)
+        # time x batch --> batch x time
+        generated_argmax = generated_argmax.reshape(
+            generated_argmax.shape[1], generated_argmax.shape[0])
+        # batch x time
+        whole_sentence_code = numpy.hstack([INIT, generated_argmax])
+        vocab = get_character(self.dataset)
+        print '-' * 41
+        print '-' * 14 + '  Generated  ' + '-' * 14
+        whole_sentence = ''
+        for char in vocab[whole_sentence_code[0]]:
+            whole_sentence += char
+        print whole_sentence
+        print '-' * 41
 
 
 class SvdExtension(SimpleExtension, MonitoringExtension):
