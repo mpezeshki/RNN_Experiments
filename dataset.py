@@ -64,7 +64,8 @@ def get_stream_char(dataset, which_set, time_length, mini_batch_size,
 
     targets_dataset = dataset[1:, :]
     targets_dataset = numpy.concatenate(
-        (targets_dataset, numpy.zeros((1, mini_batch_size))), axis=0)
+        (targets_dataset,
+         numpy.zeros((1, mini_batch_size)).astype(numpy.int64)), axis=0)
 
     dataset = dataset.reshape(
         total_train_chars / (mini_batch_size * time_length),

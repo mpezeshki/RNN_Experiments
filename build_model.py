@@ -1,5 +1,6 @@
 from collections import OrderedDict
 import logging
+import numpy
 
 import theano
 from theano import tensor
@@ -7,12 +8,9 @@ from theano import tensor
 from blocks import initialization
 from blocks.bricks import Linear, Tanh, Softmax, FeedforwardSequence
 from blocks.bricks.parallel import Fork
-from blocks.bricks.recurrent import LSTM, SimpleRecurrent, RecurrentStack
+from blocks.bricks.recurrent import SimpleRecurrent, RecurrentStack
 
-from bricks import LookupTable, ClockworkBase
-
-from blocks.filter import VariableFilter, get_brick
-from blocks.graph import ComputationGraph
+from bricks import LSTM, LookupTable, ClockworkBase
 
 floatX = theano.config.floatX
 logging.basicConfig(level='INFO')
@@ -95,6 +93,20 @@ def build_model(vocab_size, args, dtype=floatX):
     else:
         pre_rnn.name = "pre_rnn"
 
+    # Prepare initial states (and cells)
+    init_states = {}
+    for d in range(layers):
+        init_states[d] = theano.shared(
+            numpy.zeros((args.mini_batch_size, state_dim)).astype(floatX),
+            name='state0_%d' % d)
+
+    if rnn_type == "lstm":
+        init_cells = {}
+        for d in range(layers):
+            init_cells[d] = theano.shared(
+                numpy.zeros((args.mini_batch_size, state_dim)).astype(floatX),
+                name='cell0_%d' % d)
+
     # Prepare inputs for the RNN
     kwargs = OrderedDict()
     for d in range(layers):
@@ -107,17 +119,52 @@ def build_model(vocab_size, args, dtype=floatX):
                 kwargs['inputs' + suffix] = pre_rnn[d]
             else:
                 kwargs['inputs' + suffix] = pre_rnn
+        kwargs['states' + suffix] = init_states[d]
+        if rnn_type == "lstm":
+            kwargs['cells' + suffix] = init_cells[d]
 
     # Apply the RNN to the inputs
+    # TODO: Check if "low_memory=True" is really what we want
     h = rnn.apply(low_memory=True, **kwargs)
 
     # In the LSTM case:
-    # h = [state_1, cell_1, state_2, cell_2 ...]
+    # h = [state, cell, state_1, cell_1 ...]
     # In the Clockwork case:
-    # h = [state_1, time_1, state2, time_2 ...]
-    if rnn_type in ["lstm", "clockwork"]:
+    # h = [state, time, state_1, time_1 ...]
+    if rnn_type == "clockwork":
         h = h[::2]
+        if layers == 1:
+            h = h[0]
 
+    last_states = {}
+    if layers == 1:
+        if rnn_type == "lstm":
+            last_cells = {}
+            last_states[0] = h[0][-1, :, :]
+            last_cells[1] = h[1][-1, :, :]
+        else:
+            last_states[0] = h[-1, :, :]
+    else:
+        if rnn_type == "lstm":
+            last_cells = {}
+            for d in range(layers):
+                last_states[d] = h[2 * d][-1, :, :]
+                last_cells[d] = h[2 * d + 1][-1, :, :]
+        else:
+            for d in range(layers):
+                last_states[d] = h[d][-1, :, :]
+
+    # The updates of the hidden states
+    updates = []
+    for d in range(layers):
+        updates.append((init_states[d], last_states[d]))
+        if rnn_type == "lstm":
+            updates.append((init_cells[d], last_states[d]))
+
+    if rnn_type == "lstm":
+        h = h[::2]
+        if layers == 1:
+            h = h[0]
     # Now we have correctly:
     # h = [state_1, state_2, state_3 ...]
 
@@ -161,4 +208,4 @@ def build_model(vocab_size, args, dtype=floatX):
     output_layer.biases_init = initialization.Constant(0)
     output_layer.initialize()
 
-    return cost, cross_entropy
+    return cost, cross_entropy, updates

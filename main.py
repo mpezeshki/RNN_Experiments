@@ -21,7 +21,7 @@ if __name__ == "__main__":
 
     # Build the model
     if args.gating_type == "none":
-        cost, cross_entropy = build_model(vocab_size, args)
+        cost, cross_entropy, updates = build_model(vocab_size, args)
 
     elif args.gating_type == "soft":
         cost, cross_entropy = build_model_soft(vocab_size, args)
@@ -30,4 +30,4 @@ if __name__ == "__main__":
     #     cost, cross_entropy = build_model_hard(vocab_size, args)
 
     # Train the model
-    train_model(cost, cross_entropy, train_stream, valid_stream, args)
+    train_model(cost, cross_entropy, train_stream, valid_stream, updates, args)
