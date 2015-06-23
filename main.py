@@ -1,4 +1,6 @@
-from build_model import build_model
+from build_model_vanilla import build_model_vanilla
+from build_model_lstm import build_model_lstm
+from build_model_cw import build_model_cw
 from build_model_soft import build_model_soft
 # from build_model_hard import build_model_hard
 from dataset import get_minibatch_char
@@ -11,6 +13,7 @@ if __name__ == "__main__":
 
     mini_batch_size = args.mini_batch_size
     time_length = args.time_length
+    rnn_type = args.rnn_type
 
     # Prepare data
     train_stream, valid_stream, vocab_size = get_minibatch_char(
@@ -20,14 +23,18 @@ if __name__ == "__main__":
         raise NotImplementedError
 
     # Build the model
-    if args.gating_type == "none":
-        cost, cross_entropy = build_model(vocab_size, args)
-
-    elif args.gating_type == "soft":
+    if rnn_type == "simple":
+        cost, cross_entropy = build_model_vanilla(vocab_size, args)
+    elif rnn_type == "clockwork":
+        cost, cross_entropy = build_model_lstm(vocab_size, args)
+    elif rnn_type == "lstm":
+        cost, cross_entropy = build_model_lstm(vocab_size, args)
+    elif rnn_type == "soft":
         cost, cross_entropy = build_model_soft(vocab_size, args)
-
-    # elif args.gating_type == "hard":
+    # elif rnn_type == "hard":
     #     cost, cross_entropy = build_model_hard(vocab_size, args)
+    else:
+        assert(False)
 
     # Train the model
     train_model(cost, cross_entropy, train_stream, valid_stream, args)

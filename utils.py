@@ -26,12 +26,11 @@ def parse_args():
     parser.add_argument('--algorithm',
                         choices=['rms_prop', 'adam', 'sgd'],
                         default='adam')
-    parser.add_argument('--rnn_type', choices=['lstm', 'simple', 'clockwork'],
+    parser.add_argument('--rnn_type', choices=['lstm', 'simple', 'clockwork',
+                                               'soft', 'hard'],
                         default='clockwork')
     parser.add_argument('--dataset', choices=['wikipedia', 'penntree'],
                         default='penntree')
-    parser.add_argument('--gating_type', choices=['none', 'soft', 'hard'],
-                        default='none')
     parser.add_argument('--monitoring_freq', type=int, default=1000)
     args = parser.parse_args()
 

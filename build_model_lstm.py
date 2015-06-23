@@ -7,12 +7,10 @@ from theano import tensor
 from blocks import initialization
 from blocks.bricks import Linear, Tanh, Softmax, FeedforwardSequence
 from blocks.bricks.parallel import Fork
-from blocks.bricks.recurrent import LSTM, SimpleRecurrent, RecurrentStack
+from blocks.bricks.recurrent import LSTM, RecurrentStack
 
-from bricks import LookupTable, ClockworkBase
+from bricks import LookupTable
 
-from blocks.filter import VariableFilter, get_brick
-from blocks.graph import ComputationGraph
 
 floatX = theano.config.floatX
 logging.basicConfig(level='INFO')
@@ -20,21 +18,17 @@ logger = logging.getLogger(__name__)
 
 
 # TODO: clean this function, split it in several pieces maybe
-def build_model(vocab_size, args, dtype=floatX):
+def build_model_lstm(vocab_size, args, dtype=floatX):
     logger.info('Building model ...')
 
     # Parameters for the model
     context = args.context
     state_dim = args.state_dim
-    rnn_type = args.rnn_type
     layers = args.layers
     skip_connections = args.skip_connections
     time_length = args.time_length
 
-    if rnn_type == "lstm":
-        virtual_dim = 4 * state_dim
-    else:
-        virtual_dim = state_dim
+    virtual_dim = 4 * state_dim
 
     # Symbolic variables
     x = tensor.lmatrix('features')
@@ -61,18 +55,8 @@ def build_model(vocab_size, args, dtype=floatX):
                 prototype=FeedforwardSequence(
                     [lookup.apply]))
 
-    if rnn_type == "lstm":
-        transitions = [LSTM(dim=state_dim, activation=Tanh())
-                       for _ in range(layers)]
-    elif rnn_type == "simple":
-        transitions = [SimpleRecurrent(dim=state_dim, activation=Tanh())
-                       for _ in range(layers)]
-
-    # Note that this order of the periods makes faster modules flow in slower
-    # ones with is the opposite of the original paper
-    elif rnn_type == "clockwork":
-        transitions = [ClockworkBase(dim=state_dim, activation=Tanh(),
-                                     period=2 ** i) for i in range(layers)]
+    transitions = [LSTM(dim=state_dim, activation=Tanh())
+                   for _ in range(layers)]
 
     rnn = RecurrentStack(transitions, skip_connections=skip_connections)
 
@@ -114,14 +98,12 @@ def build_model(vocab_size, args, dtype=floatX):
     h = rnn.apply(low_memory=True, **kwargs)
 
     # In the LSTM case:
-    # h = [state_1, cell_1, state_2, cell_2 ...]
-    # In the Clockwork case:
-    # h = [state_1, time_1, state2, time_2 ...]
-    if rnn_type in ["lstm", "clockwork"]:
-        h = h[::2]
+    # h = [state, cell, state_1, cell_1 ...]
+    h = h[::2]
 
     # Now we have correctly:
-    # h = [state_1, state_2, state_3 ...]
+    # h = [state, state_1, state_2 ...] if layers > 1
+    # h = [state] if layers == 1
 
     # If we have skip connections, concatenate all the states
     # Else only consider the state of the highest layer
@@ -130,6 +112,9 @@ def build_model(vocab_size, args, dtype=floatX):
             h = tensor.concatenate(h, axis=2)
         else:
             h = h[-1]
+    else:
+        h = h[0]
+    h.name = "hidden_state"
 
     presoft = output_layer.apply(h[context:, :, :])
     # Define the cost
