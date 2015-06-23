@@ -19,20 +19,20 @@ if __name__ == "__main__":
     train_stream, valid_stream, vocab_size = get_minibatch_char(
         dataset, mini_batch_size, time_length, args.tot_num_char)
 
-    if (args.skip_connections and args.layers == 1):
-        raise NotImplementedError
+    # Make sure we don't have skip_connections with only one hidden layer
+    assert(not(args.skip_connections and args.layers == 1))
 
     # Build the model
     if rnn_type == "simple":
-        cost, cross_entropy = build_model_vanilla(vocab_size, args)
+        cost, cross_entropy, updates = build_model_vanilla(vocab_size, args)
     elif rnn_type == "clockwork":
-        cost, cross_entropy = build_model_lstm(vocab_size, args)
+        cost, cross_entropy, updates = build_model_cw(vocab_size, args)
     elif rnn_type == "lstm":
-        cost, cross_entropy = build_model_lstm(vocab_size, args)
+        cost, cross_entropy, updates = build_model_lstm(vocab_size, args)
     elif rnn_type == "soft":
-        cost, cross_entropy = build_model_soft(vocab_size, args)
+        cost, cross_entropy, updates = build_model_soft(vocab_size, args)
     # elif rnn_type == "hard":
-    #     cost, cross_entropy = build_model_hard(vocab_size, args)
+    #     cost, cross_entropy, updates = build_model_hard(vocab_size, args)
     else:
         assert(False)
 

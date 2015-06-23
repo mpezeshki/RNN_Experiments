@@ -1,4 +1,4 @@
-# Credits to Cesar Laurent
+import theano
 from blocks.serialization import secure_dump
 from blocks.extensions import SimpleExtension
 from blocks.extensions.monitoring import MonitoringExtension
@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from matplotlib.table import Table
 
 
+# Credits to Cesar Laurent
 class EarlyStopping(SimpleExtension):
     """Check if a log quantity has the minimum/maximum value so far,
     and early stops the experiment if the quantity has not been better
@@ -80,6 +81,19 @@ class EarlyStopping(SimpleExtension):
         if self.counter >= self.patience:
             self.main_loop.log.current_row['training_finish_requested'] = True
         self.main_loop.log.current_row['patience'] = self.counter
+
+
+# Credits to Alex Auvolat
+class ResetStates(SimpleExtension):
+    def __init__(self, state_vars, **kwargs):
+        super(ResetStates, self).__init__(**kwargs)
+
+        self.f = theano.function(
+            inputs=[], outputs=[],
+            updates=[(v, v.zeros_like()) for v in state_vars])
+
+    def do(self, which_callback, *args):
+        self.f()
 
 
 class SvdExtension(SimpleExtension, MonitoringExtension):

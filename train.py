@@ -15,7 +15,7 @@ from blocks.extensions.saveload import Checkpoint
 from blocks.graph import ComputationGraph
 from blocks.main_loop import MainLoop
 from blocks.model import Model
-from extensions import EarlyStopping
+from extensions import EarlyStopping, ResetStates
 
 
 floatX = theano.config.floatX
@@ -45,7 +45,8 @@ def learning_algorithm(args):
     return step_rule
 
 
-def train_model(cost, cross_entropy, train_stream, valid_stream, args):
+def train_model(cost, cross_entropy, train_stream, valid_stream,
+                updates, args):
 
     # Define the model
     model = Model(cost)
@@ -56,6 +57,7 @@ def train_model(cost, cross_entropy, train_stream, valid_stream, args):
 
     algorithm = GradientDescent(cost=cost, step_rule=step_rule,
                                 params=cg.parameters)
+    algorithm.add_updates(updates)
 
     # Creating 'best' folder for saving the best model.
     best_path = os.path.join(args.save_path, 'best')
@@ -75,6 +77,7 @@ def train_model(cost, cross_entropy, train_stream, valid_stream, args):
                                  every_n_batches=args.monitoring_freq),
             Checkpoint(args.save_path, every_n_batches=args.monitoring_freq,
                        after_epoch=True),
+            ResetStates([v for v, _ in updates], every_n_batches=100),
             early_stopping,
             Printing(every_n_batches=args.monitoring_freq),
             ProgressBar()
