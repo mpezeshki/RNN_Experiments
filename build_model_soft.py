@@ -27,6 +27,7 @@ def build_model_soft(vocab_size, args, dtype=floatX):
     time_length = args.time_length
 
     # Symbolic variables
+    # Time X Batch
     x = tensor.lmatrix('features')
     y = tensor.lmatrix('targets')
 
@@ -61,11 +62,6 @@ def build_model_soft(vocab_size, args, dtype=floatX):
     pre_rnn = fork.apply(x)
     pre_rnn.name = "pre_rnn"
 
-    # Give time as the first index for each element in the list:
-    # (Time X Batch X embedding_dim)
-
-    pre_rnn = pre_rnn.dimshuffle(1, 0, 2)
-
     # Prepare inputs for the RNN
     kwargs = OrderedDict()
     for d in range(layers):
@@ -91,9 +87,8 @@ def build_model_soft(vocab_size, args, dtype=floatX):
     # Define the cost
     # Compute the probability distribution
     time, batch, feat = presoft.shape
-    presoft = presoft.dimshuffle(1, 0, 2)
     presoft = presoft.reshape((batch * time, feat))
-    y = y[:, context:].flatten()
+    y = y[context:, :].flatten()
 
     cross_entropy = Softmax().categorical_cross_entropy(y, presoft)
     cross_entropy = cross_entropy / tensor.log(2)
