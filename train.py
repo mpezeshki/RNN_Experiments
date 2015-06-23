@@ -7,11 +7,12 @@ import numpy as np
 import theano
 
 from blocks.algorithms import (Adam, CompositeRule, GradientDescent,
-                               Momentum, RMSProp, StepClipping, RemoveNotFinite)
+                               Momentum, RMSProp, StepClipping,
+                               RemoveNotFinite)
 from blocks.extensions import Printing, ProgressBar
 from blocks.extensions.monitoring import (
     TrainingDataMonitoring, DataStreamMonitoring)
-from blocks.extensions.saveload import Checkpoint
+from blocks.extensions.saveload import Load
 from blocks.graph import ComputationGraph
 from blocks.main_loop import MainLoop
 from blocks.model import Model
@@ -59,28 +60,31 @@ def train_model(cost, cross_entropy, train_stream, valid_stream,
                                 params=cg.parameters)
     algorithm.add_updates(updates)
 
+    # extensions to be added
+    extensions = []
     # Creating 'best' folder for saving the best model.
+    if not os.path.exists(args.save_path):
+        os.makedirs(args.save_path)
     best_path = os.path.join(args.save_path, 'best')
-    if not os.path.exists(best_path):
-        os.mkdir(best_path)
     early_stopping = EarlyStopping('valid_cross_entropy',
                                    args.patience, best_path,
                                    every_n_batches=args.monitoring_freq)
+    extensions.append(early_stopping)
+    if args.load_path is not None:
+        extensions.append(Load(args.load_path))
+    extensions.extend([
+        TrainingDataMonitoring([cost], prefix='train'),
+        DataStreamMonitoring([cost, cross_entropy],
+                             valid_stream, prefix='valid',
+                             every_n_batches=args.monitoring_freq),
+        ResetStates([v for v, _ in updates], every_n_batches=100),
+        Printing(every_n_batches=args.monitoring_freq),
+        ProgressBar()])
+
     main_loop = MainLoop(
         model=model,
         data_stream=train_stream,
         algorithm=algorithm,
-        extensions=[
-            TrainingDataMonitoring([cost], prefix='train'),
-            DataStreamMonitoring([cost, cross_entropy],
-                                 valid_stream, prefix='valid',
-                                 every_n_batches=args.monitoring_freq),
-            Checkpoint(args.save_path, every_n_batches=args.monitoring_freq,
-                       after_epoch=True),
-            ResetStates([v for v, _ in updates], every_n_batches=100),
-            early_stopping,
-            Printing(every_n_batches=args.monitoring_freq),
-            ProgressBar()
-        ]
+        extensions=extensions
     )
     main_loop.run()
