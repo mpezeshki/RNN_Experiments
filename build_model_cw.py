@@ -129,11 +129,11 @@ def build_model_cw(vocab_size, args, dtype=floatX):
     # Define the cost
     # Compute the probability distribution
     time, batch, feat = presoft.shape
-    presoft = presoft.reshape((batch * time, feat))
     presoft.name = 'presoft'
-    y = y[context:, :].flatten()
 
-    cross_entropy = Softmax().categorical_cross_entropy(y, presoft)
+    cross_entropy = Softmax().categorical_cross_entropy(
+        y[context:, :].flatten(),
+        presoft.reshape((batch * time, feat)))
     cross_entropy = cross_entropy / tensor.log(2)
     cross_entropy.name = "cross_entropy"
 
