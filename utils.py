@@ -13,7 +13,7 @@ def parse_args():
     parser.add_argument('--tot_num_char', type=int, default=None)
     parser.add_argument('--load_path', type=str, default=None)
     parser.add_argument('--save_path', type=str,
-                        default="/data/lisatmp3/zablocki")
+                        default="/data/lisatmp3/zablocki/1XLSTM_ADAM_100Units")
     # default="/media/win/Users/Eloi/tmp")
     parser.add_argument('--patience', type=int, default=10)
     parser.add_argument('--state_dim', type=int, default=10)
