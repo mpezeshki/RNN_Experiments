@@ -26,11 +26,17 @@ def parse_args():
     parser.add_argument('--algorithm',
                         choices=['rms_prop', 'adam', 'sgd'],
                         default='adam')
-    parser.add_argument('--rnn_type', choices=['lstm', 'simple', 'clockwork',
-                                               'soft', 'hard'],
+    parser.add_argument('--rnn_type',
+                        choices=['lstm', 'simple', 'clockwork',
+                                 'soft', 'hard'],
                         default='simple')
-    parser.add_argument('--dataset', choices=['wikipedia', 'penntree'],
+    parser.add_argument('--dataset',
+                        choices=['wikipedia', 'penntree', 'mytext'],
                         default='penntree')
+    parser.add_argument('--train_path', type=str,
+                        default="/data/lisatmp3/zablocki/train.txt")
+    parser.add_argument('--valid_path', type=str,
+                        default="/data/lisatmp3/zablocki/valid.txt")
     parser.add_argument('--monitoring_freq', type=int, default=1000)
     args = parser.parse_args()
 
