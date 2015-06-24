@@ -124,6 +124,7 @@ def build_model_vanilla(vocab_size, args, dtype=floatX):
     # Compute the probability distribution
     time, batch, feat = presoft.shape
     presoft = presoft.reshape((batch * time, feat))
+    presoft.name = 'presoft'
     y = y[context:, :].flatten()
 
     cross_entropy = Softmax().categorical_cross_entropy(y, presoft)
