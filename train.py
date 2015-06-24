@@ -32,6 +32,8 @@ def learning_algorithm(args):
     if name == 'adam':
         clipping = StepClipping(threshold=np.cast[floatX](clipping_threshold))
         adam = Adam(learning_rate=learning_rate)
+        # [adam, clipping] means 'step clipping'
+        # [clipping, adam] means 'gradient clipping'
         step_rule = CompositeRule([adam, clipping])
     elif name == 'rms_prop':
         clipping = StepClipping(threshold=np.cast[floatX](clipping_threshold))
