@@ -16,7 +16,7 @@ from blocks.extensions.saveload import Load
 from blocks.graph import ComputationGraph
 from blocks.main_loop import MainLoop
 from blocks.model import Model
-from extensions import EarlyStopping, ResetStates
+from extensions import EarlyStopping, TextGenerationExtension
 
 
 floatX = theano.config.floatX
@@ -48,8 +48,7 @@ def learning_algorithm(args):
     return step_rule
 
 
-def train_model(cost, cross_entropy, train_stream, valid_stream,
-                updates, args):
+def train_model(cost, cross_entropy, train_stream, valid_stream, args):
 
     # Define the model
     model = Model(cost)
@@ -60,11 +59,11 @@ def train_model(cost, cross_entropy, train_stream, valid_stream,
 
     algorithm = GradientDescent(cost=cost, step_rule=step_rule,
                                 params=cg.parameters)
-    algorithm.add_updates(updates)
+    # algorithm.add_updates(updates)
 
     # extensions to be added
     extensions = []
-    # Creating 'best' folder for saving the best model.
+    # Creating directory for saving model.
     if not os.path.exists(args.save_path):
         os.makedirs(args.save_path)
     best_path = os.path.join(args.save_path, 'best')
@@ -74,12 +73,18 @@ def train_model(cost, cross_entropy, train_stream, valid_stream,
     extensions.append(early_stopping)
     if args.load_path is not None:
         extensions.append(Load(args.load_path, load_iteration_states=True))
+    extensions.append(TextGenerationExtension(
+        generation_length=100,
+        initial_text_length=args.context,
+        every_n_batches=1,
+        plot_probability=True,
+        dataset=args.dataset))
     extensions.extend([
         TrainingDataMonitoring([cost], prefix='train'),
         DataStreamMonitoring([cost, cross_entropy],
                              valid_stream, prefix='valid',
                              every_n_batches=args.monitoring_freq),
-        ResetStates([v for v, _ in updates], every_n_batches=100),
+        # ResetStates([v for v, _ in updates], every_n_batches=100),
         Printing(every_n_batches=args.monitoring_freq),
         ProgressBar()])
 
