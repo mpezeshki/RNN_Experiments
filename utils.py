@@ -37,8 +37,9 @@ def parse_args():
                         default="/data/lisatmp3/zablocki/train.txt")
     parser.add_argument('--valid_path', type=str,
                         default="/data/lisatmp3/zablocki/valid.txt")
-    parser.add_argument('--initial_characters', type=str,
-                        default="we are awesome because ")
+    parser.add_argument('--softmax_sampling', type=str,
+                        choices=['random_sample', 'argmax'],
+                        default='random_sample')
     parser.add_argument('--monitoring_freq', type=int, default=1000)
     args = parser.parse_args()
 
