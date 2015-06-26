@@ -17,6 +17,7 @@ from blocks.graph import ComputationGraph
 from blocks.main_loop import MainLoop
 from blocks.model import Model
 from extensions import EarlyStopping, TextGenerationExtension
+from blocks.extensions.saveload import Checkpoint
 
 
 floatX = theano.config.floatX
@@ -63,21 +64,14 @@ def train_model(cost, cross_entropy, train_stream, valid_stream, args):
 
     # extensions to be added
     extensions = []
-    # Creating directory for saving model.
-    if not os.path.exists(args.save_path):
-        os.makedirs(args.save_path)
-    best_path = os.path.join(args.save_path, 'best')
-    early_stopping = EarlyStopping('valid_cross_entropy',
-                                   args.patience, best_path,
-                                   every_n_batches=args.monitoring_freq)
-    extensions.append(early_stopping)
     if args.load_path is not None:
         extensions.append(Load(args.load_path, load_iteration_states=True))
     extensions.append(TextGenerationExtension(
         generation_length=100,
         initial_text_length=args.context,
-        every_n_batches=1,
+        every_n_batches=args.monitoring_freq,
         plot_probability=True,
+        softmax_sampling=args.softmax_sampling,
         dataset=args.dataset))
     extensions.extend([
         TrainingDataMonitoring([cost], prefix='train'),
@@ -85,8 +79,20 @@ def train_model(cost, cross_entropy, train_stream, valid_stream, args):
                              valid_stream, prefix='valid',
                              every_n_batches=args.monitoring_freq),
         # ResetStates([v for v, _ in updates], every_n_batches=100),
-        Printing(every_n_batches=args.monitoring_freq),
         ProgressBar()])
+    # Creating directory for saving model.
+    if not os.path.exists(args.save_path):
+        os.makedirs(args.save_path)
+    else:
+        raise Exception('Directory already exists')
+    early_stopping = EarlyStopping('valid_cross_entropy',
+                                   args.patience, args.save_path,
+                                   every_n_batches=args.monitoring_freq)
+    # extensions.append(Checkpoint(args.save_path,
+    #                              every_n_batches=args.monitoring_freq,
+    #                              save_separately=['log']))
+    extensions.append(early_stopping)
+    extensions.append(Printing(every_n_batches=args.monitoring_freq))
 
     main_loop = MainLoop(
         model=model,
