@@ -17,7 +17,7 @@ from blocks.graph import ComputationGraph
 from blocks.main_loop import MainLoop
 from blocks.model import Model
 from extensions import EarlyStopping, TextGenerationExtension
-from blocks.extensions.saveload import Checkpoint
+# from blocks.extensions.saveload import Checkpoint
 
 
 floatX = theano.config.floatX
@@ -65,7 +65,7 @@ def train_model(cost, cross_entropy, train_stream, valid_stream, args):
     # extensions to be added
     extensions = []
     if args.load_path is not None:
-        extensions.append(Load(args.load_path, load_iteration_states=True))
+        extensions.append(Load(args.load_path))
     extensions.append(TextGenerationExtension(
         generation_length=100,
         initial_text_length=args.context,
@@ -81,7 +81,7 @@ def train_model(cost, cross_entropy, train_stream, valid_stream, args):
         # ResetStates([v for v, _ in updates], every_n_batches=100),
         ProgressBar()])
     # Creating directory for saving model.
-    if not os.path.exists(args.save_path):
+    if (not os.path.exists(args.save_path)) and (not args.interactive_mode):
         os.makedirs(args.save_path)
     else:
         raise Exception('Directory already exists')
@@ -100,4 +100,9 @@ def train_model(cost, cross_entropy, train_stream, valid_stream, args):
         algorithm=algorithm,
         extensions=extensions
     )
-    main_loop.run()
+    if args.interactive_mode:
+        Load(args.load_path).load_to(main_loop)
+        import ipdb
+        ipdb.set_trace()
+    else:
+        main_loop.run()
