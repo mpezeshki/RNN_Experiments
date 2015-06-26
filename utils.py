@@ -40,6 +40,8 @@ def parse_args():
     parser.add_argument('--softmax_sampling', type=str,
                         choices=['random_sample', 'argmax'],
                         default='random_sample')
+    parser.add_argument('--interactive_mode', action='store_true',
+                        default=False)
     parser.add_argument('--monitoring_freq', type=int, default=1000)
     args = parser.parse_args()
 
