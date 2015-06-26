@@ -1,11 +1,21 @@
 import theano
+import cPickle
 from blocks.serialization import secure_dump
 from blocks.extensions import SimpleExtension
 from blocks.extensions.monitoring import MonitoringExtension
 from scipy.linalg import svd
 import numpy as np
+import matplotlib
+# Force matplotlib to not use any Xwindows backend.
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.table import Table
+from dataset import get_character
+from numpy.random import random_sample
+import logging
+
+logging.basicConfig(level='INFO')
+logger = logging.getLogger(__name__)
 
 
 # Credits to Cesar Laurent
@@ -56,8 +66,14 @@ class EarlyStopping(SimpleExtension):
 
     def _dump(self):
         try:
-            self.main_loop.log.current_row['saved_best_to'] = self.path
-            secure_dump(self.main_loop, self.path)
+            path = self.path + '/best'
+            self.main_loop.log.current_row['saved_best_to'] = path
+            logger.info("Saving log ...")
+            f = open(self.path + '/log.txt', 'w')
+            f.write(str(self.main_loop.log))
+            f.close()
+            logger.info("Dumping best model ...")
+            secure_dump(self.main_loop.model.params, path, use_cpickle=True)
         except Exception:
             self.main_loop.log.current_row['saved_best_to'] = None
             raise
@@ -96,6 +112,14 @@ class ResetStates(SimpleExtension):
         self.f()
 
 
+class TestSave(SimpleExtension):
+    def __init__(self, **kwargs):
+        super(TestSave, self).__init__(**kwargs)
+
+    def do(self, which_callback, *args):
+        print "here"
+
+
 class SvdExtension(SimpleExtension, MonitoringExtension):
     def __init__(self, **kwargs):
         super(SvdExtension, self).__init__(**kwargs)
@@ -107,16 +131,95 @@ class SvdExtension(SimpleExtension, MonitoringExtension):
                                            network.name] = w_svd[1]
 
 
-def probability_plot(prob, alphabet_list, target, top_n_probabilities=5):
+class TextGenerationExtension(SimpleExtension):
+    def __init__(self, generation_length, dataset,
+                 initial_text_length, plot_probability,
+                 softmax_sampling, **kwargs):
+        self.generation_length = generation_length
+        self.initial_text_length = initial_text_length
+        self.dataset = dataset
+        self.plot_probability = plot_probability
+        self.softmax_sampling = softmax_sampling
+        super(TextGenerationExtension, self).__init__(**kwargs)
+
+    def do(self, *args):
+        variables = self.main_loop.model.variables
+        inputs = [variable for variable in variables
+                  if variable.name == 'features']
+        outputs = [variable for variable in variables
+                   if variable.name == 'presoft']
+        generate = theano.function(inputs, outputs)
+
+        # +1 is for one output (consider context = self.initial_text_length)
+        # time x batch
+        init_ = next(self.main_loop.data_stream.get_epoch_iterator(
+        ))[0][2:2 + self.initial_text_length + 64, 3:4]
+        inputs_ = init_
+        all_output_probabilities = []
+        logger.info("\nGeneration:")
+        for i in range(self.generation_length):
+            # time x batch x features (1 x 1 x vocab_size)
+            last_output = generate(inputs_)[0][-1:, :, :]
+            # time x features (1 x vocab_size) '0' is for removing one dim
+            last_output_probabilities = softmax(last_output[0])
+            all_output_probabilities += [last_output_probabilities]
+            # 1 x 1
+            if self.softmax_sampling == 'argmax':
+                argmax = True
+            else:
+                argmax = False
+            last_output_sample = sample(last_output_probabilities, argmax)
+            inputs_ = np.vstack([inputs_, last_output_sample])
+        # time x batch
+        whole_sentence_code = inputs_
+        vocab = get_character(self.dataset)
+        # whole_sentence
+        whole_sentence = ''
+        for char in vocab[whole_sentence_code[:, 0]]:
+            whole_sentence += char
+        logger.info(whole_sentence[:init_.shape[0]] + ' ...')
+        logger.info(whole_sentence)
+
+        if self.plot_probability:
+            all_output_probabilities_array = np.zeros(
+                (self.generation_length, all_output_probabilities[0].shape[1]))
+            for i, output_probabilities in enumerate(all_output_probabilities):
+                all_output_probabilities_array[i] = output_probabilities
+            probability_plot(all_output_probabilities_array,
+                             whole_sentence[init_.shape[0]:], vocab)
+
+
+# python softmax
+def softmax(w):
+    e = np.exp(w)
+    dist = e / np.sum(e, axis=1)
+    return dist
+
+
+# python sampling
+def sample(probs, argmax=False):
+    assert(probs.shape[0] == 1)
+    if argmax:
+        return np.argmax(probs, axis=1)
+    bins = np.add.accumulate(probs[0])
+    return np.digitize(random_sample(1), bins)
+
+
+# python plotting
+def probability_plot(probabilities, selected, vocab,
+                     top_n_probabilities=20, max_length=30):
+    selected = selected[:max_length]
+    probabilities = probabilities[:max_length]
     # target = ['a', 'b', 'c', 'd', 'e', 'f', 'a', 'b', 'c', 'd']
-    # prob = np.random.uniform(low=0, high=1, size=(10, 6))  # T x C
-    sorted_prob = np.zeros(prob.shape)
-    sorted_indices = np.zeros(prob.shape)
-    for i in range(prob.shape[0]):
-        sorted_prob[i, :] = np.sort(prob[i, :])
-        sorted_indices[i, :] = np.argsort(prob[i, :])
-    concatenated = np.zeros((prob.shape[0], prob.shape[1], 2))
-    concatenated[:, :, 0] = sorted_prob[:, ::-1]
+    # probabilities = np.random.uniform(low=0, high=1, size=(10, 6))  # T x C
+    sorted_probabilities = np.zeros(probabilities.shape)
+    sorted_indices = np.zeros(probabilities.shape)
+    for i in range(probabilities.shape[0]):
+        sorted_probabilities[i, :] = np.sort(probabilities[i, :])
+        sorted_indices[i, :] = np.argsort(probabilities[i, :])
+    concatenated = np.zeros((
+        probabilities.shape[0], probabilities.shape[1], 2))
+    concatenated[:, :, 0] = sorted_probabilities[:, ::-1]
     concatenated[:, :, 1] = sorted_indices[:, ::-1]
 
     fig, ax = plt.subplots()
@@ -128,14 +231,15 @@ def probability_plot(prob, alphabet_list, target, top_n_probabilities=5):
 
     for (i, j), v in np.ndenumerate(concatenated[:, :top_n_probabilities, 0]):
         tb.add_cell(j + 1, i, height, width,
-                    text=alphabet_list[concatenated[i, j, 1].astype('int')],
+                    text=unicode(vocab[concatenated[i, j, 1].astype('int')],
+                                 errors='ignore'),
                     loc='center', facecolor=(1,
                                              1 - concatenated[i, j, 0],
                                              1 - concatenated[i, j, 0]))
-    for i, char in enumerate(target):
+    for i, char in enumerate(selected):
         tb.add_cell(0, i, height, width,
-                    text=char,
+                    text=unicode(char, errors='ignore'),
                     loc='center', facecolor='green')
     ax.add_table(tb)
 
-    plt.show()
+    plt.savefig('/data/lisatmp3/zablocki/plots/probs.png')
