@@ -1,6 +1,6 @@
 from collections import OrderedDict
 import logging
-
+import numpy
 import theano
 from theano import tensor
 
@@ -80,7 +80,7 @@ def build_model_cw(vocab_size, args, dtype=floatX):
 
     # Prepare inputs for the RNN
     kwargs = OrderedDict()
-    # init_states = {}
+    init_states = {}
     for d in range(layers):
         if d > 0:
             suffix = '_' + str(d)
@@ -90,10 +90,10 @@ def build_model_cw(vocab_size, args, dtype=floatX):
             kwargs['inputs' + suffix] = pre_rnn[d]
         elif d == 0:
             kwargs['inputs'] = pre_rnn
-        # init_states[d] = theano.shared(
-        #     numpy.zeros((args.mini_batch_size, state_dim)).astype(floatX),
-        #     name='state0_%d' % d)
-        # kwargs['states' + suffix] = init_states[d]
+        init_states[d] = theano.shared(
+            numpy.zeros((args.mini_batch_size, state_dim)).astype(floatX),
+            name='state0_%d' % d)
+        kwargs['states' + suffix] = init_states[d]
 
     # Apply the RNN to the inputs
     h = rnn.apply(low_memory=True, **kwargs)
@@ -120,9 +120,9 @@ def build_model_cw(vocab_size, args, dtype=floatX):
     h.name = "hidden_state"
 
     # The updates of the hidden states
-    # updates = []
-    # for d in range(layers):
-    #     updates.append((init_states[d], last_states[d]))
+    updates = []
+    for d in range(layers):
+        updates.append((init_states[d], last_states[d]))
 
     presoft = output_layer.apply(h[context:, :, :])
     # Define the cost
@@ -155,4 +155,4 @@ def build_model_cw(vocab_size, args, dtype=floatX):
     output_layer.biases_init = initialization.Constant(0)
     output_layer.initialize()
 
-    return cost, cross_entropy
+    return cost, cross_entropy, updates

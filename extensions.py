@@ -1,5 +1,5 @@
 import theano
-import cPickle
+from blocks.graph import ComputationGraph
 from blocks.serialization import secure_dump
 from blocks.extensions import SimpleExtension
 from blocks.extensions.monitoring import MonitoringExtension
@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 # Credits to Cesar Laurent
 class EarlyStopping(SimpleExtension):
+
     """Check if a log quantity has the minimum/maximum value so far,
     and early stops the experiment if the quantity has not been better
     since `patience` number of epochs. It also saves the best best model
@@ -50,6 +51,7 @@ class EarlyStopping(SimpleExtension):
         The name used for the notification
 
     """
+
     def __init__(self, record_name, patience, path, notification_name=None,
                  choose_best=min, **kwargs):
         self.record_name = record_name
@@ -101,6 +103,7 @@ class EarlyStopping(SimpleExtension):
 
 # Credits to Alex Auvolat
 class ResetStates(SimpleExtension):
+
     def __init__(self, state_vars, **kwargs):
         super(ResetStates, self).__init__(**kwargs)
 
@@ -113,14 +116,16 @@ class ResetStates(SimpleExtension):
 
 
 class TestSave(SimpleExtension):
+
     def __init__(self, **kwargs):
         super(TestSave, self).__init__(**kwargs)
 
     def do(self, which_callback, *args):
-        print "here"
+        print("here")
 
 
 class SvdExtension(SimpleExtension, MonitoringExtension):
+
     def __init__(self, **kwargs):
         super(SvdExtension, self).__init__(**kwargs)
 
@@ -131,10 +136,12 @@ class SvdExtension(SimpleExtension, MonitoringExtension):
                                            network.name] = w_svd[1]
 
 
+# Help from Alex Auvolat
 class TextGenerationExtension(SimpleExtension):
-    def __init__(self, generation_length, dataset,
+
+    def __init__(self, outputs, generation_length, dataset,
                  initial_text_length, plot_probability,
-                 softmax_sampling, **kwargs):
+                 softmax_sampling, updates, **kwargs):
         self.generation_length = generation_length
         self.initial_text_length = initial_text_length
         self.dataset = dataset
@@ -142,13 +149,23 @@ class TextGenerationExtension(SimpleExtension):
         self.softmax_sampling = softmax_sampling
         super(TextGenerationExtension, self).__init__(**kwargs)
 
+        # TODO: remove the commented lines when debugged
+        # inputs = [variable for variable in variables
+        #           if variable.name == 'features']
+
+        cg = ComputationGraph(outputs)
+        assert(len(cg.inputs) == 1)
+        assert(cg.inputs[0].name == "features")
+
+        state_vars = [theano.shared(
+            v[0:1, :].zeros_like().eval(), v.name + '-gen')
+            for v, _ in updates]
+        givens = [(v, x) for (v, _), x in zip(updates, state_vars)]
+        f_updates = [(x, upd) for x, (_, upd) in zip(state_vars, updates)]
+        self.generate = theano.function(inputs=cg.inputs, outputs=outputs,
+                                        givens=givens, updates=f_updates)
+
     def do(self, *args):
-        variables = self.main_loop.model.variables
-        inputs = [variable for variable in variables
-                  if variable.name == 'features']
-        outputs = [variable for variable in variables
-                   if variable.name == 'presoft']
-        generate = theano.function(inputs, outputs)
 
         # +1 is for one output (consider context = self.initial_text_length)
         # time x batch
@@ -159,7 +176,7 @@ class TextGenerationExtension(SimpleExtension):
         logger.info("\nGeneration:")
         for i in range(self.generation_length):
             # time x batch x features (1 x 1 x vocab_size)
-            last_output = generate(inputs_)[0][-1:, :, :]
+            last_output = self.generate(inputs_)[0][-1:, :, :]
             # time x features (1 x vocab_size) '0' is for removing one dim
             last_output_probabilities = softmax(last_output[0])
             all_output_probabilities += [last_output_probabilities]

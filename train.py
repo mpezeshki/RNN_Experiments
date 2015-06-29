@@ -16,7 +16,7 @@ from blocks.extensions.saveload import Load
 from blocks.graph import ComputationGraph
 from blocks.main_loop import MainLoop
 from blocks.model import Model
-from extensions import EarlyStopping, TextGenerationExtension
+from extensions import EarlyStopping, TextGenerationExtension, ResetStates
 # from blocks.extensions.saveload import Checkpoint
 
 
@@ -49,7 +49,8 @@ def learning_algorithm(args):
     return step_rule
 
 
-def train_model(cost, cross_entropy, train_stream, valid_stream, args):
+def train_model(cost, cross_entropy, updates,
+                train_stream, valid_stream, args):
 
     # Define the model
     model = Model(cost)
@@ -60,25 +61,31 @@ def train_model(cost, cross_entropy, train_stream, valid_stream, args):
 
     algorithm = GradientDescent(cost=cost, step_rule=step_rule,
                                 params=cg.parameters)
-    # algorithm.add_updates(updates)
+    algorithm.add_updates(updates)
 
     # extensions to be added
     extensions = []
     if args.load_path is not None:
         extensions.append(Load(args.load_path))
+
+    outputs = [
+        variable for variable in cg.variables if variable.name == "presoft"]
+
     extensions.append(TextGenerationExtension(
+        outputs=outputs,
         generation_length=100,
         initial_text_length=args.context,
         every_n_batches=args.monitoring_freq,
         plot_probability=True,
         softmax_sampling=args.softmax_sampling,
-        dataset=args.dataset))
+        dataset=args.dataset,
+        updates=updates))
     extensions.extend([
         TrainingDataMonitoring([cost], prefix='train'),
         DataStreamMonitoring([cost, cross_entropy],
                              valid_stream, prefix='valid',
                              every_n_batches=args.monitoring_freq),
-        # ResetStates([v for v, _ in updates], every_n_batches=100),
+        ResetStates([v for v, _ in updates], every_n_batches=100),
         ProgressBar()])
     # Creating directory for saving model.
     if (not os.path.exists(args.save_path)) and (not args.interactive_mode):
