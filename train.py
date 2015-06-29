@@ -76,7 +76,7 @@ def train_model(cost, cross_entropy, updates,
         generation_length=100,
         initial_text_length=args.context,
         every_n_batches=args.monitoring_freq,
-        plot_probability=True,
+        ploting_path=args.save_path + '/probs.png',
         softmax_sampling=args.softmax_sampling,
         dataset=args.dataset,
         updates=updates))
