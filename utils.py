@@ -20,7 +20,7 @@ def parse_args():
     parser.add_argument('--state_dim', type=int, default=400)
     parser.add_argument('--layers', type=int, default=3)
     parser.add_argument('--skip_connections', action='store_true',
-                        default=True)
+                        default=False)
     parser.add_argument('--learning_rate', type=float, default=1e-3)
     parser.add_argument('--momentum', type=float, default=0.9)
     parser.add_argument('--clipping', type=float, default=10)
@@ -89,9 +89,11 @@ def compute_units(param, layers, skip_connections, vocab_size, unit_type):
 # 3 layers of 406 LSTM = 4,250,000 parameters
 # 3 layers of 817 SIMPLE = 4,250,000 parameters
 if __name__ == "__main__":
-    param = compute_params(1000, 1, False, 50, "lstm")
+    param = compute_params(1000, 1, False, 50, "simple")
+    param2 = compute_params(400, 3, True, 50, "simple")
     unit = compute_units(4250000, 1, False, 50, "simple")
     unit2 = compute_units(4250000, 3, True, 50, "simple")
     print(param)
+    print(param2)
     print(unit)
     print(unit2)

@@ -1,11 +1,12 @@
 from collections import OrderedDict
 import logging
-
+import numpy
 import theano
 from theano import tensor
 
 from blocks import initialization
-from blocks.bricks import Linear, Tanh, Softmax, FeedforwardSequence
+from blocks.bricks import (Linear, Tanh, Softmax,
+                           FeedforwardSequence, MLP, Logistic)
 from blocks.bricks.parallel import Fork
 from blocks.bricks.recurrent import SimpleRecurrent, RecurrentStack
 
@@ -16,8 +17,7 @@ logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
 
 
-# TODO add the carrying of hidden state
-# TODO: clean this function, split it in several pieces maybe
+# Skip_connections are false
 def build_model_soft(vocab_size, args, dtype=floatX):
     logger.info('Building model ...')
 
@@ -25,9 +25,9 @@ def build_model_soft(vocab_size, args, dtype=floatX):
     context = args.context
     state_dim = args.state_dim
     layers = args.layers
-    time_length = args.time_length
 
     # Symbolic variables
+    # In both cases: Time X Batch
     x = tensor.lmatrix('features')
     y = tensor.lmatrix('targets')
 
@@ -39,15 +39,20 @@ def build_model_soft(vocab_size, args, dtype=floatX):
     lookup.weights_init = initialization.IsotropicGaussian(0.1)
     lookup.biases_init = initialization.Constant(0)
 
-    fork = Fork(output_names=output_names, input_dim=time_length,
+    fork = Fork(output_names=output_names, input_dim=args.mini_batch_size,
                 output_dims=output_dims,
                 prototype=FeedforwardSequence(
                     [lookup.apply]))
 
     transitions = [SimpleRecurrent(dim=state_dim, activation=Tanh())]
     for i in range(layers - 1):
+        mlp = MLP(activations=[Logistic()], dims=[2 * state_dim, 1],
+                  weights_init=initialization.IsotropicGaussian(0.1),
+                  biases_init=initialization.Constant(0),
+                  name="mlp_" + str(i))
         transitions.append(
             SoftGatedRecurrent(dim=state_dim,
+                               mlp=mlp,
                                activation=Tanh()))
 
     rnn = RecurrentStack(transitions, skip_connections=False)
@@ -64,6 +69,7 @@ def build_model_soft(vocab_size, args, dtype=floatX):
 
     # Prepare inputs for the RNN
     kwargs = OrderedDict()
+    init_states = {}
     for d in range(layers):
         if d > 0:
             suffix = '_' + str(d)
@@ -71,6 +77,10 @@ def build_model_soft(vocab_size, args, dtype=floatX):
             suffix = ''
         if d == 0:
             kwargs['inputs' + suffix] = pre_rnn
+        init_states[d] = theano.shared(
+            numpy.zeros((args.mini_batch_size, state_dim)).astype(floatX),
+            name='state0_%d' % d)
+        kwargs['states' + suffix] = init_states[d]
 
     # Apply the RNN to the inputs
     h = rnn.apply(low_memory=True, **kwargs)
@@ -78,10 +88,20 @@ def build_model_soft(vocab_size, args, dtype=floatX):
     # Now we have correctly:
     # h = [state_1, state_2, state_3 ...]
 
+    # Save all the last states
+    last_states = {}
+    for d in range(layers):
+        last_states[d] = h[d][-1, :, :]
+
     # Concatenate all the states
     if layers > 1:
         h = tensor.concatenate(h, axis=2)
     h.name = "hidden_state"
+
+    # The updates of the hidden states
+    updates = []
+    for d in range(layers):
+        updates.append((init_states[d], last_states[d]))
 
     presoft = output_layer.apply(h[context:, :, :])
     # Define the cost
@@ -114,4 +134,4 @@ def build_model_soft(vocab_size, args, dtype=floatX):
     output_layer.biases_init = initialization.Constant(0)
     output_layer.initialize()
 
-    return cost, cross_entropy
+    return cost, cross_entropy, updates
