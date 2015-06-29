@@ -30,7 +30,7 @@ def parse_args():
     parser.add_argument('--rnn_type',
                         choices=['lstm', 'simple', 'clockwork',
                                  'soft', 'hard'],
-                        default='soft')
+                        default='lstm')
     parser.add_argument('--dataset',
                         choices=['wikipedia', 'penntree', 'mytext'],
                         default='penntree')
