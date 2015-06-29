@@ -169,8 +169,10 @@ class TextGenerationExtension(SimpleExtension):
 
         # +1 is for one output (consider context = self.initial_text_length)
         # time x batch
-        init_ = next(self.main_loop.data_stream.get_epoch_iterator(
-        ))[0][2:2 + self.initial_text_length + 64, 3:4]
+        init_ = next(
+            self.main_loop.epoch_iterator)["features"][
+            0: self.initial_text_length,
+            0:1]
         inputs_ = init_
         all_output_probabilities = []
         logger.info("\nGeneration:")

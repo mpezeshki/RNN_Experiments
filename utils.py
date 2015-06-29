@@ -10,6 +10,7 @@ def parse_args():
     parser.add_argument('--mini_batch_size', type=int, default=15)
     parser.add_argument('--time_length', type=int, default=150)
     parser.add_argument('--context', type=int, default=1)
+    parser.add_argument('--initial_text_length', type=int, default=30)
     parser.add_argument('--tot_num_char', type=int, default=None)
     parser.add_argument('--load_path', type=str, default=None)
     parser.add_argument('--save_path', type=str,

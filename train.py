@@ -74,7 +74,7 @@ def train_model(cost, cross_entropy, updates,
     extensions.append(TextGenerationExtension(
         outputs=outputs,
         generation_length=100,
-        initial_text_length=args.context,
+        initial_text_length=args.initial_text_length,
         every_n_batches=args.monitoring_freq,
         plot_probability=True,
         softmax_sampling=args.softmax_sampling,
