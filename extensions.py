@@ -140,12 +140,12 @@ class SvdExtension(SimpleExtension, MonitoringExtension):
 class TextGenerationExtension(SimpleExtension):
 
     def __init__(self, outputs, generation_length, dataset,
-                 initial_text_length, plot_probability,
-                 softmax_sampling, updates, **kwargs):
+                 initial_text_length, softmax_sampling,
+                 updates, ploting_path=None, **kwargs):
         self.generation_length = generation_length
         self.initial_text_length = initial_text_length
         self.dataset = dataset
-        self.plot_probability = plot_probability
+        self.ploting_path = ploting_path
         self.softmax_sampling = softmax_sampling
         super(TextGenerationExtension, self).__init__(**kwargs)
 
@@ -199,13 +199,14 @@ class TextGenerationExtension(SimpleExtension):
         logger.info(whole_sentence[:init_.shape[0]] + ' ...')
         logger.info(whole_sentence)
 
-        if self.plot_probability:
+        if self.ploting_path is not None:
             all_output_probabilities_array = np.zeros(
                 (self.generation_length, all_output_probabilities[0].shape[1]))
             for i, output_probabilities in enumerate(all_output_probabilities):
                 all_output_probabilities_array[i] = output_probabilities
             probability_plot(all_output_probabilities_array,
-                             whole_sentence[init_.shape[0]:], vocab)
+                             whole_sentence[init_.shape[0]:],
+                             vocab, self.ploting_path)
 
 
 # python softmax
@@ -225,7 +226,7 @@ def sample(probs, argmax=False):
 
 
 # python plotting
-def probability_plot(probabilities, selected, vocab,
+def probability_plot(probabilities, selected, vocab, ploting_path,
                      top_n_probabilities=20, max_length=30):
     selected = selected[:max_length]
     probabilities = probabilities[:max_length]
@@ -261,4 +262,4 @@ def probability_plot(probabilities, selected, vocab,
                     loc='center', facecolor='green')
     ax.add_table(tb)
 
-    plt.savefig('/data/lisatmp3/zablocki/plots/probs.png')
+    plt.savefig('self.ploting_path')
