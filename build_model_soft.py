@@ -25,6 +25,7 @@ def build_model_soft(vocab_size, args, dtype=floatX):
     context = args.context
     state_dim = args.state_dim
     layers = args.layers
+    skip_connections = args.skip_connections
 
     # Symbolic variables
     # In both cases: Time X Batch
@@ -32,8 +33,16 @@ def build_model_soft(vocab_size, args, dtype=floatX):
     y = tensor.lmatrix('targets')
 
     # Build the model
-    output_names = ["inputs"]
-    output_dims = [state_dim]
+    output_names = []
+    output_dims = []
+    for d in range(layers):
+        if d > 0:
+            suffix = '_' + str(d)
+        else:
+            suffix = ''
+        if d == 0 or skip_connections:
+            output_names.append("inputs" + suffix)
+            output_dims.append(state_dim)
 
     lookup = LookupTable(length=vocab_size, dim=state_dim)
     lookup.weights_init = initialization.IsotropicGaussian(0.1)
@@ -55,7 +64,7 @@ def build_model_soft(vocab_size, args, dtype=floatX):
                                mlp=mlp,
                                activation=Tanh()))
 
-    rnn = RecurrentStack(transitions, skip_connections=False)
+    rnn = RecurrentStack(transitions, skip_connections=skip_connections)
 
     # dim = layers * state_dim
     output_layer = Linear(
@@ -65,7 +74,13 @@ def build_model_soft(vocab_size, args, dtype=floatX):
     # Return list of 3D Tensor, one for each layer
     # (Time X Batch X embedding_dim)
     pre_rnn = fork.apply(x)
-    pre_rnn.name = "pre_rnn"
+
+    # Give a name to the input of each layer
+    if skip_connections:
+        for t in range(len(pre_rnn)):
+            pre_rnn[t].name = "pre_rnn_" + str(t)
+    else:
+        pre_rnn.name = "pre_rnn"
 
     # Prepare inputs for the RNN
     kwargs = OrderedDict()
@@ -75,7 +90,9 @@ def build_model_soft(vocab_size, args, dtype=floatX):
             suffix = '_' + str(d)
         else:
             suffix = ''
-        if d == 0:
+        if skip_connections:
+            kwargs['inputs' + suffix] = pre_rnn[d]
+        elif d == 0:
             kwargs['inputs' + suffix] = pre_rnn
         init_states[d] = theano.shared(
             numpy.zeros((args.mini_batch_size, state_dim)).astype(floatX),

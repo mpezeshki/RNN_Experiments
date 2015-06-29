@@ -92,7 +92,7 @@ def build_model_vanilla(vocab_size, args, dtype=floatX):
         kwargs['states' + suffix] = init_states[d]
 
     # Apply the RNN to the inputs
-    h = rnn.apply(**kwargs)
+    h = rnn.apply(low_memory=True, **kwargs)
 
     # We have
     # h = [state, state_1, state_2 ...] if layers > 1
