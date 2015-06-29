@@ -73,15 +73,16 @@ def train_model(cost, cross_entropy, updates,
 
     extensions.append(TextGenerationExtension(
         outputs=outputs,
-        generation_length=100,
+        generation_length=150,
         initial_text_length=args.initial_text_length,
         every_n_batches=args.monitoring_freq,
-        ploting_path=args.save_path + '/probs.png',
+        ploting_path=os.path.join(args.save_path, 'prob_plot.png'),
         softmax_sampling=args.softmax_sampling,
         dataset=args.dataset,
         updates=updates))
     extensions.extend([
-        TrainingDataMonitoring([cost], prefix='train'),
+        TrainingDataMonitoring([cost], prefix='train',
+                               every_n_batches=args.monitoring_freq),
         DataStreamMonitoring([cost, cross_entropy],
                              valid_stream, prefix='valid',
                              every_n_batches=args.monitoring_freq),

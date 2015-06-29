@@ -167,8 +167,7 @@ class TextGenerationExtension(SimpleExtension):
 
     def do(self, *args):
 
-        # +1 is for one output (consider context = self.initial_text_length)
-        # time x batch
+        # init is TIME X 1
         init_ = next(
             self.main_loop.epoch_iterator)["features"][
             0: self.initial_text_length,
@@ -262,4 +261,4 @@ def probability_plot(probabilities, selected, vocab, ploting_path,
                     loc='center', facecolor='green')
     ax.add_table(tb)
 
-    plt.savefig('self.ploting_path')
+    plt.savefig(ploting_path)
