@@ -13,9 +13,11 @@ from blocks.extensions import Printing, ProgressBar
 from blocks.extensions.monitoring import (
     TrainingDataMonitoring, DataStreamMonitoring)
 from blocks.extensions.saveload import Load
-from blocks.graph import ComputationGraph
+from blocks.filter import VariableFilter
+from blocks.graph import ComputationGraph, apply_noise
 from blocks.main_loop import MainLoop
 from blocks.model import Model
+from blocks.roles import WEIGHT
 from extensions import EarlyStopping, TextGenerationExtension, ResetStates
 # from blocks.extensions.saveload import Checkpoint
 
@@ -52,11 +54,19 @@ def learning_algorithm(args):
 def train_model(cost, cross_entropy, updates,
                 train_stream, valid_stream, args):
 
-    # Define the model
-    model = Model(cost)
-
     step_rule = learning_algorithm(args)
     cg = ComputationGraph(cost)
+
+    # ADD REGULARIZATION
+    # WEIGHT NOISE
+    weight_noise = args.weight_noise
+    if weight_noise > 0:
+        weights = VariableFilter(roles=[WEIGHT])(cg.variables)
+        cg_train = apply_noise(cg, weights, weight_noise)
+        cost = cg_train.outputs[0]
+    cost.name = "cost_with_weight_noise"
+    cg = ComputationGraph(cost)
+
     logger.info(cg.parameters)
 
     algorithm = GradientDescent(cost=cost, step_rule=step_rule,
@@ -103,7 +113,7 @@ def train_model(cost, cross_entropy, updates,
     extensions.append(Printing(every_n_batches=args.monitoring_freq))
 
     main_loop = MainLoop(
-        model=model,
+        model=Model(cost),
         data_stream=train_stream,
         algorithm=algorithm,
         extensions=extensions

@@ -7,6 +7,7 @@ logger = logging.getLogger(__name__)
 
 def parse_args():
     parser = argparse.ArgumentParser(description='RNN_experiment')
+    parser.add_argument('--weight_noise', type=float, default=0.0)
     parser.add_argument('--mini_batch_size', type=int, default=10)
     parser.add_argument('--time_length', type=int, default=150)
     parser.add_argument('--context', type=int, default=1)
@@ -14,11 +15,11 @@ def parse_args():
     parser.add_argument('--tot_num_char', type=int, default=None)
     parser.add_argument('--load_path', type=str, default=None)
     parser.add_argument('--save_path', type=str,
-                        default="/data/lisatmp3/zablocki/3XSOFT_ADAM_400Units")
+                        default="/data/lisatmp3/zablocki/5XSOFT_ADAM_400Units_skip")
     # default="/media/win/Users/Eloi/tmp")
     parser.add_argument('--patience', type=int, default=10)
-    parser.add_argument('--state_dim', type=int, default=10)
-    parser.add_argument('--layers', type=int, default=3)
+    parser.add_argument('--state_dim', type=int, default=400)
+    parser.add_argument('--layers', type=int, default=5)
     parser.add_argument('--skip_connections', action='store_true',
                         default=True)
     parser.add_argument('--learning_rate', type=float, default=1e-3)

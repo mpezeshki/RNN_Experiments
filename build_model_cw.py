@@ -57,7 +57,7 @@ def build_model_cw(vocab_size, args, dtype=floatX):
     # Note that this order of the periods makes faster modules flow in slower
     # ones with is the opposite of the original paper
     transitions = [ClockworkBase(dim=state_dim, activation=Tanh(),
-                                 period=2 ** i) for i in range(layers)]
+                                 period=2 ** (layers - i - 1)) for i in range(layers)]
 
     rnn = RecurrentStack(transitions, skip_connections=skip_connections)
 
