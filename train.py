@@ -18,7 +18,8 @@ from blocks.graph import ComputationGraph, apply_noise
 from blocks.main_loop import MainLoop
 from blocks.model import Model
 from blocks.roles import WEIGHT
-from extensions import EarlyStopping, TextGenerationExtension, ResetStates
+from extensions import (EarlyStopping, TextGenerationExtension,
+                        ResetStates, InteractiveMode)
 # from blocks.extensions.saveload import Checkpoint
 
 
@@ -110,6 +111,8 @@ def train_model(cost, cross_entropy, updates,
     # extensions.append(Checkpoint(args.save_path,
     #                              every_n_batches=args.monitoring_freq,
     #                              save_separately=['log']))
+    if args.interactive_mode:
+        extensions.append(InteractiveMode())
     extensions.append(early_stopping)
     extensions.append(Printing(every_n_batches=args.monitoring_freq))
 
@@ -119,9 +122,4 @@ def train_model(cost, cross_entropy, updates,
         algorithm=algorithm,
         extensions=extensions
     )
-    if args.interactive_mode:
-        Load(args.load_path).load_to(main_loop)
-        import ipdb
-        ipdb.set_trace()
-    else:
-        main_loop.run()
+    main_loop.run()

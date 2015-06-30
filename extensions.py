@@ -115,13 +115,14 @@ class ResetStates(SimpleExtension):
         self.f()
 
 
-class TestSave(SimpleExtension):
-
+class InteractiveMode(SimpleExtension):
     def __init__(self, **kwargs):
-        super(TestSave, self).__init__(**kwargs)
+        kwargs.setdefault("before_training", True)
+        super(InteractiveMode, self).__init__(**kwargs)
 
-    def do(self, which_callback, *args):
-        print("here")
+    def do(self, *args):
+        import ipdb
+        ipdb.set_trace()
 
 
 class SvdExtension(SimpleExtension, MonitoringExtension):
