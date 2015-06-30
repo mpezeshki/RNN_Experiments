@@ -21,7 +21,7 @@ def parse_args():
     parser.add_argument('--state_dim', type=int, default=400)
     parser.add_argument('--layers', type=int, default=5)
     parser.add_argument('--skip_connections', action='store_true',
-                        default=True)
+                        default=False)
     parser.add_argument('--learning_rate', type=float, default=1e-3)
     parser.add_argument('--momentum', type=float, default=0.9)
     parser.add_argument('--clipping', type=float, default=10)
@@ -31,7 +31,7 @@ def parse_args():
     parser.add_argument('--rnn_type',
                         choices=['lstm', 'simple', 'clockwork',
                                  'soft', 'hard'],
-                        default='soft')
+                        default='lstm')
     parser.add_argument('--dataset',
                         choices=['wikipedia', 'penntree', 'mytext'],
                         default='penntree')

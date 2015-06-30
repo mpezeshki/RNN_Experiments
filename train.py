@@ -99,10 +99,11 @@ def train_model(cost, cross_entropy, updates,
         ResetStates([v for v, _ in updates], every_n_batches=100),
         ProgressBar()])
     # Creating directory for saving model.
-    if (not os.path.exists(args.save_path)) and (not args.interactive_mode):
-        os.makedirs(args.save_path)
-    else:
-        raise Exception('Directory already exists')
+    if not args.interactive_mode:
+        if not os.path.exists(args.save_path):
+            os.makedirs(args.save_path)
+        else:
+            raise Exception('Directory already exists')
     early_stopping = EarlyStopping('valid_cross_entropy',
                                    args.patience, args.save_path,
                                    every_n_batches=args.monitoring_freq)

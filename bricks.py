@@ -288,8 +288,8 @@ class LSTM(BaseRecurrent, Initializable):
         in_gate = tensor.nnet.sigmoid(slice_last(activation, 0))
         forget_gate = tensor.nnet.sigmoid(slice_last(activation, 1))
         next_cells = (forget_gate * cells +
-                      in_gate * nonlinearity(slice_last(activation, 2)))
-        out_gate = tensor.nnet.sigmoid(slice_last(activation, 3))
+                      in_gate * nonlinearity(slice_last(activation, 3)))
+        out_gate = tensor.nnet.sigmoid(slice_last(activation, 2))
         next_states = out_gate * nonlinearity(next_cells)
 
         if mask:
