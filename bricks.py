@@ -1,4 +1,5 @@
 from theano import tensor
+from theano.sandbox.rng_mrg import MRG_RandomStreams
 
 from blocks.bricks import Initializable, Tanh
 from blocks.bricks.base import application, lazy
@@ -179,9 +180,9 @@ class SoftGatedRecurrent(BaseRecurrent, Initializable):
 
     def _allocate(self):
         self.params.append(shared_floatx_nans((self.dim, self.dim),
-                           name='state_to_state'))
+                                              name='state_to_state'))
         self.params.append(shared_floatx_zeros((self.dim,),
-                           name="initial_state"))
+                                               name="initial_state"))
         add_role(self.params[0], WEIGHT)
         add_role(self.params[1], INITIAL_STATE)
 
@@ -226,6 +227,103 @@ class SoftGatedRecurrent(BaseRecurrent, Initializable):
         # Apply the gating
         next_states = (next_states * gate_value +
                        states * (1 - gate_value))
+
+        if mask:
+            next_states = (mask[:, None] * next_states +
+                           (1 - mask[:, None]) * states)
+        return next_states
+
+    @application(outputs=apply.states)
+    def initial_states(self, batch_size, *args, **kwargs):
+        return [tensor.repeat(self.params[2][None, :], batch_size, 0)]
+
+
+class HardGatedRecurrent(BaseRecurrent, Initializable):
+
+    @lazy(allocation=['dim'])
+    def __init__(self, dim, activation=None, mlp=None,
+                 **kwargs):
+        super(HardGatedRecurrent, self).__init__(**kwargs)
+        self.dim = dim
+
+        if not activation:
+            activation = Tanh()
+        self.activation = activation
+
+        # The activation of the mlp should be a Logistic function
+        self.mlp = mlp
+
+        # The random stream
+        self.randomstream = MRG_RandomStreams()
+
+        self.children = [activation, mlp]
+
+    @property
+    def state_to_state(self):
+        return self.params[0]
+
+    @property
+    def matrix_gate(self):
+        return self.params[1]
+
+    def get_dim(self, name):
+        if name == 'mask':
+            return 0
+        if name in ['inputs', 'states']:
+            return self.dim
+        return super(HardGatedRecurrent, self).get_dim(name)
+
+    def _allocate(self):
+        self.params.append(shared_floatx_nans((self.dim, self.dim),
+                                              name='state_to_state'))
+        self.params.append(shared_floatx_zeros((self.dim,),
+                                               name="initial_state"))
+        add_role(self.params[0], WEIGHT)
+        add_role(self.params[1], INITIAL_STATE)
+
+    def _initialize(self):
+        self.weights_init.initialize(self.state_to_state, self.rng)
+
+    @recurrent(sequences=['mask', 'inputs'],
+               states=['states'], outputs=['states'], contexts=[])
+    def apply(self, inputs, states, mask=None):
+        """Apply the gated recurrent transition.
+        Parameters
+        ----------
+        states : :class:`~tensor.TensorVariable`
+            The 2 dimensional matrix of current states in the shape
+            (batch_size, dim). Required for `one_step` usage.
+        inputs : :class:`~tensor.TensorVariable`
+            The 2 dimensional matrix of inputs in the shape (batch_size,
+            dim)
+        mask : :class:`~tensor.TensorVariable`
+            A 1D binary array in the shape (batch,) which is 1 if there is
+            data available, 0 if not. Assumed to be 1-s only if not given.
+        Returns
+        -------
+        output : :class:`~tensor.TensorVariable`
+            Next states of the network.
+        """
+        # Concatenate the inputs of the MLP
+        mlp_input = tensor.concatenate((inputs, states), axis=1)
+
+        # Compute the output of the MLP
+        gate_value = self.mlp.apply(mlp_input)
+        random = self.randomstream.uniform((1,))
+
+        # TODO: Find a way to remove the following "hack".
+        # Simply removing the two next lines won't work
+        gate_value = gate_value[:, 0]
+        gate_value = gate_value[:, None]
+
+        # Compute the next_states value, before gating
+        next_states = self.activation.apply(
+            states.dot(self.state_to_state) + inputs)
+
+        # Apply the gating
+        next_states = tensor.switch(tensor.le(random[0], gate_value),
+                                    next_states,
+                                    states)
 
         if mask:
             next_states = (mask[:, None] * next_states +

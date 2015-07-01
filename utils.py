@@ -7,19 +7,19 @@ logger = logging.getLogger(__name__)
 
 def parse_args():
     parser = argparse.ArgumentParser(description='RNN_experiment')
-    parser.add_argument('--weight_noise', type=float, default=0.0)
+    parser.add_argument('--weight_noise', type=float, default=0.01)
     parser.add_argument('--mini_batch_size', type=int, default=10)
     parser.add_argument('--time_length', type=int, default=150)
     parser.add_argument('--context', type=int, default=1)
-    parser.add_argument('--initial_text_length', type=int, default=40)
+    parser.add_argument('--initial_text_length', type=int, default=60)
+    parser.add_argument('--generated_text_lenght', type=int, default=200)
     parser.add_argument('--tot_num_char', type=int, default=None)
     parser.add_argument('--load_path', type=str, default=None)
     parser.add_argument('--save_path', type=str,
-                        default="/data/lisatmp3/zablocki/5XSOFT_ADAM_400Units_skip")
-    # default="/media/win/Users/Eloi/tmp")
+                        default="/data/lisatmp3/zablocki/1XLSTM_ADAM_1000Units01weightnoise")
     parser.add_argument('--patience', type=int, default=10)
-    parser.add_argument('--state_dim', type=int, default=400)
-    parser.add_argument('--layers', type=int, default=5)
+    parser.add_argument('--state_dim', type=int, default=1000)
+    parser.add_argument('--layers', type=int, default=1)
     parser.add_argument('--skip_connections', action='store_true',
                         default=False)
     parser.add_argument('--learning_rate', type=float, default=1e-3)
@@ -44,7 +44,7 @@ def parse_args():
                         default='random_sample')
     parser.add_argument('--interactive_mode', action='store_true',
                         default=False)
-    parser.add_argument('--monitoring_freq', type=int, default=1000)
+    parser.add_argument('--monitoring_freq', type=int, default=2000)
     args = parser.parse_args()
 
     logger.info("\n" + "#" * 40)

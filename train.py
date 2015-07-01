@@ -84,7 +84,7 @@ def train_model(cost, cross_entropy, updates,
 
     extensions.append(TextGenerationExtension(
         outputs=outputs,
-        generation_length=150,
+        generation_length=args.generated_text_lenght,
         initial_text_length=args.initial_text_length,
         every_n_batches=args.monitoring_freq,
         ploting_path=os.path.join(args.save_path, 'prob_plot.png'),
