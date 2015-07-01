@@ -1,1 +1,1 @@
-THEANO_FLAGS='device=gpu0, floatX=float32' python main.py --state_dim 400 --time_length 150 --mini_batch_size 128 --layers 4 --save_path '/data/lisatmp3/zablocki/4XLSTM_700Units_ADAM' --load_path '/data/lisatmp3/zablocki/4XLSTM_700Units_ADAM/best' --dataset 'wikipedia' --monitoring_freq 20 --interactive_mode
+THEANO_FLAGS='device=gpu0, floatX=float32' python main.py --state_dim 700 --time_length 150 --mini_batch_size 128 --layers 4 --save_path '/data/lisatmp3/zablocki/4XLSTM_700Units_ADAM' --dataset 'wikipedia' --monitoring_freq 1 --skip_connections
