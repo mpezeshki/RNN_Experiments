@@ -1,7 +1,7 @@
 from theano import tensor
 from theano.sandbox.rng_mrg import MRG_RandomStreams
 
-from blocks.bricks import Initializable, Tanh
+from blocks.bricks import Initializable, Tanh, Activation
 from blocks.bricks.base import application, lazy
 from blocks.bricks.recurrent import BaseRecurrent, recurrent
 # from blocks.initialization import IsotropicGaussian, Constant
@@ -400,3 +400,9 @@ class LSTM(BaseRecurrent, Initializable):
     def initial_states(self, batch_size, *args, **kwargs):
         return [tensor.repeat(self.initial_state_[None, :], batch_size, 0),
                 tensor.repeat(self.initial_cells[None, :], batch_size, 0)]
+
+
+class HardLogistic(Activation):
+    @application(inputs=['input_'], outputs=['output'])
+    def apply(self, input_):
+        return tensor.nnet.hard_sigmoid(input_)

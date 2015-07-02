@@ -25,7 +25,8 @@ def parse_args():
     parser.add_argument('--mlp_layers', type=int,
                         default=1)
     parser.add_argument('--mlp_activation', choices=['logistic',
-                                                     'rectifier'],
+                                                     'rectifier',
+                                                     'hard_logistic'],
                         default="rectifier")
 
     # Experiment options
