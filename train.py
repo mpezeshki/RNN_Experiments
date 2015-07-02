@@ -93,7 +93,8 @@ def train_model(cost, cross_entropy, updates,
         updates=updates))
     extensions.extend([
         TrainingDataMonitoring([cost], prefix='train',
-                               every_n_batches=args.monitoring_freq),
+                               every_n_batches=args.monitoring_freq,
+                               after_epoch=True),
         DataStreamMonitoring([cost, cross_entropy],
                              valid_stream, prefix='valid',
                              every_n_batches=args.monitoring_freq),

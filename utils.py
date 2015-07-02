@@ -7,34 +7,47 @@ logger = logging.getLogger(__name__)
 
 def parse_args():
     parser = argparse.ArgumentParser(description='RNN_experiment')
-    parser.add_argument('--weight_noise', type=float, default=0.01)
-    parser.add_argument('--mini_batch_size', type=int, default=10)
-    parser.add_argument('--time_length', type=int, default=150)
-    parser.add_argument('--context', type=int, default=1)
-    parser.add_argument('--initial_text_length', type=int, default=60)
-    parser.add_argument('--generated_text_lenght', type=int, default=200)
-    parser.add_argument('--tot_num_char', type=int, default=None)
-    parser.add_argument('--load_path', type=str, default=None)
-    parser.add_argument('--save_path', type=str,
-                        default="/data/lisatmp3/zablocki/1XLSTM_ADAM_1000Units01weightnoise")
-    parser.add_argument('--patience', type=int, default=10)
-    parser.add_argument('--state_dim', type=int, default=1000)
-    parser.add_argument('--layers', type=int, default=1)
-    parser.add_argument('--skip_connections', action='store_true',
-                        default=False)
-    parser.add_argument('--learning_rate', type=float, default=1e-3)
-    parser.add_argument('--momentum', type=float, default=0.9)
-    parser.add_argument('--clipping', type=float, default=10)
-    parser.add_argument('--algorithm',
-                        choices=['rms_prop', 'adam', 'sgd'],
-                        default='adam')
+
+    # Model options
     parser.add_argument('--rnn_type',
                         choices=['lstm', 'simple', 'clockwork',
                                  'soft', 'hard'],
-                        default='lstm')
+                        default='soft')
+    parser.add_argument('--layers', type=int, default=4)
+    parser.add_argument('--state_dim', type=int, default=500)
+    parser.add_argument('--skip_connections', action='store_true',
+                        default=True)
+    parser.add_argument('--algorithm',
+                        choices=['rms_prop', 'adam', 'sgd'],
+                        default='adam')
+
+    # Experiment options
     parser.add_argument('--dataset',
                         choices=['wikipedia', 'penntree', 'mytext'],
-                        default='penntree')
+                        default='wikipedia')
+    parser.add_argument('--time_length', type=int, default=150)
+    parser.add_argument('--mini_batch_size', type=int, default=5)
+    parser.add_argument('--context', type=int, default=1)
+    parser.add_argument('--tot_num_char', type=int, default=None)
+    parser.add_argument('--clipping', type=float, default=5)
+    parser.add_argument('--load_path', type=str,
+                        default=None)
+    parser.add_argument('--save_path', type=str,
+                        default="/data/lisatmp3/zablocki/" +
+                        "4XSOFTX500UnitsX001WNX5MBXWiki")
+
+    # Training options
+    parser.add_argument('--learning_rate', type=float, default=1e-3)
+    parser.add_argument('--momentum', type=float, default=0.9)
+
+    # Regularization options
+    parser.add_argument('--weight_noise', type=float, default=0.01)
+
+    # Monitoring options
+    parser.add_argument('--initial_text_length', type=int, default=60)
+    parser.add_argument('--generated_text_lenght', type=int, default=200)
+    parser.add_argument('--patience', type=int, default=20)
+    parser.add_argument('--monitoring_freq', type=int, default=5000)
     parser.add_argument('--train_path', type=str,
                         default="/data/lisatmp3/zablocki/train.txt")
     parser.add_argument('--valid_path', type=str,
@@ -44,9 +57,10 @@ def parse_args():
                         default='random_sample')
     parser.add_argument('--interactive_mode', action='store_true',
                         default=False)
-    parser.add_argument('--monitoring_freq', type=int, default=2000)
+
     args = parser.parse_args()
 
+    # Print all the arguments
     logger.info("\n" + "#" * 40)
     for arg in vars(args):
         logger.info('\"' + str(arg) + '\" \t: ' + str(vars(args)[arg]))
