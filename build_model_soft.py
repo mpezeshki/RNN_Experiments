@@ -6,7 +6,8 @@ from theano import tensor
 
 from blocks import initialization
 from blocks.bricks import (Linear, Tanh, Softmax,
-                           FeedforwardSequence, MLP, Logistic)
+                           FeedforwardSequence, MLP, Logistic,
+                           Rectifier)
 from blocks.bricks.parallel import Fork
 from blocks.bricks.recurrent import SimpleRecurrent, RecurrentStack
 
@@ -54,8 +55,27 @@ def build_model_soft(vocab_size, args, dtype=floatX):
                     [lookup.apply]))
 
     transitions = [SimpleRecurrent(dim=state_dim, activation=Tanh())]
+
+    # Build the MLP
+    dims = [2 * state_dim]
+    activations = []
+    for i in range(args.mlp_layers):
+        activations.append(Rectifier())
+        dims.append(state_dim)
+
+    # Activation of the last layer of the MLP
+    if args.mlp_activation == "logistic":
+        activations.append(Logistic())
+    elif args.mlp_activation == "rectifier":
+        activations.append(Rectifier())
+    else:
+        assert False
+
+    # Output of MLP has dimension 1
+    dims.append(1)
+
     for i in range(layers - 1):
-        mlp = MLP(activations=[Logistic()], dims=[2 * state_dim, 1],
+        mlp = MLP(activations=activations, dims=dims,
                   weights_init=initialization.IsotropicGaussian(0.1),
                   biases_init=initialization.Constant(0),
                   name="mlp_" + str(i))

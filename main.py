@@ -12,12 +12,14 @@ if __name__ == "__main__":
     dataset = args.dataset
 
     mini_batch_size = args.mini_batch_size
+    mini_batch_size_valid = args.mini_batch_size_valid
     time_length = args.time_length
     rnn_type = args.rnn_type
 
     # Prepare data
     train_stream, valid_stream, vocab_size = get_minibatch_char(
-        dataset, mini_batch_size, time_length, args.tot_num_char)
+        dataset, mini_batch_size, mini_batch_size_valid,
+        time_length, args.tot_num_char)
 
     # Make sure we don't have skip_connections with only one hidden layer
     assert(not(args.skip_connections and args.layers == 1))

@@ -60,7 +60,7 @@ def get_stream_char(dataset, which_set, time_length, mini_batch_size,
     return stream, total_train_chars
 
 
-def get_minibatch_char(dataset, mini_batch_size,
+def get_minibatch_char(dataset, mini_batch_size, mini_batch_size_valid,
                        time_length, total_train_chars=None):
     data = get_data(dataset)
     vocab_size = data['vocab_size']
@@ -68,7 +68,7 @@ def get_minibatch_char(dataset, mini_batch_size,
     train_stream, train_num_examples = get_stream_char(
         dataset, "train", time_length, mini_batch_size, total_train_chars)
     valid_stream, valid_num_examples = get_stream_char(
-        dataset, "valid", time_length, mini_batch_size)
+        dataset, "valid", time_length, mini_batch_size_valid)
     return train_stream, valid_stream, vocab_size
 
 if __name__ == "__main__":
