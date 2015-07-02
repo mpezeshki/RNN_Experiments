@@ -118,6 +118,7 @@ class ResetStates(SimpleExtension):
 class InteractiveMode(SimpleExtension):
     def __init__(self, **kwargs):
         kwargs.setdefault("before_training", True)
+        kwargs.setdefault("on_interrupt", True)
         super(InteractiveMode, self).__init__(**kwargs)
 
     def do(self, *args):
@@ -169,8 +170,10 @@ class TextGenerationExtension(SimpleExtension):
     def do(self, *args):
 
         # init is TIME X 1
+        # TEMPORARY
+        # it = self.main_loop.data_stream.get_epoch_iterator()
         init_ = next(
-            self.main_loop.epoch_iterator)["features"][
+            self.main_loop.epoch_iterator)["features"][  # 0][
             0: self.initial_text_length,
             0:1]
         inputs_ = init_
