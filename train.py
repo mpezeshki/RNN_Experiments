@@ -19,7 +19,7 @@ from blocks.main_loop import MainLoop
 from blocks.model import Model
 from blocks.roles import WEIGHT
 from extensions import (EarlyStopping, TextGenerationExtension,
-                        ResetStates, InteractiveMode)
+                        ResetStates, InteractiveMode, VisualizeGate)
 # from blocks.extensions.saveload import Checkpoint
 
 
@@ -114,6 +114,8 @@ def train_model(cost, cross_entropy, updates,
     #                              save_separately=['log']))
     if args.interactive_mode:
         extensions.append(InteractiveMode())
+    # if gate_values is not None:
+    #     extensions.append(VisualizeGate())
     extensions.append(early_stopping)
     extensions.append(Printing(every_n_batches=args.monitoring_freq))
 

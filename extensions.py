@@ -150,6 +150,7 @@ class VisualizeGate(SimpleExtension):
     def do(self, *args):
         init_ = next(self.main_loop.epoch_iterator)["features"][
             0: self.text_length, 0:1]
+        last_output = self.generate(init_)[0][-1:, :, :]
 
 
 class SvdExtension(SimpleExtension, MonitoringExtension):
