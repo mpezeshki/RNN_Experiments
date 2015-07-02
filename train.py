@@ -53,7 +53,7 @@ def learning_algorithm(args):
 
 
 def train_model(cost, cross_entropy, updates,
-                train_stream, valid_stream, args):
+                train_stream, valid_stream, args, gate_values=None):
 
     step_rule = learning_algorithm(args)
     cg = ComputationGraph(cost)

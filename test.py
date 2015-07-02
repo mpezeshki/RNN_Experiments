@@ -1,24 +1,123 @@
+from theano import tensor
+
+from blocks.bricks import Initializable, Tanh
+from blocks.bricks.base import application, lazy
+from blocks.bricks.recurrent import BaseRecurrent, recurrent
+from blocks.roles import add_role, WEIGHT, INITIAL_STATE
+from blocks.utils import shared_floatx_nans, shared_floatx_zeros
+
 from collections import OrderedDict
 import logging
 import numpy
 import theano
-from theano import tensor
 
 from blocks import initialization
-from blocks.bricks import (Linear, Tanh, Softmax,
+from blocks.bricks import (Linear, Softmax,
                            FeedforwardSequence, MLP, Logistic,
                            Rectifier)
 from blocks.bricks.parallel import Fork
 from blocks.bricks.recurrent import SimpleRecurrent, RecurrentStack
 
-from bricks import LookupTable, SoftGatedRecurrent, HardLogistic
+from bricks import LookupTable, HardLogistic
 
 floatX = theano.config.floatX
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
 
 
-def build_model_soft(vocab_size, args, dtype=floatX):
+class SoftGatedRecurrent(BaseRecurrent, Initializable):
+
+    @lazy(allocation=['dim'])
+    def __init__(self, dim, activation=None, mlp=None,
+                 **kwargs):
+        super(SoftGatedRecurrent, self).__init__(**kwargs)
+        self.dim = dim
+
+        if not activation:
+            activation = Tanh()
+        self.activation = activation
+
+        # The activation of the mlp should be a Logistic function
+        self.mlp = mlp
+
+        self.children = [activation, mlp]
+
+    @property
+    def state_to_state(self):
+        return self.params[0]
+
+    @property
+    def matrix_gate(self):
+        return self.params[1]
+
+    def get_dim(self, name):
+        if name == 'mask':
+            return 0
+        if name in ['inputs', 'states']:
+            return self.dim
+        return super(SoftGatedRecurrent, self).get_dim(name)
+
+    def _allocate(self):
+        self.params.append(shared_floatx_nans((self.dim, self.dim),
+                                              name='state_to_state'))
+        self.params.append(shared_floatx_zeros((self.dim,),
+                                               name="initial_state"))
+        add_role(self.params[0], WEIGHT)
+        add_role(self.params[1], INITIAL_STATE)
+
+    def _initialize(self):
+        self.weights_init.initialize(self.state_to_state, self.rng)
+
+    @recurrent(sequences=['mask', 'inputs'], states=['states'],
+               outputs=['states', "gate_value"], contexts=[])
+    def apply(self, inputs, states, mask=None):
+        """Apply the gated recurrent transition.
+        Parameters
+        ----------
+        states : :class:`~tensor.TensorVariable`
+            The 2 dimensional matrix of current states in the shape
+            (batch_size, dim). Required for `one_step` usage.
+        inputs : :class:`~tensor.TensorVariable`
+            The 2 dimensional matrix of inputs in the shape (batch_size,
+            dim)
+        mask : :class:`~tensor.TensorVariable`
+            A 1D binary array in the shape (batch,) which is 1 if there is
+            data available, 0 if not. Assumed to be 1-s only if not given.
+        Returns
+        -------
+        output : :class:`~tensor.TensorVariable`
+            Next states of the network.
+        """
+        # Concatenate the inputs of the MLP
+        mlp_input = tensor.concatenate((inputs, states), axis=1)
+
+        # Compute the output of the MLP
+        gate_value = self.mlp.apply(mlp_input)
+
+        # TODO: Find a way to remove the following "hack".
+        # Simply removing the two next lines won't work
+        gate_value = gate_value[:, 0]
+        gate_value = gate_value[:, None]
+
+        # Compute the next_states value, before gating
+        next_states = self.activation.apply(
+            states.dot(self.state_to_state) + inputs)
+
+        # Apply the gating
+        next_states = (next_states * gate_value +
+                       states * (1 - gate_value))
+
+        if mask:
+            next_states = (mask[:, None] * next_states +
+                           (1 - mask[:, None]) * states)
+        return next_states, gate_value
+
+    @application(outputs=apply.states)
+    def initial_states(self, batch_size, *args, **kwargs):
+        return [tensor.repeat(self.params[2][None, :], batch_size, 0)]
+
+
+def build_model_soft_test(vocab_size, args, dtype=floatX):
     logger.info('Building model ...')
 
     # Parameters for the model
@@ -123,8 +222,21 @@ def build_model_soft(vocab_size, args, dtype=floatX):
     # Apply the RNN to the inputs
     h = rnn.apply(low_memory=True, **kwargs)
 
-    # Now we have correctly:
-    # h = [state_1, state_2, state_3 ...]
+    # Now we have:
+    # h = [state, state_1, gate_value_1, state_2, gate_value_2, state_3, ...]
+
+    # Extract gate_values
+    gate_values = h[2::2]
+    new_h = [h[0]]
+    new_h.extend(h[1::2])
+    h = new_h
+
+    # Now we have:
+    # h = [state, state_1, state_2, ...]
+    # gate_values = [gate_value_1, gate_value_2, gate_value_3]
+
+    for i, gate_value in enumerate(gate_values):
+        gate_value.name = "gate_value_" + str(i)
 
     # Save all the last states
     last_states = {}
@@ -172,4 +284,4 @@ def build_model_soft(vocab_size, args, dtype=floatX):
     output_layer.biases_init = initialization.Constant(0)
     output_layer.initialize()
 
-    return cost, cross_entropy, updates
+    return cost, cross_entropy, updates, gate_values

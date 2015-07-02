@@ -4,7 +4,6 @@ from theano.sandbox.rng_mrg import MRG_RandomStreams
 from blocks.bricks import Initializable, Tanh, Activation
 from blocks.bricks.base import application, lazy
 from blocks.bricks.recurrent import BaseRecurrent, recurrent
-# from blocks.initialization import IsotropicGaussian, Constant
 from blocks.roles import add_role, WEIGHT, BIAS, INITIAL_STATE
 from blocks.utils import (
     check_theano_variable, shared_floatx_nans, shared_floatx_zeros)
@@ -309,6 +308,7 @@ class HardGatedRecurrent(BaseRecurrent, Initializable):
 
         # Compute the output of the MLP
         gate_value = self.mlp.apply(mlp_input)
+
         random = self.randomstream.uniform((1,))
 
         # TODO: Find a way to remove the following "hack".

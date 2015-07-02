@@ -17,7 +17,6 @@ logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
 
 
-# Skip_connections are false
 def build_model_hard(vocab_size, args, dtype=floatX):
     logger.info('Building model ...')
 

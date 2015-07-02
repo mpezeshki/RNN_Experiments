@@ -11,11 +11,11 @@ def parse_args():
     # Model options
     parser.add_argument('--rnn_type', choices=['lstm', 'simple', 'clockwork',
                                                'soft', 'hard'],
-                        default='soft')
+                        default='soft_test')
     parser.add_argument('--layers', type=int,
                         default=3)
     parser.add_argument('--state_dim', type=int,
-                        default=300)
+                        default=10)
     parser.add_argument('--skip_connections', action='store_true',
                         default=True)
     parser.add_argument('--algorithm', choices=['rms_prop', 'adam', 'sgd'],
@@ -32,13 +32,13 @@ def parse_args():
     # Experiment options
     parser.add_argument('--dataset',
                         choices=['wikipedia', 'penntree', 'mytext'],
-                        default='penntree')
+                        default='wikipedia')
     parser.add_argument('--time_length', type=int,
                         default=150)
     parser.add_argument('--mini_batch_size', type=int,
                         default=5)
     parser.add_argument('--mini_batch_size_valid', type=int,
-                        default=1024)
+                        default=16384)
     parser.add_argument('--context', type=int,
                         default=1)
     parser.add_argument('--tot_num_char', type=int,
@@ -48,7 +48,7 @@ def parse_args():
     parser.add_argument('--load_path', type=str,
                         default=None)
     parser.add_argument('--save_path', type=str,
-                        default="soft_text")
+                        default="data/lisatmp3/zablocki/")
 
     # Training options
     parser.add_argument('--learning_rate', type=float,
@@ -58,7 +58,7 @@ def parse_args():
 
     # Regularization options
     parser.add_argument('--weight_noise', type=float,
-                        default=0.01)
+                        default=0.)
 
     # Monitoring options
     parser.add_argument('--initial_text_length', type=int,
@@ -68,7 +68,7 @@ def parse_args():
     parser.add_argument('--patience', type=int,
                         default=20)
     parser.add_argument('--monitoring_freq', type=int,
-                        default=500)
+                        default=5000)
     parser.add_argument('--train_path', type=str,
                         default="/data/lisatmp3/zablocki/train.txt")
     parser.add_argument('--valid_path', type=str,

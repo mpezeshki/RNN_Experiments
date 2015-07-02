@@ -116,6 +116,7 @@ class ResetStates(SimpleExtension):
 
 
 class InteractiveMode(SimpleExtension):
+
     def __init__(self, **kwargs):
         kwargs.setdefault("before_training", True)
         kwargs.setdefault("on_interrupt", True)
@@ -124,6 +125,31 @@ class InteractiveMode(SimpleExtension):
     def do(self, *args):
         import ipdb
         ipdb.set_trace()
+
+
+class VisualizeGate(SimpleExtension):
+
+    def __init__(self, outputs,
+                 updates, ploting_path=None, **kwargs):
+        kwargs.setdefault("before_training", True)
+        self.text_length = 300
+        super(VisualizeGate, self).__init__(**kwargs)
+
+        cg = ComputationGraph(outputs)
+        assert(len(cg.inputs) == 1)
+        assert(cg.inputs[0].name == "features")
+
+        state_vars = [theano.shared(
+            v[0:1, :].zeros_like().eval(), v.name + '-gen')
+            for v, _ in updates]
+        givens = [(v, x) for (v, _), x in zip(updates, state_vars)]
+        f_updates = [(x, upd) for x, (_, upd) in zip(state_vars, updates)]
+        self.generate = theano.function(inputs=cg.inputs, outputs=outputs,
+                                        givens=givens, updates=f_updates)
+
+    def do(self, *args):
+        init_ = next(self.main_loop.epoch_iterator)["features"][
+            0: self.text_length, 0:1]
 
 
 class SvdExtension(SimpleExtension, MonitoringExtension):
@@ -150,10 +176,6 @@ class TextGenerationExtension(SimpleExtension):
         self.ploting_path = ploting_path
         self.softmax_sampling = softmax_sampling
         super(TextGenerationExtension, self).__init__(**kwargs)
-
-        # TODO: remove the commented lines when debugged
-        # inputs = [variable for variable in variables
-        #           if variable.name == 'features']
 
         cg = ComputationGraph(outputs)
         assert(len(cg.inputs) == 1)
