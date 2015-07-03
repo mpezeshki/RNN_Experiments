@@ -11,11 +11,11 @@ def parse_args():
     # Model options
     parser.add_argument('--rnn_type', choices=['lstm', 'simple', 'clockwork',
                                                'soft', 'hard'],
-                        default='soft')
+                        default='simple')
     parser.add_argument('--layers', type=int,
                         default=3)
     parser.add_argument('--state_dim', type=int,
-                        default=300)
+                        default=10)
     parser.add_argument('--skip_connections', action='store_true',
                         default=True)
     parser.add_argument('--algorithm', choices=['rms_prop', 'adam', 'sgd'],
@@ -32,7 +32,7 @@ def parse_args():
     # Experiment options
     parser.add_argument('--dataset',
                         choices=['wikipedia', 'penntree', 'mytext'],
-                        default='penntree')
+                        default='wikipedia')
     parser.add_argument('--time_length', type=int,
                         default=150)
     parser.add_argument('--mini_batch_size', type=int,
