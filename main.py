@@ -6,7 +6,6 @@ from build_model_hard import build_model_hard
 from dataset import get_minibatch_char
 from train import train_model
 from utils import parse_args
-from test import build_model_soft_test
 
 if __name__ == "__main__":
     args = parse_args()
@@ -34,9 +33,7 @@ if __name__ == "__main__":
     elif rnn_type == "lstm":
         cost, cross_entropy, updates = build_model_lstm(vocab_size, args)
     elif rnn_type == "soft":
-        cost, cross_entropy, updates = build_model_soft(vocab_size, args)
-    elif rnn_type == "soft_test":
-        cost, cross_entropy, updates, gate_values = build_model_soft_test(
+        cost, cross_entropy, updates, gate_values = build_model_soft(
             vocab_size, args)
     elif rnn_type == "hard":
         cost, cross_entropy, updates = build_model_hard(vocab_size, args)

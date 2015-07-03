@@ -129,13 +129,12 @@ class InteractiveMode(SimpleExtension):
 
 class VisualizeGate(SimpleExtension):
 
-    def __init__(self, outputs,
-                 updates, ploting_path=None, **kwargs):
+    def __init__(self, gate_values, updates, ploting_path=None, **kwargs):
         kwargs.setdefault("before_training", True)
         self.text_length = 300
         super(VisualizeGate, self).__init__(**kwargs)
 
-        cg = ComputationGraph(outputs)
+        cg = ComputationGraph(gate_values)
         assert(len(cg.inputs) == 1)
         assert(cg.inputs[0].name == "features")
 
@@ -144,7 +143,7 @@ class VisualizeGate(SimpleExtension):
             for v, _ in updates]
         givens = [(v, x) for (v, _), x in zip(updates, state_vars)]
         f_updates = [(x, upd) for x, (_, upd) in zip(state_vars, updates)]
-        self.generate = theano.function(inputs=cg.inputs, outputs=outputs,
+        self.generate = theano.function(inputs=cg.inputs, outputs=gate_values,
                                         givens=givens, updates=f_updates)
 
     def do(self, *args):

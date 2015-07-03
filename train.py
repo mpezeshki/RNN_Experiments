@@ -116,8 +116,9 @@ def train_model(cost, cross_entropy, updates,
     #                              save_separately=['log']))
     if args.interactive_mode:
         extensions.append(InteractiveMode())
-    # if gate_values is not None:
-    #     extensions.append(VisualizeGate())
+    if gate_values is not None:
+        extensions.append(VisualizeGate(gate_values, updates,
+                                        ploting_path=None))
     extensions.append(early_stopping)
     extensions.append(Printing(every_n_batches=args.monitoring_freq))
 

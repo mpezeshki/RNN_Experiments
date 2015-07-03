@@ -11,7 +11,7 @@ def parse_args():
     # Model options
     parser.add_argument('--rnn_type', choices=['lstm', 'simple', 'clockwork',
                                                'soft', 'hard'],
-                        default='soft_test')
+                        default='soft')
     parser.add_argument('--layers', type=int,
                         default=3)
     parser.add_argument('--state_dim', type=int,
@@ -32,14 +32,14 @@ def parse_args():
     # Experiment options
     parser.add_argument('--dataset',
                         choices=['wikipedia', 'penntree', 'mytext'],
-                        default='wikipedia')
+                        default='penntree')
     parser.add_argument('--time_length', type=int,
                         default=150)
     parser.add_argument('--mini_batch_size', type=int,
                         default=5)
+    # Use 16000 for wiki but not for penntree
     parser.add_argument('--mini_batch_size_valid', type=int,
-                        # default=16384)
-                        default=5)
+                        default=2000)
     parser.add_argument('--context', type=int,
                         default=1)
     parser.add_argument('--tot_num_char', type=int,
@@ -69,7 +69,7 @@ def parse_args():
     parser.add_argument('--patience', type=int,
                         default=20)
     parser.add_argument('--monitoring_freq', type=int,
-                        default=5000)
+                        default=200)
     parser.add_argument('--train_path', type=str,
                         default="/data/lisatmp3/zablocki/train.txt")
     parser.add_argument('--valid_path', type=str,

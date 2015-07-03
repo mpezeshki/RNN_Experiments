@@ -4,6 +4,7 @@ from theano.sandbox.rng_mrg import MRG_RandomStreams
 from blocks.bricks import Initializable, Tanh, Activation
 from blocks.bricks.base import application, lazy
 from blocks.bricks.recurrent import BaseRecurrent, recurrent
+# from blocks.initialization import IsotropicGaussian, Constant
 from blocks.roles import add_role, WEIGHT, BIAS, INITIAL_STATE
 from blocks.utils import (
     check_theano_variable, shared_floatx_nans, shared_floatx_zeros)
@@ -188,8 +189,8 @@ class SoftGatedRecurrent(BaseRecurrent, Initializable):
     def _initialize(self):
         self.weights_init.initialize(self.state_to_state, self.rng)
 
-    @recurrent(sequences=['mask', 'inputs'],
-               states=['states'], outputs=['states'], contexts=[])
+    @recurrent(sequences=['mask', 'inputs'], states=['states'],
+               outputs=['states', "gate_value"], contexts=[])
     def apply(self, inputs, states, mask=None):
         """Apply the gated recurrent transition.
         Parameters
@@ -230,7 +231,7 @@ class SoftGatedRecurrent(BaseRecurrent, Initializable):
         if mask:
             next_states = (mask[:, None] * next_states +
                            (1 - mask[:, None]) * states)
-        return next_states
+        return next_states, gate_value
 
     @application(outputs=apply.states)
     def initial_states(self, batch_size, *args, **kwargs):
@@ -308,7 +309,6 @@ class HardGatedRecurrent(BaseRecurrent, Initializable):
 
         # Compute the output of the MLP
         gate_value = self.mlp.apply(mlp_input)
-
         random = self.randomstream.uniform((1,))
 
         # TODO: Find a way to remove the following "hack".
@@ -403,6 +403,7 @@ class LSTM(BaseRecurrent, Initializable):
 
 
 class HardLogistic(Activation):
+
     @application(inputs=['input_'], outputs=['output'])
     def apply(self, input_):
         return tensor.nnet.hard_sigmoid(input_)
