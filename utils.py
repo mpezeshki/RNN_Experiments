@@ -27,7 +27,7 @@ def parse_args():
     parser.add_argument('--mlp_activation', choices=['logistic',
                                                      'rectifier',
                                                      'hard_logistic'],
-                        default="rectifier")
+                        default="logistic")
 
     # Experiment options
     parser.add_argument('--dataset',
@@ -65,7 +65,7 @@ def parse_args():
     parser.add_argument('--initial_text_length', type=int,
                         default=60)
     parser.add_argument('--generated_text_lenght', type=int,
-                        default=200)
+                        default=20)
     parser.add_argument('--patience', type=int,
                         default=20)
     parser.add_argument('--monitoring_freq', type=int,

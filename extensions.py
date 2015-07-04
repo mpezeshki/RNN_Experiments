@@ -7,7 +7,7 @@ from scipy.linalg import svd
 import numpy as np
 import matplotlib
 # Force matplotlib to not use any Xwindows backend.
-matplotlib.use('Agg')
+# matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.table import Table
 from dataset import get_character
@@ -130,7 +130,7 @@ class InteractiveMode(SimpleExtension):
 class VisualizeGate(SimpleExtension):
 
     def __init__(self, gate_values, updates, ploting_path=None, **kwargs):
-        kwargs.setdefault("before_training", True)
+        kwargs.setdefault("after_batch", 1)
         self.text_length = 300
         super(VisualizeGate, self).__init__(**kwargs)
 
@@ -149,7 +149,13 @@ class VisualizeGate(SimpleExtension):
     def do(self, *args):
         init_ = next(self.main_loop.epoch_iterator)["features"][
             0: self.text_length, 0:1]
-        last_output = self.generate(init_)[0][-1:, :, :]
+        last_output = self.generate(init_)
+        layers = len(last_output)
+        time = last_output[0].shape[0]
+        for i in range(layers):
+            plt.plot(np.arange(time), last_output[i][:, 0, 0])
+            plt.draw()
+        plt.show()
 
 
 class SvdExtension(SimpleExtension, MonitoringExtension):
