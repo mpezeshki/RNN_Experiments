@@ -13,9 +13,9 @@ def parse_args():
                                                'soft', 'hard'],
                         default='soft')
     parser.add_argument('--layers', type=int,
-                        default=3)
+                        default=4)
     parser.add_argument('--state_dim', type=int,
-                        default=10)
+                        default=500)
     parser.add_argument('--skip_connections', action='store_true',
                         default=True)
     parser.add_argument('--algorithm', choices=['rms_prop', 'adam', 'sgd'],
@@ -23,7 +23,7 @@ def parse_args():
 
     # Options for the soft model
     parser.add_argument('--mlp_layers', type=int,
-                        default=1)
+                        default=0)
     parser.add_argument('--mlp_activation', choices=['logistic',
                                                      'rectifier',
                                                      'hard_logistic'],
@@ -32,14 +32,13 @@ def parse_args():
     # Experiment options
     parser.add_argument('--dataset',
                         choices=['wikipedia', 'penntree', 'mytext'],
-                        default='penntree')
+                        default='wikipedia')
     parser.add_argument('--time_length', type=int,
                         default=150)
     parser.add_argument('--mini_batch_size', type=int,
                         default=5)
-    # Use 16000 for wiki but not for penntree
     parser.add_argument('--mini_batch_size_valid', type=int,
-                        default=2000)
+                        default=56)
     parser.add_argument('--context', type=int,
                         default=1)
     parser.add_argument('--tot_num_char', type=int,
@@ -47,9 +46,9 @@ def parse_args():
     parser.add_argument('--clipping', type=float,
                         default=5)
     parser.add_argument('--load_path', type=str,
-                        default=None)
+                        default="/data/lisatmp3/zablocki/4XSOFTX500UnitsX001WNX5MBXWiki/best")
     parser.add_argument('--save_path', type=str,
-                        default="data/lisatmp3/zablocki/")
+                        default="None")
 
     # Training options
     parser.add_argument('--learning_rate', type=float,

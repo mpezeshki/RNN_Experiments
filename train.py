@@ -99,6 +99,7 @@ def train_model(cost, cross_entropy, updates,
                              valid_stream, args.mini_batch_size_valid,
                              state_updates=updates,
                              prefix='valid',
+                             before_training=False,
                              every_n_batches=args.monitoring_freq),
         ResetStates([v for v, _ in updates], every_n_batches=100),
         ProgressBar()])
@@ -117,7 +118,7 @@ def train_model(cost, cross_entropy, updates,
     if args.interactive_mode:
         extensions.append(InteractiveMode())
     if gate_values is not None:
-        extensions.append(VisualizeGate(gate_values, updates,
+        extensions.append(VisualizeGate(gate_values, updates, args.dataset,
                                         ploting_path=None))
     extensions.append(early_stopping)
     extensions.append(Printing(every_n_batches=args.monitoring_freq))

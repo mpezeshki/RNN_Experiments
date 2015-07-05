@@ -129,9 +129,11 @@ class InteractiveMode(SimpleExtension):
 
 class VisualizeGate(SimpleExtension):
 
-    def __init__(self, gate_values, updates, ploting_path=None, **kwargs):
+    def __init__(self, gate_values, updates, dataset, ploting_path=None,
+                 **kwargs):
         kwargs.setdefault("after_batch", 1)
         self.text_length = 300
+        self.dataset = dataset
         super(VisualizeGate, self).__init__(**kwargs)
 
         cg = ComputationGraph(gate_values)
@@ -149,6 +151,14 @@ class VisualizeGate(SimpleExtension):
     def do(self, *args):
         init_ = next(self.main_loop.epoch_iterator)["features"][
             0: self.text_length, 0:1]
+        # time x batch
+        whole_sentence_code = init_
+        vocab = get_character(self.dataset)
+        # whole_sentence
+        whole_sentence = ''
+        for char in vocab[whole_sentence_code[:, 0]]:
+            whole_sentence += char
+
         last_output = self.generate(init_)
         layers = len(last_output)
         time = last_output[0].shape[0]
