@@ -11,23 +11,23 @@ def parse_args():
     # Model options
     parser.add_argument('--rnn_type', choices=['lstm', 'simple', 'clockwork',
                                                'soft', 'hard'],
-                        default='simple')
+                        default='lstm')
     parser.add_argument('--layers', type=int,
-                        default=3)
+                        default=1)
     parser.add_argument('--state_dim', type=int,
-                        default=10)
+                        default=500)
     parser.add_argument('--skip_connections', action='store_true',
-                        default=True)
+                        default=False)
     parser.add_argument('--algorithm', choices=['rms_prop', 'adam', 'sgd'],
                         default='adam')
 
     # Options for the soft model
     parser.add_argument('--mlp_layers', type=int,
-                        default=1)
+                        default=2)
     parser.add_argument('--mlp_activation', choices=['logistic',
                                                      'rectifier',
                                                      'hard_logistic'],
-                        default="rectifier")
+                        default="logistic")
 
     # Experiment options
     parser.add_argument('--dataset',
@@ -38,7 +38,7 @@ def parse_args():
     parser.add_argument('--mini_batch_size', type=int,
                         default=5)
     parser.add_argument('--mini_batch_size_valid', type=int,
-                        default=1024)
+                        default=512)
     parser.add_argument('--context', type=int,
                         default=1)
     parser.add_argument('--tot_num_char', type=int,
@@ -46,9 +46,9 @@ def parse_args():
     parser.add_argument('--clipping', type=float,
                         default=5)
     parser.add_argument('--load_path', type=str,
-                        default=None)
+                        default="/data/lisatmp3/zablocki/1_500_LSTM_wiki_075WN/best")
     parser.add_argument('--save_path', type=str,
-                        default="soft_text")
+                        default="/data/lisatmp3/zablocki/1_500_LSTM_wiki_075WN_next")
 
     # Training options
     parser.add_argument('--learning_rate', type=float,
@@ -58,17 +58,17 @@ def parse_args():
 
     # Regularization options
     parser.add_argument('--weight_noise', type=float,
-                        default=0.01)
+                        default=0.)
 
     # Monitoring options
     parser.add_argument('--initial_text_length', type=int,
                         default=60)
     parser.add_argument('--generated_text_lenght', type=int,
-                        default=200)
+                        default=400)
     parser.add_argument('--patience', type=int,
                         default=20)
     parser.add_argument('--monitoring_freq', type=int,
-                        default=500)
+                        default=2000)
     parser.add_argument('--train_path', type=str,
                         default="/data/lisatmp3/zablocki/train.txt")
     parser.add_argument('--valid_path', type=str,
@@ -86,6 +86,7 @@ def parse_args():
     for arg in vars(args):
         logger.info('\"' + str(arg) + '\" \t: ' + str(vars(args)[arg]))
     logger.info("#" * 40 + "\n")
+
     return args
 
 
