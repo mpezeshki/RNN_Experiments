@@ -11,6 +11,8 @@ def get_data(dataset):
     if dataset == "wikipedia":
         path = os.path.join(config.data_path, 'wikipedia-text',
                             'char_level_enwik8.npz')
+    elif dataset == "wikipedia_junyoung":
+        path = '/data/lisatmp3/zablocki/jun_data.npz'
     elif dataset == "penntree":
         path = os.path.join(config.data_path, 'PennTreebankCorpus',
                             'char_level_penntree.npz')
