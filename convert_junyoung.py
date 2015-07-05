@@ -1,4 +1,44 @@
+# WARNING: The code is ad-hoc for a special purpose and
+#          as a result is so messy.
 import numpy as np
+
+jun_data = np.load('/data/lisa/data/wikipedia-text/enwiki_char_and_word.npz')
+elo_data = np.load('/data/lisa/data/wikipedia-text/char_level_enwik8.npz')
+new_data = {}
+
+new_data['vocab'] = elo_data['vocab']
+new_data['vocab_size'] = elo_data['vocab_size']
+new_data['oov'] = elo_data['oov']
+
+print jun_data['train_chars']
+
+new_data['train'] = jun_data['train_chars']
+new_data['valid'] = jun_data['valid_chars']
+new_data['test'] = jun_data['test_chars']
+
+mapping_jun_to_elo = np.array([90, 161, 172, 168, 130, 162, 166, 173, 0, 152,
+                               146, 122, 51, 155, 26, 145, 35, 109, 63, 153,
+                               62, 117, 42, 139, 192, 80, 56, 194, 60, 183,
+                               66, 129, 54, 197, 40, 83, 102, 187, 92, 193,
+                               94, 11, 164, 10, 179, 9, 196, 17, 2, 49, 30,
+                               88, 136, 140, 147, 128, 114, 148, 135, 143,
+                               82, 111, 23, 124, 107, 175, 32, 95, 58, 133,
+                               67, 91, 28, 105, 101, 37, 134, 61, 204, 77,
+                               189, 73, 78, 41, 199, 69, 110, 15, 202, 79,
+                               89, 12, 181, 18, 177, 33, 163, 5, 200, 8, 24,
+                               72, 106, 159, 154, 20, 144, 149, 126, 108, 156,
+                               104, 84, 151, 29, 97, 47, 116, 25, 121, 44, 112,
+                               65, 127, 38, 113, 43, 52, 131, 59, 165, 76, 201,
+                               68, 86, 64, 190, 81, 125, 85, 150, 118, 22, 120,
+                               19, 180, 74, 186, 6, 7, 27, 70, 176, 100, 160,
+                               158, 169, 185, 178, 170, 174, 167, 96, 171, 93,
+                               138, 50, 137, 39, 157, 31, 123, 57, 141, 46,
+                               119, 34, 115, 36, 132, 55, 198, 48, 182, 53, 98,
+                               103, 195, 75, 184, 87, 191, 14, 203, 3, 99, 1,
+                               142, 4, 188, 16, 45, 13, 21, 71])
+# import ipdb; ipdb.set_trace()
+# np.savez('/data/lisatmp3/zablocki/jun_data', **new_data)
+
 
 data_1 = np.load('/data/lisatmp3/zablocki/4XLSTM_700Units_ADAM/best')
 data_3 = {}
