@@ -90,7 +90,8 @@ def train_model(cost, cross_entropy, updates,
         ploting_path=os.path.join(args.save_path, 'prob_plot.png'),
         softmax_sampling=args.softmax_sampling,
         dataset=args.dataset,
-        updates=updates))
+        updates=updates,
+        interactive_mode=args.interactive_mode))
     extensions.extend([
         TrainingDataMonitoring([cost], prefix='train',
                                every_n_batches=args.monitoring_freq,
