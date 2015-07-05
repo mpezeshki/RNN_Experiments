@@ -31,7 +31,8 @@ def parse_args():
 
     # Experiment options
     parser.add_argument('--dataset',
-                        choices=['wikipedia', 'penntree', 'mytext'],
+                        choices=['wikipedia', 'penntree',
+                                 'mytext', 'wikipedia_junyoung'],
                         default='wikipedia')
     parser.add_argument('--time_length', type=int,
                         default=150)
