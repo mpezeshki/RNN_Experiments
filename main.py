@@ -10,7 +10,6 @@ from utils import parse_args
 if __name__ == "__main__":
     args = parse_args()
     dataset = args.dataset
-
     mini_batch_size = args.mini_batch_size
     mini_batch_size_valid = args.mini_batch_size_valid
     time_length = args.time_length

@@ -153,10 +153,6 @@ class TextGenerationExtension(SimpleExtension):
         self.interactive_mode = interactive_mode
         super(TextGenerationExtension, self).__init__(**kwargs)
 
-        # TODO: remove the commented lines when debugged
-        # inputs = [variable for variable in variables
-        #           if variable.name == 'features']
-
         cg = ComputationGraph(outputs)
         assert(len(cg.inputs) == 1)
         assert(cg.inputs[0].name == "features")

@@ -11,7 +11,7 @@ from blocks.bricks import (Linear, Tanh, Softmax,
 from blocks.bricks.parallel import Fork
 from blocks.bricks.recurrent import SimpleRecurrent, RecurrentStack
 
-from bricks import LookupTable, SoftGatedRecurrent
+from bricks import LookupTable, SoftGatedRecurrent, HardLogistic
 
 floatX = theano.config.floatX
 logging.basicConfig(level='INFO')
@@ -68,6 +68,8 @@ def build_model_soft(vocab_size, args, dtype=floatX):
         activations.append(Logistic())
     elif args.mlp_activation == "rectifier":
         activations.append(Rectifier())
+    elif args.mlp_activation == "hard_logistic":
+        activations.append(HardLogistic())
     else:
         assert False
 

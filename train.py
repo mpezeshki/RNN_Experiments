@@ -10,8 +10,7 @@ from blocks.algorithms import (Adam, CompositeRule, GradientDescent,
                                Momentum, RMSProp, StepClipping,
                                RemoveNotFinite)
 from blocks.extensions import Printing, ProgressBar
-from blocks.extensions.monitoring import (
-    TrainingDataMonitoring, DataStreamMonitoring)
+from blocks.extensions.monitoring import (TrainingDataMonitoring)
 from blocks.extensions.saveload import Load
 from blocks.filter import VariableFilter
 from blocks.graph import ComputationGraph, apply_noise
@@ -20,6 +19,7 @@ from blocks.model import Model
 from blocks.roles import WEIGHT
 from extensions import (EarlyStopping, TextGenerationExtension,
                         ResetStates, InteractiveMode)
+from datastream_monitoring import DataStreamMonitoring
 # from blocks.extensions.saveload import Checkpoint
 
 
@@ -97,7 +97,9 @@ def train_model(cost, cross_entropy, updates,
                                every_n_batches=args.monitoring_freq,
                                after_epoch=True),
         DataStreamMonitoring([cost, cross_entropy],
-                             valid_stream, prefix='valid',
+                             valid_stream, args.mini_batch_size_valid,
+                             state_updates=updates,
+                             prefix='valid',
                              every_n_batches=args.monitoring_freq),
         ResetStates([v for v, _ in updates], every_n_batches=100),
         ProgressBar()])
