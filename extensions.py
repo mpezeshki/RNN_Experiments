@@ -143,12 +143,14 @@ class TextGenerationExtension(SimpleExtension):
 
     def __init__(self, outputs, generation_length, dataset,
                  initial_text_length, softmax_sampling,
-                 updates, ploting_path=None, **kwargs):
+                 updates, ploting_path=None,
+                 interactive_mode=False, **kwargs):
         self.generation_length = generation_length
         self.initial_text_length = initial_text_length
         self.dataset = dataset
         self.ploting_path = ploting_path
         self.softmax_sampling = softmax_sampling
+        self.interactive_mode = interactive_mode
         super(TextGenerationExtension, self).__init__(**kwargs)
 
         # TODO: remove the commented lines when debugged
@@ -170,12 +172,20 @@ class TextGenerationExtension(SimpleExtension):
     def do(self, *args):
 
         # init is TIME X 1
-        # TEMPORARY
-        # it = self.main_loop.data_stream.get_epoch_iterator()
-        init_ = next(
-            self.main_loop.epoch_iterator)["features"][  # 0][
-            0: self.initial_text_length,
-            0:1]
+        # This is because in interactive mode,
+        # self.main_loop.epoch_iterator is not accessible.
+        if self.interactive_mode:
+            # TEMPORARY HACK
+            it = self.main_loop.data_stream.get_epoch_iterator()
+            init_ = next(
+                it)[0][
+                0: self.initial_text_length,
+                0:1]
+        else:
+            init_ = next(
+                self.main_loop.epoch_iterator)["features"][
+                0: self.initial_text_length,
+                0:1]
         inputs_ = init_
         all_output_probabilities = []
         logger.info("\nGeneration:")
