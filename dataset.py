@@ -16,6 +16,9 @@ def get_data(dataset):
     elif dataset == "penntree":
         path = os.path.join(config.data_path, 'PennTreebankCorpus',
                             'char_level_penntree.npz')
+    elif dataset == "toy":
+        path = os.path.join(config.data_path, 'toy_dependencies',
+                            'toy_dependencies.npz')
     return numpy.load(path, 'rb')
 
 

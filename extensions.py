@@ -7,7 +7,7 @@ from scipy.linalg import svd
 import numpy as np
 import matplotlib
 # Force matplotlib to not use any Xwindows backend.
-# matplotlib.use('Agg')
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.table import Table
 from dataset import get_character
@@ -347,7 +347,7 @@ def sample(probs, argmax=False):
 
 # python plotting
 def probability_plot(probabilities, selected, vocab, ploting_path,
-                     top_n_probabilities=20, max_length=30):
+                     top_n_probabilities=20, max_length=120):
     selected = selected[:max_length]
     probabilities = probabilities[:max_length]
     # target = ['a', 'b', 'c', 'd', 'e', 'f', 'a', 'b', 'c', 'd']

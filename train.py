@@ -83,16 +83,17 @@ def train_model(cost, cross_entropy, updates,
     outputs = [
         variable for variable in cg.variables if variable.name == "presoft"]
 
-    extensions.append(TextGenerationExtension(
-        outputs=outputs,
-        generation_length=args.generated_text_lenght,
-        initial_text_length=args.initial_text_length,
-        every_n_batches=args.monitoring_freq,
-        ploting_path=os.path.join(args.save_path, 'prob_plot.png'),
-        softmax_sampling=args.softmax_sampling,
-        dataset=args.dataset,
-        updates=updates,
-        interactive_mode=args.interactive_mode))
+    if args.generate:
+        extensions.append(TextGenerationExtension(
+            outputs=outputs,
+            generation_length=args.generated_text_lenght,
+            initial_text_length=args.initial_text_length,
+            every_n_batches=args.monitoring_freq,
+            ploting_path=os.path.join(args.save_path, 'prob_plot.png'),
+            softmax_sampling=args.softmax_sampling,
+            dataset=args.dataset,
+            updates=updates,
+            interactive_mode=args.interactive_mode))
     extensions.extend([
         TrainingDataMonitoring([cost], prefix='train',
                                every_n_batches=args.monitoring_freq,
