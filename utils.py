@@ -11,14 +11,14 @@ def parse_args():
     # Model options
     parser.add_argument('--rnn_type', choices=['lstm', 'simple', 'clockwork',
                                                'soft', 'hard'],
-                        default='soft')
+                        default='lstm')
 
     parser.add_argument('--layers', type=int,
-                        default=4)
+                        default=1)
     parser.add_argument('--state_dim', type=int,
-                        default=500)
+                        default=700)
     parser.add_argument('--skip_connections', action='store_true',
-                        default=True)
+                        default=False)
     parser.add_argument('--algorithm', choices=['rms_prop', 'adam', 'sgd'],
                         default='adam')
 
@@ -49,9 +49,9 @@ def parse_args():
     parser.add_argument('--clipping', type=float,
                         default=5)
     parser.add_argument('--load_path', type=str,
-                        default="/data/lisatmp3/zablocki/4XSOFTX500UnitsX001WNX5MBXWiki/best")
+                        default=None)
     parser.add_argument('--save_path', type=str,
-                        default="None")
+                        default="/data/lisatmp3/zablocki/1_700_LSTM_wiki_150tl")
 
     # Training options
     parser.add_argument('--learning_rate', type=float,
@@ -61,7 +61,7 @@ def parse_args():
 
     # Regularization options
     parser.add_argument('--weight_noise', type=float,
-                        default=0.)
+                        default=0.075)
 
     # Monitoring options
     parser.add_argument('--initial_text_length', type=int,
@@ -81,7 +81,7 @@ def parse_args():
                         default='random_sample')
     parser.add_argument('--interactive_mode', action='store_true',
                         default=False)
-    parser.add_argument('--visualize_gate', action='store_true',
+    parser.add_argument('--visualize_gates', action='store_true',
                         default=False)
 
     args = parser.parse_args()
