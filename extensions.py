@@ -7,7 +7,7 @@ from scipy.linalg import svd
 import numpy as np
 import matplotlib
 # Force matplotlib to not use any Xwindows backend.
-# matplotlib.use('Agg')
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.table import Table
 from dataset import get_character
@@ -287,7 +287,7 @@ class TextGenerationExtension(SimpleExtension):
             init_ = next(
                 it)[0][
                 0: self.initial_text_length,
-                0:1]
+                2:3]
         else:
             init_ = next(
                 self.main_loop.epoch_iterator)["features"][
@@ -327,6 +327,39 @@ class TextGenerationExtension(SimpleExtension):
             probability_plot(all_output_probabilities_array,
                              whole_sentence[init_.shape[0]:],
                              vocab, self.ploting_path)
+
+    def interactive_generate(self, initial_text, length, *args):
+        import ipdb; ipdb.set_trace()
+        it = self.main_loop.data_stream.get_epoch_iterator()
+        init_ = next(
+            it)[0][
+            0: self.initial_text_length,
+            0:1]
+        inputs_ = init_
+        all_output_probabilities = []
+        logger.info("\nGeneration:")
+        for i in range(length):
+            # time x batch x features (1 x 1 x vocab_size)
+            last_output = self.generate(inputs_)[0][-1:, :, :]
+            # time x features (1 x vocab_size) '0' is for removing one dim
+            last_output_probabilities = softmax(last_output[0])
+            all_output_probabilities += [last_output_probabilities]
+            # 1 x 1
+            if self.softmax_sampling == 'argmax':
+                argmax = True
+            else:
+                argmax = False
+            last_output_sample = sample(last_output_probabilities, argmax)
+            inputs_ = np.vstack([inputs_, last_output_sample])
+        # time x batch
+        whole_sentence_code = inputs_
+        vocab = get_character(self.dataset)
+        # whole_sentence
+        whole_sentence = ''
+        for char in vocab[whole_sentence_code[:, 0]]:
+            whole_sentence += char
+        logger.info(whole_sentence[:init_.shape[0]] + ' ...')
+        logger.info(whole_sentence)
 
 
 # python softmax
