@@ -115,8 +115,19 @@ def build_model_lstm(vocab_size, args, dtype=floatX):
         updates.append((init_states[d], last_states[d]))
         updates.append((init_cells[d], last_states[d]))
 
-    # h = [state, cell, state_1, cell_1 ...]
-    h = h[::2]
+    # h = [state, cell, in, forget, out, state_1,
+    #        cell_1, in_1, forget_1, out_1 ...]
+
+    # Extract the values
+    in_gates = h[2::5]
+    forget_gates = h[3::5]
+    out_gates = h[4::5]
+
+    gate_values = {"in_gates": in_gates,
+                   "forget_gates": forget_gates,
+                   "out_gates": out_gates}
+
+    h = h[::5]
 
     # Now we have correctly:
     # h = [state, state_1, state_2 ...] if layers > 1
@@ -164,4 +175,4 @@ def build_model_lstm(vocab_size, args, dtype=floatX):
     output_layer.biases_init = initialization.Constant(0)
     output_layer.initialize()
 
-    return cost, cross_entropy, updates
+    return cost, cross_entropy, updates, gate_values

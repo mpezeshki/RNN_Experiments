@@ -12,6 +12,7 @@ def parse_args():
     parser.add_argument('--rnn_type', choices=['lstm', 'simple', 'clockwork',
                                                'soft', 'hard'],
                         default='soft')
+
     parser.add_argument('--layers', type=int,
                         default=4)
     parser.add_argument('--state_dim', type=int,
@@ -23,7 +24,7 @@ def parse_args():
 
     # Options for the soft model
     parser.add_argument('--mlp_layers', type=int,
-                        default=0)
+                        default=2)
     parser.add_argument('--mlp_activation', choices=['logistic',
                                                      'rectifier',
                                                      'hard_logistic'],
@@ -31,14 +32,16 @@ def parse_args():
 
     # Experiment options
     parser.add_argument('--dataset',
-                        choices=['wikipedia', 'penntree', 'mytext'],
+                        choices=['wikipedia', 'penntree',
+                                 'mytext', 'wikipedia_junyoung'],
                         default='wikipedia')
     parser.add_argument('--time_length', type=int,
                         default=150)
     parser.add_argument('--mini_batch_size', type=int,
                         default=5)
     parser.add_argument('--mini_batch_size_valid', type=int,
-                        default=56)
+                        default=512)
+
     parser.add_argument('--context', type=int,
                         default=1)
     parser.add_argument('--tot_num_char', type=int,
@@ -64,11 +67,11 @@ def parse_args():
     parser.add_argument('--initial_text_length', type=int,
                         default=60)
     parser.add_argument('--generated_text_lenght', type=int,
-                        default=20)
+                        default=400)
     parser.add_argument('--patience', type=int,
                         default=20)
     parser.add_argument('--monitoring_freq', type=int,
-                        default=200)
+                        default=2000)
     parser.add_argument('--train_path', type=str,
                         default="/data/lisatmp3/zablocki/train.txt")
     parser.add_argument('--valid_path', type=str,
@@ -78,6 +81,8 @@ def parse_args():
                         default='random_sample')
     parser.add_argument('--interactive_mode', action='store_true',
                         default=False)
+    parser.add_argument('--visualize_gate', action='store_true',
+                        default=False)
 
     args = parser.parse_args()
 
@@ -86,6 +91,7 @@ def parse_args():
     for arg in vars(args):
         logger.info('\"' + str(arg) + '\" \t: ' + str(vars(args)[arg]))
     logger.info("#" * 40 + "\n")
+
     return args
 
 

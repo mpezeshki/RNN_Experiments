@@ -127,14 +127,14 @@ class InteractiveMode(SimpleExtension):
         ipdb.set_trace()
 
 
-class VisualizeGate(SimpleExtension):
+class VisualizeGateSoft(SimpleExtension):
 
     def __init__(self, gate_values, updates, dataset, ploting_path=None,
                  **kwargs):
         kwargs.setdefault("after_batch", 1)
         self.text_length = 300
         self.dataset = dataset
-        super(VisualizeGate, self).__init__(**kwargs)
+        super(VisualizeGateSoft, self).__init__(**kwargs)
 
         cg = ComputationGraph(gate_values)
         assert(len(cg.inputs) == 1)
@@ -168,6 +168,75 @@ class VisualizeGate(SimpleExtension):
         plt.show()
 
 
+class VisualizeGateLSTM(SimpleExtension):
+
+    def __init__(self, gate_values, updates, dataset, ploting_path=None,
+                 **kwargs):
+        kwargs.setdefault("after_batch", 1)
+        self.text_length = 300
+        self.dataset = dataset
+        super(VisualizeGateLSTM, self).__init__(**kwargs)
+
+        in_gates = gate_values["in_gates"]
+        out_gates = gate_values["out_gates"]
+        forget_gates = gate_values["forget_gates"]
+        cg_in = ComputationGraph(in_gates)
+        cg_out = ComputationGraph(out_gates)
+        cg_forget = ComputationGraph(forget_gates)
+        for cg in [cg_in, cg_forget, cg_out]:
+            assert(len(cg.inputs) == 1)
+            assert(cg.inputs[0].name == "features")
+
+        state_vars = [theano.shared(
+            v[0:1, :].zeros_like().eval(), v.name + '-gen')
+            for v, _ in updates]
+        givens = [(v, x) for (v, _), x in zip(updates, state_vars)]
+        f_updates = [(x, upd) for x, (_, upd) in zip(state_vars, updates)]
+
+        self.generate_in = theano.function(inputs=cg_in.inputs,
+                                           outputs=in_gates,
+                                           givens=givens,
+                                           updates=f_updates)
+        self.generate_out = theano.function(inputs=cg_out.inputs,
+                                            outputs=out_gates,
+                                            givens=givens,
+                                            updates=f_updates)
+        self.generate_forget = theano.function(inputs=cg_forget.inputs,
+                                               outputs=forget_gates,
+                                               givens=givens,
+                                               updates=f_updates)
+
+    def do(self, *args):
+        init_ = next(self.main_loop.epoch_iterator)["features"][
+            0: self.text_length, 0:1]
+        # time x batch
+        whole_sentence_code = init_
+        vocab = get_character(self.dataset)
+        # whole_sentence
+        whole_sentence = ''
+        for char in vocab[whole_sentence_code[:, 0]]:
+            whole_sentence += char
+
+        last_output_in = self.generate_in(init_)
+        last_output_out = self.generate_out(init_)
+        last_output_forget = self.generate_forget(init_)
+        layers = len(last_output_in)
+
+        time = last_output_in[0].shape[0]
+
+        for i in range(layers):
+            plt.subplot(3, layers, i * 3)
+            plt.plot(np.arange(time), last_output_in[i][:, 0, 0])
+            plt.plot(np.arange(time), last_output_in[i][:, 0, 1])
+            plt.subplot(3, layers, i * 3 + 1)
+            plt.plot(np.arange(time), last_output_out[i][:, 0, 0])
+            plt.plot(np.arange(time), last_output_out[i][:, 0, 1])
+            plt.subplot(3, layers, i * 3 + 2)
+            plt.plot(np.arange(time), last_output_forget[i][:, 0, 0])
+            plt.plot(np.arange(time), last_output_forget[i][:, 0, 1])
+        plt.show()
+
+
 class SvdExtension(SimpleExtension, MonitoringExtension):
 
     def __init__(self, **kwargs):
@@ -185,12 +254,14 @@ class TextGenerationExtension(SimpleExtension):
 
     def __init__(self, outputs, generation_length, dataset,
                  initial_text_length, softmax_sampling,
-                 updates, ploting_path=None, **kwargs):
+                 updates, ploting_path=None,
+                 interactive_mode=False, **kwargs):
         self.generation_length = generation_length
         self.initial_text_length = initial_text_length
         self.dataset = dataset
         self.ploting_path = ploting_path
         self.softmax_sampling = softmax_sampling
+        self.interactive_mode = interactive_mode
         super(TextGenerationExtension, self).__init__(**kwargs)
 
         cg = ComputationGraph(outputs)
@@ -208,12 +279,20 @@ class TextGenerationExtension(SimpleExtension):
     def do(self, *args):
 
         # init is TIME X 1
-        # TEMPORARY
-        # it = self.main_loop.data_stream.get_epoch_iterator()
-        init_ = next(
-            self.main_loop.epoch_iterator)["features"][  # 0][
-            0: self.initial_text_length,
-            0:1]
+        # This is because in interactive mode,
+        # self.main_loop.epoch_iterator is not accessible.
+        if self.interactive_mode:
+            # TEMPORARY HACK
+            it = self.main_loop.data_stream.get_epoch_iterator()
+            init_ = next(
+                it)[0][
+                0: self.initial_text_length,
+                0:1]
+        else:
+            init_ = next(
+                self.main_loop.epoch_iterator)["features"][
+                0: self.initial_text_length,
+                0:1]
         inputs_ = init_
         all_output_probabilities = []
         logger.info("\nGeneration:")

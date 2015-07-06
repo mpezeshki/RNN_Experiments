@@ -18,7 +18,8 @@ from blocks.main_loop import MainLoop
 from blocks.model import Model
 from blocks.roles import WEIGHT
 from extensions import (EarlyStopping, TextGenerationExtension,
-                        ResetStates, InteractiveMode, VisualizeGate)
+                        ResetStates, InteractiveMode, VisualizeGateSoft,
+                        VisualizeGateLSTM)
 from datastream_monitoring import DataStreamMonitoring
 # from blocks.extensions.saveload import Checkpoint
 
@@ -90,7 +91,8 @@ def train_model(cost, cross_entropy, updates,
         ploting_path=os.path.join(args.save_path, 'prob_plot.png'),
         softmax_sampling=args.softmax_sampling,
         dataset=args.dataset,
-        updates=updates))
+        updates=updates,
+        interactive_mode=args.interactive_mode))
     extensions.extend([
         TrainingDataMonitoring([cost], prefix='train',
                                every_n_batches=args.monitoring_freq,
@@ -100,6 +102,7 @@ def train_model(cost, cross_entropy, updates,
                              state_updates=updates,
                              prefix='valid',
                              before_training=False,
+                             before_first_epoch=False,
                              every_n_batches=args.monitoring_freq),
         ResetStates([v for v, _ in updates], every_n_batches=100),
         ProgressBar()])
@@ -112,14 +115,22 @@ def train_model(cost, cross_entropy, updates,
     early_stopping = EarlyStopping('valid_cross_entropy',
                                    args.patience, args.save_path,
                                    every_n_batches=args.monitoring_freq)
-    # extensions.append(Checkpoint(args.save_path,
-    #                              every_n_batches=args.monitoring_freq,
-    #                              save_separately=['log']))
+
+    # Visualizing extensions
     if args.interactive_mode:
         extensions.append(InteractiveMode())
-    if gate_values is not None:
-        extensions.append(VisualizeGate(gate_values, updates, args.dataset,
-                                        ploting_path=None))
+    if args.visualize_gates and (gate_values is not None):
+        if args.rnn_type == "lstm":
+            extensions.append(VisualizeGateLSTM(gate_values, updates,
+                                                args.dataset,
+                                                ploting_path=None))
+        elif args.rnn_type == "soft":
+            extensions.append(VisualizeGateSoft(gate_values, updates,
+                                                args.dataset,
+                                                ploting_path=None))
+        else:
+            assert(False)
+
     extensions.append(early_stopping)
     extensions.append(Printing(every_n_batches=args.monitoring_freq))
 

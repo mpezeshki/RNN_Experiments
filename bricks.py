@@ -375,7 +375,8 @@ class LSTM(BaseRecurrent, Initializable):
         self.weights_init.initialize(self.params[0], self.rng)
 
     @recurrent(sequences=['inputs', 'mask'], states=['states', 'cells'],
-               contexts=[], outputs=['states', 'cells'])
+               contexts=[], outputs=['states', 'cells', 'in_gate',
+                                     'forget_gate', 'out_gate'])
     def apply(self, inputs, states, cells, mask=None):
         def slice_last(x, no):
             return x[:, no * self.dim: (no + 1) * self.dim]
@@ -394,7 +395,7 @@ class LSTM(BaseRecurrent, Initializable):
             next_states = (mask[:, None] * next_states +
                            (1 - mask[:, None]) * states)
 
-        return next_states, next_cells
+        return next_states, next_cells, in_gate, forget_gate, out_gate
 
     @application(outputs=apply.states)
     def initial_states(self, batch_size, *args, **kwargs):

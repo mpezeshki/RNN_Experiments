@@ -10,7 +10,6 @@ from utils import parse_args
 if __name__ == "__main__":
     args = parse_args()
     dataset = args.dataset
-
     mini_batch_size = args.mini_batch_size
     mini_batch_size_valid = args.mini_batch_size_valid
     time_length = args.time_length
@@ -31,7 +30,8 @@ if __name__ == "__main__":
     elif rnn_type == "clockwork":
         cost, cross_entropy, updates = build_model_cw(vocab_size, args)
     elif rnn_type == "lstm":
-        cost, cross_entropy, updates = build_model_lstm(vocab_size, args)
+        cost, cross_entropy, updates, gate_values = build_model_lstm(
+            vocab_size, args)
     elif rnn_type == "soft":
         cost, cross_entropy, updates, gate_values = build_model_soft(
             vocab_size, args)
@@ -41,5 +41,6 @@ if __name__ == "__main__":
         assert(False)
 
     # Train the model
+
     train_model(cost, cross_entropy, updates, train_stream, valid_stream, args,
                 gate_values=gate_values)
