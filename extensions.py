@@ -7,7 +7,7 @@ from scipy.linalg import svd
 import numpy as np
 import matplotlib
 # Force matplotlib to not use any Xwindows backend.
-matplotlib.use('Agg')
+# matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.table import Table
 from dataset import get_character
@@ -116,6 +116,7 @@ class ResetStates(SimpleExtension):
 
 
 class InteractiveMode(SimpleExtension):
+
     def __init__(self, **kwargs):
         kwargs.setdefault("before_training", True)
         kwargs.setdefault("on_interrupt", True)
@@ -124,6 +125,75 @@ class InteractiveMode(SimpleExtension):
     def do(self, *args):
         import ipdb
         ipdb.set_trace()
+
+
+class VisualizeGate(SimpleExtension):
+
+    def __init__(self, gate_values, updates, dataset, ploting_path=None,
+                 **kwargs):
+        kwargs.setdefault("after_batch", 1)
+        self.text_length = 300
+        self.dataset = dataset
+        super(VisualizeGate, self).__init__(**kwargs)
+        # TODO gate_values is a dictionnary
+        in_gates = gate_values["in_gates"]
+        out_gates = gate_values["out_gates"]
+        forget_gates = gate_values["forget_gates"]
+        cg_in = ComputationGraph(in_gates)
+        cg_out = ComputationGraph(out_gates)
+        cg_forget = ComputationGraph(forget_gates)
+        for cg in [cg_in, cg_forget, cg_out]:
+            assert(len(cg.inputs) == 1)
+            assert(cg.inputs[0].name == "features")
+
+        state_vars = [theano.shared(
+            v[0:1, :].zeros_like().eval(), v.name + '-gen')
+            for v, _ in updates]
+        givens = [(v, x) for (v, _), x in zip(updates, state_vars)]
+        f_updates = [(x, upd) for x, (_, upd) in zip(state_vars, updates)]
+
+        self.generate_in = theano.function(inputs=cg_in.inputs,
+                                           outputs=in_gates,
+                                           givens=givens,
+                                           updates=f_updates)
+        self.generate_out = theano.function(inputs=cg_out.inputs,
+                                            outputs=out_gates,
+                                            givens=givens,
+                                            updates=f_updates)
+        self.generate_forget = theano.function(inputs=cg_forget.inputs,
+                                               outputs=forget_gates,
+                                               givens=givens,
+                                               updates=f_updates)
+
+    def do(self, *args):
+        init_ = next(self.main_loop.epoch_iterator)["features"][
+            0: self.text_length, 0:1]
+        # time x batch
+        whole_sentence_code = init_
+        vocab = get_character(self.dataset)
+        # whole_sentence
+        whole_sentence = ''
+        for char in vocab[whole_sentence_code[:, 0]]:
+            whole_sentence += char
+
+        last_output_in = self.generate_in(init_)
+        last_output_out = self.generate_out(init_)
+        last_output_forget = self.generate_forget(init_)
+        layers = len(last_output_in)
+
+        time = last_output_in[0].shape[0]
+
+        for i in range(layers):
+            plt.subplot(3, layers, i * 3)
+            plt.plot(np.arange(time), last_output_in[i][:, 0, 0])
+            plt.plot(np.arange(time), last_output_in[i][:, 0, 1])
+            plt.subplot(3, layers, i * 3 + 1)
+            plt.plot(np.arange(time), last_output_out[i][:, 0, 0])
+            plt.plot(np.arange(time), last_output_out[i][:, 0, 1])
+            plt.subplot(3, layers, i * 3 + 2)
+            plt.plot(np.arange(time), last_output_forget[i][:, 0, 0])
+            plt.plot(np.arange(time), last_output_forget[i][:, 0, 1])
+        plt.show()
 
 
 class SvdExtension(SimpleExtension, MonitoringExtension):

@@ -23,13 +23,14 @@ if __name__ == "__main__":
     # Make sure we don't have skip_connections with only one hidden layer
     assert(not(args.skip_connections and args.layers == 1))
 
+    gate_values = None
     # Build the model
     if rnn_type == "simple":
         cost, cross_entropy, updates = build_model_vanilla(vocab_size, args)
     elif rnn_type == "clockwork":
         cost, cross_entropy, updates = build_model_cw(vocab_size, args)
     elif rnn_type == "lstm":
-        cost, cross_entropy, updates = build_model_lstm(vocab_size, args)
+        cost, cross_entropy, updates, gate_values = build_model_lstm(vocab_size, args)
     elif rnn_type == "soft":
         cost, cross_entropy, updates = build_model_soft(vocab_size, args)
     elif rnn_type == "hard":
@@ -38,4 +39,4 @@ if __name__ == "__main__":
         assert(False)
 
     # Train the model
-    train_model(cost, cross_entropy, updates, train_stream, valid_stream, args)
+    train_model(cost, cross_entropy, updates, train_stream, valid_stream, args, gate_values=gate_values)

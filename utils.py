@@ -13,11 +13,11 @@ def parse_args():
                                                'soft', 'hard'],
                         default='lstm')
     parser.add_argument('--layers', type=int,
-                        default=1)
+                        default=4)
     parser.add_argument('--state_dim', type=int,
                         default=500)
     parser.add_argument('--skip_connections', action='store_true',
-                        default=False)
+                        default=True)
     parser.add_argument('--algorithm', choices=['rms_prop', 'adam', 'sgd'],
                         default='adam')
 
@@ -47,9 +47,9 @@ def parse_args():
     parser.add_argument('--clipping', type=float,
                         default=5)
     parser.add_argument('--load_path', type=str,
-                        default="/data/lisatmp3/zablocki/1_500_LSTM_wiki_075WN/best")
+                        default="/media/win/Users/Eloi/4XLSTMX500UnitsX075WNX5MBXWiki/best")
     parser.add_argument('--save_path', type=str,
-                        default="/data/lisatmp3/zablocki/1_500_LSTM_wiki_075WN_next")
+                        default=None)
 
     # Training options
     parser.add_argument('--learning_rate', type=float,
