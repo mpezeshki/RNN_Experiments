@@ -18,7 +18,7 @@ from blocks.main_loop import MainLoop
 from blocks.model import Model
 from blocks.roles import WEIGHT
 from extensions import (EarlyStopping, TextGenerationExtension,
-                        ResetStates, InteractiveMode)
+                        ResetStates, InteractiveMode, VisualizeGate)
 from datastream_monitoring import DataStreamMonitoring
 # from blocks.extensions.saveload import Checkpoint
 
@@ -53,7 +53,7 @@ def learning_algorithm(args):
 
 
 def train_model(cost, cross_entropy, updates,
-                train_stream, valid_stream, args):
+                train_stream, valid_stream, args, gate_values=None):
 
     step_rule = learning_algorithm(args)
     cg = ComputationGraph(cost)
@@ -99,6 +99,8 @@ def train_model(cost, cross_entropy, updates,
                              valid_stream, args.mini_batch_size_valid,
                              state_updates=updates,
                              prefix='valid',
+                             before_training=False,
+                             before_first_epoch=False,
                              every_n_batches=args.monitoring_freq),
         ResetStates([v for v, _ in updates], every_n_batches=100),
         ProgressBar()])
@@ -116,6 +118,9 @@ def train_model(cost, cross_entropy, updates,
     #                              save_separately=['log']))
     if args.interactive_mode:
         extensions.append(InteractiveMode())
+    if gate_values is not None:
+        extensions.append(VisualizeGate(gate_values, updates, args.dataset,
+                                        ploting_path=None))
     extensions.append(early_stopping)
     extensions.append(Printing(every_n_batches=args.monitoring_freq))
 
