@@ -189,8 +189,8 @@ class SoftGatedRecurrent(BaseRecurrent, Initializable):
     def _initialize(self):
         self.weights_init.initialize(self.state_to_state, self.rng)
 
-    @recurrent(sequences=['mask', 'inputs'],
-               states=['states'], outputs=['states'], contexts=[])
+    @recurrent(sequences=['mask', 'inputs'], states=['states'],
+               outputs=['states', "gate_value"], contexts=[])
     def apply(self, inputs, states, mask=None):
         """Apply the gated recurrent transition.
         Parameters
@@ -231,7 +231,7 @@ class SoftGatedRecurrent(BaseRecurrent, Initializable):
         if mask:
             next_states = (mask[:, None] * next_states +
                            (1 - mask[:, None]) * states)
-        return next_states
+        return next_states, gate_value
 
     @application(outputs=apply.states)
     def initial_states(self, batch_size, *args, **kwargs):

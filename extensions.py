@@ -127,15 +127,56 @@ class InteractiveMode(SimpleExtension):
         ipdb.set_trace()
 
 
-class VisualizeGate(SimpleExtension):
+class VisualizeGateSoft(SimpleExtension):
 
     def __init__(self, gate_values, updates, dataset, ploting_path=None,
                  **kwargs):
         kwargs.setdefault("after_batch", 1)
         self.text_length = 300
         self.dataset = dataset
-        super(VisualizeGate, self).__init__(**kwargs)
-        # TODO gate_values is a dictionnary
+        super(VisualizeGateSoft, self).__init__(**kwargs)
+
+        cg = ComputationGraph(gate_values)
+        assert(len(cg.inputs) == 1)
+        assert(cg.inputs[0].name == "features")
+
+        state_vars = [theano.shared(
+            v[0:1, :].zeros_like().eval(), v.name + '-gen')
+            for v, _ in updates]
+        givens = [(v, x) for (v, _), x in zip(updates, state_vars)]
+        f_updates = [(x, upd) for x, (_, upd) in zip(state_vars, updates)]
+        self.generate = theano.function(inputs=cg.inputs, outputs=gate_values,
+                                        givens=givens, updates=f_updates)
+
+    def do(self, *args):
+        init_ = next(self.main_loop.epoch_iterator)["features"][
+            0: self.text_length, 0:1]
+        # time x batch
+        whole_sentence_code = init_
+        vocab = get_character(self.dataset)
+        # whole_sentence
+        whole_sentence = ''
+        for char in vocab[whole_sentence_code[:, 0]]:
+            whole_sentence += char
+
+        last_output = self.generate(init_)
+        layers = len(last_output)
+        time = last_output[0].shape[0]
+        for i in range(layers):
+            plt.plot(np.arange(time), last_output[i][:, 0, 0])
+            plt.draw()
+        plt.show()
+
+
+class VisualizeGateLSTM(SimpleExtension):
+
+    def __init__(self, gate_values, updates, dataset, ploting_path=None,
+                 **kwargs):
+        kwargs.setdefault("after_batch", 1)
+        self.text_length = 300
+        self.dataset = dataset
+        super(VisualizeGateLSTM, self).__init__(**kwargs)
+
         in_gates = gate_values["in_gates"]
         out_gates = gate_values["out_gates"]
         forget_gates = gate_values["forget_gates"]

@@ -3,7 +3,6 @@ import logging
 import numpy
 import theano
 from theano import tensor
-
 from blocks import initialization
 from blocks.bricks import Linear, Tanh, Softmax, FeedforwardSequence
 from blocks.bricks.parallel import Fork

@@ -18,7 +18,6 @@ logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
 
 
-# Skip_connections are false
 def build_model_soft(vocab_size, args, dtype=floatX):
     logger.info('Building model ...')
 
@@ -124,8 +123,21 @@ def build_model_soft(vocab_size, args, dtype=floatX):
     # Apply the RNN to the inputs
     h = rnn.apply(low_memory=True, **kwargs)
 
-    # Now we have correctly:
-    # h = [state_1, state_2, state_3 ...]
+    # Now we have:
+    # h = [state, state_1, gate_value_1, state_2, gate_value_2, state_3, ...]
+
+    # Extract gate_values
+    gate_values = h[2::2]
+    new_h = [h[0]]
+    new_h.extend(h[1::2])
+    h = new_h
+
+    # Now we have:
+    # h = [state, state_1, state_2, ...]
+    # gate_values = [gate_value_1, gate_value_2, gate_value_3]
+
+    for i, gate_value in enumerate(gate_values):
+        gate_value.name = "gate_value_" + str(i)
 
     # Save all the last states
     last_states = {}
@@ -173,4 +185,4 @@ def build_model_soft(vocab_size, args, dtype=floatX):
     output_layer.biases_init = initialization.Constant(0)
     output_layer.initialize()
 
-    return cost, cross_entropy, updates
+    return cost, cross_entropy, updates, gate_values

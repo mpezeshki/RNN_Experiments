@@ -1,10 +1,7 @@
-Add regularization?
 Add some fancy extensions? Decrease learning_rate when training...
 Shuffle wikipedia articles ?
-Monitor the cost on the training data (it sould be working but it's not atm...)
 Check if what works better between stepclipping or gradientclipping
-
-Make the script able to load a dumped Model
+Add noise to the rectified MLP of the soft model
 
 Link for the google docs:
 https://docs.google.com/spreadsheets/d/1anGdjy2eiV67gzX2jdoYwV65xR-YRokR9msoXcZRSPY/edit?usp=sharing

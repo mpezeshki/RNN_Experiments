@@ -30,13 +30,17 @@ if __name__ == "__main__":
     elif rnn_type == "clockwork":
         cost, cross_entropy, updates = build_model_cw(vocab_size, args)
     elif rnn_type == "lstm":
-        cost, cross_entropy, updates, gate_values = build_model_lstm(vocab_size, args)
+        cost, cross_entropy, updates, gate_values = build_model_lstm(
+            vocab_size, args)
     elif rnn_type == "soft":
-        cost, cross_entropy, updates = build_model_soft(vocab_size, args)
+        cost, cross_entropy, updates, gate_values = build_model_soft(
+            vocab_size, args)
     elif rnn_type == "hard":
         cost, cross_entropy, updates = build_model_hard(vocab_size, args)
     else:
         assert(False)
 
     # Train the model
-    train_model(cost, cross_entropy, updates, train_stream, valid_stream, args, gate_values=gate_values)
+
+    train_model(cost, cross_entropy, updates, train_stream, valid_stream, args,
+                gate_values=gate_values)

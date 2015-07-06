@@ -11,7 +11,8 @@ def parse_args():
     # Model options
     parser.add_argument('--rnn_type', choices=['lstm', 'simple', 'clockwork',
                                                'soft', 'hard'],
-                        default='lstm')
+                        default='soft')
+
     parser.add_argument('--layers', type=int,
                         default=4)
     parser.add_argument('--state_dim', type=int,
@@ -40,6 +41,7 @@ def parse_args():
                         default=5)
     parser.add_argument('--mini_batch_size_valid', type=int,
                         default=512)
+
     parser.add_argument('--context', type=int,
                         default=1)
     parser.add_argument('--tot_num_char', type=int,
@@ -47,9 +49,9 @@ def parse_args():
     parser.add_argument('--clipping', type=float,
                         default=5)
     parser.add_argument('--load_path', type=str,
-                        default="/media/win/Users/Eloi/4XLSTMX500UnitsX075WNX5MBXWiki/best")
+                        default="/data/lisatmp3/zablocki/4XSOFTX500UnitsX001WNX5MBXWiki/best")
     parser.add_argument('--save_path', type=str,
-                        default=None)
+                        default="None")
 
     # Training options
     parser.add_argument('--learning_rate', type=float,
@@ -78,6 +80,8 @@ def parse_args():
                         choices=['random_sample', 'argmax'],
                         default='random_sample')
     parser.add_argument('--interactive_mode', action='store_true',
+                        default=False)
+    parser.add_argument('--visualize_gate', action='store_true',
                         default=False)
 
     args = parser.parse_args()
