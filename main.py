@@ -1,4 +1,4 @@
-from build_model.build_model_vanilla import build_model_vanilla
+from rnn.build_model.build_model_vanilla import build_model_vanilla
 from rnn.build_model.build_model_lstm import build_model_lstm
 from rnn.build_model.build_model_cw import build_model_cw
 from rnn.build_model.build_model_soft import build_model_soft
