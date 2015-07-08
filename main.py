@@ -6,6 +6,7 @@ from rnn.build_model.build_model_hard import build_model_hard
 from rnn.datasets.dataset import get_minibatch_char
 from rnn.train import train_model
 from rnn.utils import parse_args
+from rnn.visualize import run_visualizations
 
 if __name__ == "__main__":
     args = parse_args()
@@ -15,16 +16,16 @@ if __name__ == "__main__":
     time_length = args.time_length
     rnn_type = args.rnn_type
 
+    # Make sure we don't have skip_connections with only one hidden layer
+    assert(not(args.skip_connections and args.layers == 1))
+
     # Prepare data
     train_stream, valid_stream, vocab_size = get_minibatch_char(
         dataset, mini_batch_size, mini_batch_size_valid,
         time_length, args.tot_num_char)
 
-    # Make sure we don't have skip_connections with only one hidden layer
-    assert(not(args.skip_connections and args.layers == 1))
-
-    gate_values = None
     # Build the model
+    gate_values = None
     if rnn_type == "simple":
         cost, cross_entropy, updates = build_model_vanilla(vocab_size, args)
     elif rnn_type == "clockwork":
@@ -41,5 +42,13 @@ if __name__ == "__main__":
         assert(False)
 
     # Train the model
-    train_model(cost, cross_entropy, updates, train_stream, valid_stream, args,
-                gate_values=gate_values)
+    if args.visualize == "nothing":
+        train_model(cost, cross_entropy, updates,
+                    train_stream, valid_stream,
+                    args,
+                    gate_values=gate_values)
+    else:
+        run_visualizations(cost, updates,
+                           train_stream, valid_stream,
+                           args,
+                           gate_values=gate_values)

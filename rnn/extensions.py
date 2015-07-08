@@ -149,7 +149,7 @@ class SvdExtension(SimpleExtension, MonitoringExtension):
 # Help from Alex Auvolat
 class TextGenerationExtension(SimpleExtension):
 
-    def __init__(self, outputs, generation_length, dataset,
+    def __init__(self, cost, generation_length, dataset,
                  initial_text_length, softmax_sampling,
                  updates, ploting_path=None,
                  interactive_mode=False, **kwargs):
@@ -161,6 +161,8 @@ class TextGenerationExtension(SimpleExtension):
         self.interactive_mode = interactive_mode
         super(TextGenerationExtension, self).__init__(**kwargs)
 
+        outputs = [
+            variable for variable in ComputationGraph(cost).variables if variable.name == "presoft"]
         cg = ComputationGraph(outputs)
         ####
         outputs = [variable for variable in cg.variables

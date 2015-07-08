@@ -11,7 +11,7 @@ def parse_args():
     # Model options
     parser.add_argument('--rnn_type', choices=['lstm', 'simple', 'clockwork',
                                                'soft', 'hard'],
-                        default='lstm')
+                        default='simple')
 
     parser.add_argument('--layers', type=int,
                         default=1)
@@ -89,14 +89,14 @@ def parse_args():
     parser.add_argument('--softmax_sampling', type=str,
                         choices=['random_sample', 'argmax'],
                         default='random_sample')
+
+    # Visualization options
     parser.add_argument('--interactive_mode', action='store_true',
                         default=False)
-    parser.add_argument('--visualize_gates', action='store_true',
-                        default=False)
-    parser.add_argument('--visualize_states', action='store_true',
-                        default=False)
-    parser.add_argument('--visualize_gradients', action='store_true',
-                        default=False)
+    parser.add_argument('--visualize', choices=["nothing", "gates",
+                                                "states", "gradients"],
+                        default="states")
+    parser.add_argument('--visualize_length', type=int, default=75)
 
     args = parser.parse_args()
 

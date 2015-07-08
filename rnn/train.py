@@ -1,5 +1,4 @@
 import logging
-
 import os
 
 import numpy as np
@@ -20,13 +19,8 @@ from blocks.roles import WEIGHT
 
 from rnn.extensions import (EarlyStopping, TextGenerationExtension,
                             ResetStates, InteractiveMode)
-from rnn.visualize.visualize_gates import VisualizeGateSoft, VisualizeGateLSTM
-from rnn.visualize.visualize_states import VisualizeStates
-from rnn.visualize.visualize_gradients import VisualizeGradients
 
 from rnn.datastream_monitoring import DataStreamMonitoring
-# from blocks.extensions.saveload import Checkpoint
-
 
 floatX = theano.config.floatX
 logging.basicConfig(level='INFO')
@@ -75,21 +69,23 @@ def train_model(cost, cross_entropy, updates,
 
     logger.info(cg.parameters)
 
+    # Define algorithm
     algorithm = GradientDescent(cost=cost, step_rule=step_rule,
                                 params=cg.parameters)
+    # Add the updates to carry the hidden state
     algorithm.add_updates(updates)
 
-    # extensions to be added
+    # Extensions to be added
     extensions = []
+
+    # Load from a dumped model
     if args.load_path is not None:
         extensions.append(Load(args.load_path))
 
-    outputs = [
-        variable for variable in cg.variables if variable.name == "presoft"]
-
+    # Generation extension
     if args.generate:
         extensions.append(TextGenerationExtension(
-            outputs=outputs,
+            cost=cost,
             generation_length=args.generated_text_lenght,
             initial_text_length=args.initial_text_length,
             every_n_batches=args.monitoring_freq,
@@ -98,8 +94,8 @@ def train_model(cost, cross_entropy, updates,
             dataset=args.dataset,
             updates=updates,
             interactive_mode=args.interactive_mode))
-    boolean = not(
-        args.visualize_gates or args.visualize_states or args.visualize_gradients)
+
+    # Training and Validation score monitoring
     extensions.extend([
         TrainingDataMonitoring([cost], prefix='train',
                                every_n_batches=args.monitoring_freq,
@@ -108,44 +104,32 @@ def train_model(cost, cross_entropy, updates,
                              valid_stream, args.mini_batch_size_valid,
                              state_updates=updates,
                              prefix='valid',
-                             before_first_epoch=boolean,
-                             every_n_batches=args.monitoring_freq),
-        ResetStates([v for v, _ in updates], every_n_batches=100),
-        ProgressBar()])
+                             before_first_epoch=(args.visualize == "nothing"),
+                             every_n_batches=args.monitoring_freq)])
+
     # Creating directory for saving model.
     if not args.interactive_mode:
         if not os.path.exists(args.save_path):
             os.makedirs(args.save_path)
         else:
             raise Exception('Directory already exists')
-    early_stopping = EarlyStopping('valid_cross_entropy',
-                                   args.patience, args.save_path,
-                                   every_n_batches=args.monitoring_freq)
+
+    # Early stopping
+    extensions.append(EarlyStopping('valid_cross_entropy',
+                                    args.patience, args.save_path,
+                                    every_n_batches=args.monitoring_freq))
+
+    # Printing
+    extensions.append(ProgressBar())
+    extensions.append(Printing(every_n_batches=args.monitoring_freq))
+
+    # Reset the initial states
+    extensions.append(ResetStates([v for v, _ in updates],
+                                  every_n_batches=100))
 
     # Visualizing extensions
     if args.interactive_mode:
         extensions.append(InteractiveMode())
-    if args.visualize_gates and (gate_values is not None):
-        if args.rnn_type == "lstm":
-            extensions.append(VisualizeGateLSTM(gate_values, updates,
-                                                args.dataset,
-                                                ploting_path=None))
-        elif args.rnn_type == "soft":
-            extensions.append(VisualizeGateSoft(gate_values, updates,
-                                                args.dataset,
-                                                ploting_path=None))
-        else:
-            assert(False)
-    if args.visualize_states:
-        extensions.append(VisualizeStates(cost, updates, args,
-                                          ploting_path=None))
-
-    if args.visualize_gradients:
-        extensions.append(VisualizeGradients(cost, updates, args,
-                                             ploting_path=None))
-
-    extensions.append(early_stopping)
-    extensions.append(Printing(every_n_batches=args.monitoring_freq))
 
     main_loop = MainLoop(
         model=Model(cost),
