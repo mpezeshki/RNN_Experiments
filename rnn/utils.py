@@ -18,13 +18,15 @@ def parse_args():
     parser.add_argument('--state_dim', type=int,
                         default=5)
     parser.add_argument('--skip_connections', action='store_true',
-                        default=True)
+                        default=False)
+    parser.add_argument('--skip_output', action="store_true",
+                        default=False)
     parser.add_argument('--algorithm', choices=['rms_prop', 'adam', 'sgd'],
                         default='adam')
 
     # Options for the soft model
     parser.add_argument('--mlp_layers', type=int,
-                        default=0)
+                        default=1)
     parser.add_argument('--mlp_activation', choices=['logistic',
                                                      'rectifier',
                                                      'hard_logistic'],

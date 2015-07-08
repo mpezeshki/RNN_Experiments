@@ -28,6 +28,7 @@ def build_model_lstm(vocab_size, args, dtype=floatX):
     state_dim = args.state_dim
     layers = args.layers
     skip_connections = args.skip_connections
+    skip_output = args.skip_output
 
     virtual_dim = 4 * state_dim
 
@@ -65,9 +66,10 @@ def build_model_lstm(vocab_size, args, dtype=floatX):
 
     # If skip_connections: dim = layers * state_dim
     # else: dim = state_dim
+    use_all_states = skip_connections * skip_output
     output_layer = Linear(
-        input_dim=skip_connections * layers *
-        state_dim + (1 - skip_connections) * state_dim,
+        input_dim=use_all_states * layers *
+        state_dim + (1 - use_all_states) * state_dim,
         output_dim=vocab_size, name="output_layer")
 
     # Return list of 3D Tensor, one for each layer
@@ -142,7 +144,7 @@ def build_model_lstm(vocab_size, args, dtype=floatX):
     # If we have skip connections, concatenate all the states
     # Else only consider the state of the highest layer
     if layers > 1:
-        if skip_connections:
+        if skip_connections or skip_output:
             h = tensor.concatenate(h, axis=2)
         else:
             h = h[-1]
