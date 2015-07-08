@@ -11,7 +11,7 @@ def parse_args():
     # Model options
     parser.add_argument('--rnn_type', choices=['lstm', 'simple', 'clockwork',
                                                'soft', 'hard'],
-                        default='lstm')
+                        default='simple')
 
     parser.add_argument('--layers', type=int,
                         default=4)
@@ -20,7 +20,7 @@ def parse_args():
     parser.add_argument('--skip_connections', action='store_true',
                         default=False)
     parser.add_argument('--skip_output', action="store_true",
-                        default=True)
+                        default=False)
     parser.add_argument('--algorithm', choices=['rms_prop', 'adam', 'sgd'],
                         default='adam')
 
@@ -59,7 +59,7 @@ def parse_args():
     parser.add_argument('--load_path', type=str,
                         default=None)
     parser.add_argument('--save_path', type=str,
-                        default="/data/lisatmp3/zablocki/new_toy_4l_5units_lstm_05_40")
+                        default="/data/lisatmp3/zablocki/new_toy_4l_5units_simple_noskip_05_40")
 
     # Training options
     parser.add_argument('--learning_rate', type=float,
