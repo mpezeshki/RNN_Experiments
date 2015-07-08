@@ -265,6 +265,19 @@ class TextGenerationExtension(SimpleExtension):
         super(TextGenerationExtension, self).__init__(**kwargs)
 
         cg = ComputationGraph(outputs)
+        ####
+        outputs = [variable for variable in cg.variables
+                   if (variable.name == "lstm_0_apply_cells"
+                       or variable.name == "lstm_1_apply_cells"
+                       or variable.name == "lstm_2_apply_cells"
+                       or variable.name == "lstm_3_apply_cells"
+                       or variable.name == "lstm_0_apply_states"
+                       or variable.name == "lstm_1_apply_states"
+                       or variable.name == "lstm_2_apply_states"
+                       or variable.name == "lstm_3_apply_states"
+                       or variable.name == "pre_rnn"
+                       or variable.name == "presoft")]
+        ####
         assert(len(cg.inputs) == 1)
         assert(cg.inputs[0].name == "features")
 
@@ -298,7 +311,7 @@ class TextGenerationExtension(SimpleExtension):
         logger.info("\nGeneration:")
         for i in range(self.generation_length):
             # time x batch x features (1 x 1 x vocab_size)
-            last_output = self.generate(inputs_)[0][-1:, :, :]
+            last_output = self.generate(inputs_)[-1][-1:, :, :]
             # time x features (1 x vocab_size) '0' is for removing one dim
             last_output_probabilities = softmax(last_output[0])
             all_output_probabilities += [last_output_probabilities]
@@ -328,19 +341,18 @@ class TextGenerationExtension(SimpleExtension):
                              whole_sentence[init_.shape[0]:],
                              vocab, self.ploting_path)
 
-    def interactive_generate(self, initial_text, length, *args):
-        import ipdb; ipdb.set_trace()
-        it = self.main_loop.data_stream.get_epoch_iterator()
-        init_ = next(
-            it)[0][
-            0: self.initial_text_length,
-            0:1]
-        inputs_ = init_
+    def interactive_generate(self, initial_text, generation_length, *args):
+        vocab = get_character(self.dataset)
+        initial_code = []
+        for char in initial_text:
+            initial_code += [np.where(vocab == char)[0]]
+        initial_code = np.array(initial_code)
+        inputs_ = initial_code
         all_output_probabilities = []
         logger.info("\nGeneration:")
-        for i in range(length):
+        for i in range(generation_length):
             # time x batch x features (1 x 1 x vocab_size)
-            last_output = self.generate(inputs_)[0][-1:, :, :]
+            last_output = self.generate(inputs_)[-1][-1:, :, :]
             # time x features (1 x vocab_size) '0' is for removing one dim
             last_output_probabilities = softmax(last_output[0])
             all_output_probabilities += [last_output_probabilities]
@@ -353,12 +365,11 @@ class TextGenerationExtension(SimpleExtension):
             inputs_ = np.vstack([inputs_, last_output_sample])
         # time x batch
         whole_sentence_code = inputs_
-        vocab = get_character(self.dataset)
         # whole_sentence
         whole_sentence = ''
         for char in vocab[whole_sentence_code[:, 0]]:
             whole_sentence += char
-        logger.info(whole_sentence[:init_.shape[0]] + ' ...')
+        logger.info(whole_sentence[:initial_code.shape[0]] + ' ...')
         logger.info(whole_sentence)
 
 
