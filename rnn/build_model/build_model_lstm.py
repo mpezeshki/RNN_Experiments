@@ -66,7 +66,7 @@ def build_model_lstm(vocab_size, args, dtype=floatX):
 
     # If skip_connections: dim = layers * state_dim
     # else: dim = state_dim
-    use_all_states = skip_connections * skip_output
+    use_all_states = skip_connections or skip_output
     output_layer = Linear(
         input_dim=use_all_states * layers *
         state_dim + (1 - use_all_states) * state_dim,

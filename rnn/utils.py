@@ -20,7 +20,7 @@ def parse_args():
     parser.add_argument('--skip_connections', action='store_true',
                         default=False)
     parser.add_argument('--skip_output', action="store_true",
-                        default=False)
+                        default=True)
     parser.add_argument('--algorithm', choices=['rms_prop', 'adam', 'sgd'],
                         default='adam')
 
@@ -31,6 +31,11 @@ def parse_args():
                                                      'rectifier',
                                                      'hard_logistic'],
                         default="logistic")
+
+    # Options for the clockwork
+    parser.add_argument('--module_order', choices=["slow_in_fast",
+                                                   "fast_in_slow"],
+                        default="fast_in_slow")
 
     # Experiment options
     parser.add_argument('--dataset',
