@@ -5,3 +5,10 @@ Add noise to the rectified MLP of the soft model
 
 Link for the google docs:
 https://docs.google.com/spreadsheets/d/1anGdjy2eiV67gzX2jdoYwV65xR-YRokR9msoXcZRSPY/edit?usp=sharing
+
+Try:
+Train a hierarchical RNN without the connections between the layers, only the skip connections. (All are like first layers, and the output is like making the layers vote)
+
+Questions:
+Is there layers Faster / Slower ?
+Is there layers for long and short term dependencies

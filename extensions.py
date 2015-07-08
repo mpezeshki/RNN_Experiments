@@ -7,7 +7,7 @@ from scipy.linalg import svd
 import numpy as np
 import matplotlib
 # Force matplotlib to not use any Xwindows backend.
-matplotlib.use('Agg')
+# matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.table import Table
 from dataset import get_character
@@ -132,7 +132,7 @@ class VisualizeGateSoft(SimpleExtension):
     def __init__(self, gate_values, updates, dataset, ploting_path=None,
                  **kwargs):
         kwargs.setdefault("after_batch", 1)
-        self.text_length = 300
+        self.text_length = 75
         self.dataset = dataset
         super(VisualizeGateSoft, self).__init__(**kwargs)
 
@@ -157,14 +157,17 @@ class VisualizeGateSoft(SimpleExtension):
         # whole_sentence
         whole_sentence = ''
         for char in vocab[whole_sentence_code[:, 0]]:
-            whole_sentence += char
+            whole_sentence += str(char)
 
         last_output = self.generate(init_)
         layers = len(last_output)
         time = last_output[0].shape[0]
         for i in range(layers):
+            plt.subplot(layers, 1, i + 1)
             plt.plot(np.arange(time), last_output[i][:, 0, 0])
-            plt.draw()
+            plt.xticks(range(self.text_length), tuple(init_[:, 0]))
+            plt.grid(True)
+            plt.title("gate of layer " + str(i))
         plt.show()
 
 
@@ -173,7 +176,7 @@ class VisualizeGateLSTM(SimpleExtension):
     def __init__(self, gate_values, updates, dataset, ploting_path=None,
                  **kwargs):
         kwargs.setdefault("after_batch", 1)
-        self.text_length = 300
+        self.text_length = 75
         self.dataset = dataset
         super(VisualizeGateLSTM, self).__init__(**kwargs)
 
@@ -209,13 +212,14 @@ class VisualizeGateLSTM(SimpleExtension):
     def do(self, *args):
         init_ = next(self.main_loop.epoch_iterator)["features"][
             0: self.text_length, 0:1]
+
         # time x batch
         whole_sentence_code = init_
         vocab = get_character(self.dataset)
         # whole_sentence
         whole_sentence = ''
         for char in vocab[whole_sentence_code[:, 0]]:
-            whole_sentence += char
+            whole_sentence += str(char)
 
         last_output_in = self.generate_in(init_)
         last_output_out = self.generate_out(init_)
@@ -225,15 +229,34 @@ class VisualizeGateLSTM(SimpleExtension):
         time = last_output_in[0].shape[0]
 
         for i in range(layers):
+
             plt.subplot(3, layers, i * 3)
-            plt.plot(np.arange(time), last_output_in[i][:, 0, 0])
-            plt.plot(np.arange(time), last_output_in[i][:, 0, 1])
+
+            # for j in range(last_output_in[i].shape[2]):
+            #     plt.plot(np.arange(time), last_output_in[i][:, 0, j])
+            plt.plot(np.arange(time), np.mean(last_output_in[i][:, 0, :], axis=1))
+            plt.xticks(range(self.text_length), tuple(init_[:, 0]))
+            plt.grid(True)
+            plt.title("in_gate of layer " + str(i))
+
             plt.subplot(3, layers, i * 3 + 1)
-            plt.plot(np.arange(time), last_output_out[i][:, 0, 0])
-            plt.plot(np.arange(time), last_output_out[i][:, 0, 1])
+            # for j in range(last_output_in[i].shape[2]):
+            #     plt.plot(np.arange(time), last_output_out[i][:, 0, j])
+            plt.plot(np.arange(time), np.mean(last_output_out[i][:, 0, :], axis=1))
+            plt.xticks(range(self.text_length), tuple(init_[:, 0]))
+            plt.grid(True)
+            plt.title("out_gate of layer " + str(i))
+
             plt.subplot(3, layers, i * 3 + 2)
-            plt.plot(np.arange(time), last_output_forget[i][:, 0, 0])
-            plt.plot(np.arange(time), last_output_forget[i][:, 0, 1])
+            # for j in range(last_output_in[i].shape[2]):
+            #     
+            plt.plot(np.arange(time), np.mean(last_output_forget[i][:, 0, :], axis=1))
+            plt.plot(np.arange(time), np.mean(last_output_out[i][:, 0, :], axis=1))
+            plt.plot(np.arange(time), 1 - np.mean(last_output_in[i][:, 0, :], axis=1))
+            plt.xticks(range(self.text_length), tuple(init_[:, 0]))
+            plt.grid(True)
+            plt.title("forget_gate of layer " + str(i))
+
         plt.show()
 
 
@@ -315,7 +338,7 @@ class TextGenerationExtension(SimpleExtension):
         # whole_sentence
         whole_sentence = ''
         for char in vocab[whole_sentence_code[:, 0]]:
-            whole_sentence += char
+            whole_sentence += str(char)
         logger.info(whole_sentence[:init_.shape[0]] + ' ...')
         logger.info(whole_sentence)
 
@@ -371,7 +394,7 @@ def probability_plot(probabilities, selected, vocab, ploting_path,
 
     for (i, j), v in np.ndenumerate(concatenated[:, :top_n_probabilities, 0]):
         tb.add_cell(j + 1, i, height, width,
-                    text=unicode(vocab[concatenated[i, j, 1].astype('int')],
+                    text=unicode(str(vocab[concatenated[i, j, 1].astype('int')]),
                                  errors='ignore'),
                     loc='center', facecolor=(1,
                                              1 - concatenated[i, j, 0],
