@@ -103,11 +103,14 @@ def build_model_lstm(vocab_size, args, dtype=floatX):
     # Apply the RNN to the inputs
     h = rnn.apply(low_memory=True, **kwargs)
 
+    # h = [state, cell, in, forget, out, state_1,
+    #        cell_1, in_1, forget_1, out_1 ...]
+
     last_states = {}
     last_cells = {}
     for d in range(layers):
-        last_states[d] = h[2 * d][-1, :, :]
-        last_cells[d] = h[2 * d + 1][-1, :, :]
+        last_states[d] = h[5 * d][-1, :, :]
+        last_cells[d] = h[5 * d + 1][-1, :, :]
 
     # The updates of the hidden states
     updates = []
@@ -167,7 +170,11 @@ def build_model_lstm(vocab_size, args, dtype=floatX):
 
     fork.initialize()
 
-    rnn.weights_init = initialization.Orthogonal()
+    # Dont initialize as Orthogonal if we are about to load new parameters
+    if args.load_path is not None:
+        rnn.weights_init = initialization.Constant(0)
+    else:
+        rnn.weights_init = initialization.Orthogonal()
     rnn.biases_init = initialization.Constant(0)
     rnn.initialize()
 
