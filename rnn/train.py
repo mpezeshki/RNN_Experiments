@@ -22,6 +22,7 @@ from rnn.extensions import (EarlyStopping, TextGenerationExtension,
                             ResetStates, InteractiveMode)
 from rnn.visualize.visualize_gates import VisualizeGateSoft, VisualizeGateLSTM
 from rnn.visualize.visualize_states import VisualizeStates
+from rnn.visualize.visualize_gradients import VisualizeGradients
 
 from rnn.datastream_monitoring import DataStreamMonitoring
 # from blocks.extensions.saveload import Checkpoint
@@ -97,6 +98,8 @@ def train_model(cost, cross_entropy, updates,
             dataset=args.dataset,
             updates=updates,
             interactive_mode=args.interactive_mode))
+    boolean = not(
+        args.visualize_gates or args.visualize_states or args.visualize_gradients)
     extensions.extend([
         TrainingDataMonitoring([cost], prefix='train',
                                every_n_batches=args.monitoring_freq,
@@ -105,8 +108,7 @@ def train_model(cost, cross_entropy, updates,
                              valid_stream, args.mini_batch_size_valid,
                              state_updates=updates,
                              prefix='valid',
-                             before_first_epoch=not(
-                                 args.visualize_gates or args.visualize_states),
+                             before_first_epoch=boolean,
                              every_n_batches=args.monitoring_freq),
         ResetStates([v for v, _ in updates], every_n_batches=100),
         ProgressBar()])
@@ -134,9 +136,13 @@ def train_model(cost, cross_entropy, updates,
                                                 ploting_path=None))
         else:
             assert(False)
-    if args.visualize_gradients:
+    if args.visualize_states:
         extensions.append(VisualizeStates(cost, updates, args,
                                           ploting_path=None))
+
+    if args.visualize_gradients:
+        extensions.append(VisualizeGradients(cost, updates, args,
+                                             ploting_path=None))
 
     extensions.append(early_stopping)
     extensions.append(Printing(every_n_batches=args.monitoring_freq))

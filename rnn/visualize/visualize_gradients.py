@@ -3,6 +3,7 @@ import logging
 import numpy as np
 
 import theano
+from theano import tensor
 
 from blocks.graph import ComputationGraph
 from blocks.extensions import SimpleExtension
@@ -24,7 +25,8 @@ class VisualizeGradients(SimpleExtension):
         self.text_length = 75
         self.dataset = args.dataset
         self.args = args
-        self.see_several_states = (args.layers > 1 and (args.skip_connections or args.skip_output)) or (args.rnn_type in ["soft", "hard", "clockwork"])
+        self.see_several_states = (args.layers > 1 and (args.skip_connections or args.skip_output)) or (
+            args.rnn_type in ["soft", "hard", "clockwork"])
         super(VisualizeGradients, self).__init__(**kwargs)
 
         outputs = [
@@ -42,16 +44,23 @@ class VisualizeGradients(SimpleExtension):
             h = outputs
 
         cg = ComputationGraph(h)
-
         assert(len(cg.inputs) == 1)
         assert(cg.inputs[0].name == "features")
+
+        wrt_gradients = [
+            var for var in ComputationGraph(cost).variables if var.name == "pre_rnn"]
+
+        gradients = []
+        for state in h:
+            # gradients.append(tensor.grad(tensor.mean(state[50, 0, :]), wrt_gradients[0]))
+            gradients.append(tensor.grad(tensor.mean(tensor.abs_(state[60, 0, :])), wrt_gradients[0]))
 
         state_vars = [theano.shared(
             v[0:1, :].zeros_like().eval(), v.name + '-gen')
             for v, _ in updates]
         givens = [(v, x) for (v, _), x in zip(updates, state_vars)]
         f_updates = [(x, upd) for x, (_, upd) in zip(state_vars, updates)]
-        self.generate = theano.function(inputs=cg.inputs, outputs=h,
+        self.generate = theano.function(inputs=cg.inputs, outputs=gradients,
                                         givens=givens, updates=f_updates)
 
     def do(self, *args):
@@ -62,12 +71,15 @@ class VisualizeGradients(SimpleExtension):
 
         layers = len(hidden_state)
         time = hidden_state[0].shape[0]
+        print len(hidden_state)
+        print hidden_state[0].shape
 
         for i in range(layers):
             plt.subplot(layers, 1, i + 1)
             for j in range(self.args.state_dim):
-                plt.plot(np.arange(time), hidden_state[i][:, 0, j])
+                plt.plot(np.arange(time), np.mean(np.abs(hidden_state[i][:, 0, :]), axis=1))
             plt.xticks(range(self.text_length), tuple(init_[:, 0]))
             plt.grid(True)
-            plt.title("hidden_state_of_layer_" + str(i))
+            plt.yscale('log')
+            plt.title("gradient_of_layer_" + str(i))
         plt.show()

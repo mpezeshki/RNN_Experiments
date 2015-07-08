@@ -11,14 +11,14 @@ def parse_args():
     # Model options
     parser.add_argument('--rnn_type', choices=['lstm', 'simple', 'clockwork',
                                                'soft', 'hard'],
-                        default='simple')
+                        default='lstm')
 
     parser.add_argument('--layers', type=int,
-                        default=4)
+                        default=1)
     parser.add_argument('--state_dim', type=int,
-                        default=5)
+                        default=10)
     parser.add_argument('--skip_connections', action='store_true',
-                        default=True)
+                        default=False)
     parser.add_argument('--skip_output', action="store_true",
                         default=False)
     parser.add_argument('--algorithm', choices=['rms_prop', 'adam', 'sgd'],
@@ -94,6 +94,8 @@ def parse_args():
     parser.add_argument('--visualize_gates', action='store_true',
                         default=False)
     parser.add_argument('--visualize_states', action='store_true',
+                        default=False)
+    parser.add_argument('--visualize_gradients', action='store_true',
                         default=False)
 
     args = parser.parse_args()
