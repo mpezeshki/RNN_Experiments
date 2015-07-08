@@ -2,14 +2,15 @@ from collections import OrderedDict
 
 import theano
 from theano import tensor
-from bricks import LookupTable, ClockworkBase
+
+from blocks import initialization
 from blocks.bricks import FeedforwardSequence, Tanh
 from blocks.bricks.parallel import Fork
 from blocks.bricks.recurrent import RecurrentStack, SimpleRecurrent
-from blocks import initialization
 
-from dataset import get_minibatch_char
-from utils import parse_args
+from rnn.bricks import LookupTable, ClockworkBase
+from rnn.datasets.dataset import get_minibatch_char
+from rnn.utils import parse_args
 
 
 def build_fork_lookup(vocab_size, time_length, args):

@@ -1,12 +1,13 @@
 import theano
 from theano import tensor
-from bricks import LookupTable
+
+from blocks import initialization
 from blocks.bricks import FeedforwardSequence
 from blocks.bricks.parallel import Fork
-from blocks import initialization
 
-from dataset import get_minibatch_char
-from utils import parse_args
+from rnn.bricks import LookupTable
+from rnn.datasets.dataset import get_minibatch_char
+from rnn.utils import parse_args
 
 
 def build_fork_lookup(vocab_size, args):
