@@ -12,8 +12,6 @@ import matplotlib.pyplot as plt
 # Force matplotlib to not use any Xwindows backend.
 # matplotlib.use('Agg')
 
-from rnn.datasets.dataset import get_character
-
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
 
@@ -42,13 +40,6 @@ class VisualizeGateSoft(SimpleExtension):
     def do(self, *args):
         init_ = next(self.main_loop.epoch_iterator)["features"][
             0: self.text_length, 0:1]
-        # time x batch
-        whole_sentence_code = init_
-        vocab = get_character(self.dataset)
-        # whole_sentence
-        whole_sentence = ''
-        for char in vocab[whole_sentence_code[:, 0]]:
-            whole_sentence += str(char)
 
         last_output = self.generate(init_)
         layers = len(last_output)
@@ -103,14 +94,6 @@ class VisualizeGateLSTM(SimpleExtension):
     def do(self, *args):
         init_ = next(self.main_loop.epoch_iterator)["features"][
             0: self.text_length, 0:1]
-
-        # time x batch
-        whole_sentence_code = init_
-        vocab = get_character(self.dataset)
-        # whole_sentence
-        whole_sentence = ''
-        for char in vocab[whole_sentence_code[:, 0]]:
-            whole_sentence += str(char)
 
         last_output_in = self.generate_in(init_)
         last_output_out = self.generate_out(init_)
