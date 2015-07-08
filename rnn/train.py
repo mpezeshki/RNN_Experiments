@@ -17,10 +17,11 @@ from blocks.graph import ComputationGraph, apply_noise
 from blocks.main_loop import MainLoop
 from blocks.model import Model
 from blocks.roles import WEIGHT
-from extensions import (EarlyStopping, TextGenerationExtension,
-                        ResetStates, InteractiveMode, VisualizeGateSoft,
-                        VisualizeGateLSTM)
-from datastream_monitoring import DataStreamMonitoring
+
+from rnn.extensions import (EarlyStopping, TextGenerationExtension,
+                            ResetStates, InteractiveMode)
+from rnn.visualize.visualize_gates import VisualizeGateSoft, VisualizeGateLSTM
+from rnn.datastream_monitoring import DataStreamMonitoring
 # from blocks.extensions.saveload import Checkpoint
 
 

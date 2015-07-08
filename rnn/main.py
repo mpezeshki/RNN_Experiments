@@ -1,11 +1,11 @@
-from build_model_vanilla import build_model_vanilla
-from build_model_lstm import build_model_lstm
-from build_model_cw import build_model_cw
-from build_model_soft import build_model_soft
-from build_model_hard import build_model_hard
-from dataset import get_minibatch_char
-from train import train_model
-from utils import parse_args
+from rnn.build_model.build_model_vanilla import build_model_vanilla
+from rnn.build_model.build_model_lstm import build_model_lstm
+from rnn.build_model.build_model_cw import build_model_cw
+from rnn.build_model.build_model_soft import build_model_soft
+from rnn.build_model.build_model_hard import build_model_hard
+from rnn.datasets.dataset import get_minibatch_char
+from rnn.train import train_model
+from rnn.utils import parse_args
 
 if __name__ == "__main__":
     args = parse_args()

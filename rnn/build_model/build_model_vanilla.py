@@ -1,14 +1,17 @@
-from collections import OrderedDict
 import logging
+from collections import OrderedDict
+
+import numpy
+
 import theano
 from theano import tensor
-import numpy
+
 from blocks import initialization
 from blocks.bricks import Linear, Tanh, Softmax, FeedforwardSequence
 from blocks.bricks.parallel import Fork
 from blocks.bricks.recurrent import SimpleRecurrent, RecurrentStack
 
-from bricks import LookupTable
+from rnn.bricks import LookupTable
 
 floatX = theano.config.floatX
 logging.basicConfig(level='INFO')

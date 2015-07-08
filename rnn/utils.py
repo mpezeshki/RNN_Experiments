@@ -11,7 +11,7 @@ def parse_args():
     # Model options
     parser.add_argument('--rnn_type', choices=['lstm', 'simple', 'clockwork',
                                                'soft', 'hard'],
-                        default='soft')
+                        default='lstm')
 
     parser.add_argument('--layers', type=int,
                         default=4)

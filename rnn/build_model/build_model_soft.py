@@ -1,23 +1,27 @@
-from collections import OrderedDict
 import logging
+from collections import OrderedDict
+
 import numpy
+
 import theano
 from theano import tensor
+
+
 from blocks import initialization
-from blocks.bricks import Linear, Tanh, Softmax, FeedforwardSequence
+from blocks.bricks import (Linear, Tanh, Softmax,
+                           FeedforwardSequence, MLP, Logistic,
+                           Rectifier)
 from blocks.bricks.parallel import Fork
-from blocks.bricks.recurrent import RecurrentStack
+from blocks.bricks.recurrent import SimpleRecurrent, RecurrentStack
 
-from bricks import LookupTable, LSTM
-
+from rnn.bricks import LookupTable, SoftGatedRecurrent, HardLogistic
 
 floatX = theano.config.floatX
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
 
 
-# TODO: clean this function, split it in several pieces maybe
-def build_model_lstm(vocab_size, args, dtype=floatX):
+def build_model_soft(vocab_size, args, dtype=floatX):
     logger.info('Building model ...')
 
     # Parameters for the model
@@ -25,8 +29,6 @@ def build_model_lstm(vocab_size, args, dtype=floatX):
     state_dim = args.state_dim
     layers = args.layers
     skip_connections = args.skip_connections
-
-    virtual_dim = 4 * state_dim
 
     # Symbolic variables
     # In both cases: Time X Batch
@@ -43,28 +45,54 @@ def build_model_lstm(vocab_size, args, dtype=floatX):
             suffix = ''
         if d == 0 or skip_connections:
             output_names.append("inputs" + suffix)
-            output_dims.append(virtual_dim)
+            output_dims.append(state_dim)
 
-    lookup = LookupTable(length=vocab_size, dim=virtual_dim)
+    lookup = LookupTable(length=vocab_size, dim=state_dim)
     lookup.weights_init = initialization.IsotropicGaussian(0.1)
     lookup.biases_init = initialization.Constant(0)
 
-    # Make sure time_length is what we need
     fork = Fork(output_names=output_names, input_dim=args.mini_batch_size,
                 output_dims=output_dims,
                 prototype=FeedforwardSequence(
                     [lookup.apply]))
 
-    transitions = [LSTM(dim=state_dim, activation=Tanh())
-                   for _ in range(layers)]
+    transitions = [SimpleRecurrent(dim=state_dim, activation=Tanh())]
+
+    # Build the MLP
+    dims = [2 * state_dim]
+    activations = []
+    for i in range(args.mlp_layers):
+        activations.append(Rectifier())
+        dims.append(state_dim)
+
+    # Activation of the last layer of the MLP
+    if args.mlp_activation == "logistic":
+        activations.append(Logistic())
+    elif args.mlp_activation == "rectifier":
+        activations.append(Rectifier())
+    elif args.mlp_activation == "hard_logistic":
+        activations.append(HardLogistic())
+    else:
+        assert False
+
+    # Output of MLP has dimension 1
+    dims.append(1)
+
+    for i in range(layers - 1):
+        mlp = MLP(activations=activations, dims=dims,
+                  weights_init=initialization.IsotropicGaussian(0.1),
+                  biases_init=initialization.Constant(0),
+                  name="mlp_" + str(i))
+        transitions.append(
+            SoftGatedRecurrent(dim=state_dim,
+                               mlp=mlp,
+                               activation=Tanh()))
 
     rnn = RecurrentStack(transitions, skip_connections=skip_connections)
 
-    # If skip_connections: dim = layers * state_dim
-    # else: dim = state_dim
+    # dim = layers * state_dim
     output_layer = Linear(
-        input_dim=skip_connections * layers *
-        state_dim + (1 - skip_connections) * state_dim,
+        input_dim=layers * state_dim,
         output_dim=vocab_size, name="output_layer")
 
     # Return list of 3D Tensor, one for each layer
@@ -81,7 +109,6 @@ def build_model_lstm(vocab_size, args, dtype=floatX):
     # Prepare inputs for the RNN
     kwargs = OrderedDict()
     init_states = {}
-    init_cells = {}
     for d in range(layers):
         if d > 0:
             suffix = '_' + str(d)
@@ -90,62 +117,45 @@ def build_model_lstm(vocab_size, args, dtype=floatX):
         if skip_connections:
             kwargs['inputs' + suffix] = pre_rnn[d]
         elif d == 0:
-            kwargs['inputs'] = pre_rnn
+            kwargs['inputs' + suffix] = pre_rnn
         init_states[d] = theano.shared(
             numpy.zeros((args.mini_batch_size, state_dim)).astype(floatX),
             name='state0_%d' % d)
-        init_cells[d] = theano.shared(
-            numpy.zeros((args.mini_batch_size, state_dim)).astype(floatX),
-            name='cell0_%d' % d)
         kwargs['states' + suffix] = init_states[d]
-        kwargs['cells' + suffix] = init_cells[d]
 
     # Apply the RNN to the inputs
     h = rnn.apply(low_memory=True, **kwargs)
 
-    # h = [state, cell, in, forget, out, state_1,
-    #        cell_1, in_1, forget_1, out_1 ...]
+    # Now we have:
+    # h = [state, state_1, gate_value_1, state_2, gate_value_2, state_3, ...]
 
+    # Extract gate_values
+    gate_values = h[2::2]
+    new_h = [h[0]]
+    new_h.extend(h[1::2])
+    h = new_h
+
+    # Now we have:
+    # h = [state, state_1, state_2, ...]
+    # gate_values = [gate_value_1, gate_value_2, gate_value_3]
+
+    for i, gate_value in enumerate(gate_values):
+        gate_value.name = "gate_value_" + str(i)
+
+    # Save all the last states
     last_states = {}
-    last_cells = {}
     for d in range(layers):
-        last_states[d] = h[5 * d][-1, :, :]
-        last_cells[d] = h[5 * d + 1][-1, :, :]
+        last_states[d] = h[d][-1, :, :]
+
+    # Concatenate all the states
+    if layers > 1:
+        h = tensor.concatenate(h, axis=2)
+    h.name = "hidden_state"
 
     # The updates of the hidden states
     updates = []
     for d in range(layers):
         updates.append((init_states[d], last_states[d]))
-        updates.append((init_cells[d], last_states[d]))
-
-    # h = [state, cell, in, forget, out, state_1,
-    #        cell_1, in_1, forget_1, out_1 ...]
-
-    # Extract the values
-    in_gates = h[2::5]
-    forget_gates = h[3::5]
-    out_gates = h[4::5]
-
-    gate_values = {"in_gates": in_gates,
-                   "forget_gates": forget_gates,
-                   "out_gates": out_gates}
-
-    h = h[::5]
-
-    # Now we have correctly:
-    # h = [state, state_1, state_2 ...] if layers > 1
-    # h = [state] if layers == 1
-
-    # If we have skip connections, concatenate all the states
-    # Else only consider the state of the highest layer
-    if layers > 1:
-        if skip_connections:
-            h = tensor.concatenate(h, axis=2)
-        else:
-            h = h[-1]
-    else:
-        h = h[0]
-    h.name = "hidden_state"
 
     presoft = output_layer.apply(h[context:, :, :])
     # Define the cost
@@ -170,11 +180,7 @@ def build_model_lstm(vocab_size, args, dtype=floatX):
 
     fork.initialize()
 
-    # Dont initialize as Orthogonal if we are about to load new parameters
-    if args.load_path is not None:
-        rnn.weights_init = initialization.Constant(0)
-    else:
-        rnn.weights_init = initialization.Orthogonal()
+    rnn.weights_init = initialization.Orthogonal()
     rnn.biases_init = initialization.Constant(0)
     rnn.initialize()
 
