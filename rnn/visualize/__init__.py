@@ -31,12 +31,12 @@ def run_visualizations(cost, updates,
             assert False
 
     elif args.visualize == "states":
-        visualize_states(cost, hidden_states, updates,
+        visualize_states(hidden_states, updates,
                          train_stream, valid_stream,
                          args)
 
     elif args.visualize == "gradients":
-        visualize_gradients(cost, hidden_states, updates,
+        visualize_gradients(hidden_states, updates,
                             train_stream, valid_stream,
                             args)
 

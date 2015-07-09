@@ -15,7 +15,7 @@ logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
 
 
-def visualize_states(cost, hidden_states, updates,
+def visualize_states(hidden_states, updates,
                      train_stream, valid_stream,
                      args):
 

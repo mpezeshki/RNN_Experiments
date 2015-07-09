@@ -16,7 +16,7 @@ logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
 
 
-def visualize_gradients(cost, hidden_states, updates,
+def visualize_gradients(hidden_states, updates,
                         train_stream, valid_stream,
                         args):
 
@@ -31,7 +31,7 @@ def visualize_gradients(cost, hidden_states, updates,
     all_cells = sorted(all_cells, key=lambda var: var.name[-1])
 
     # Get the variable on which we compute the gradients
-    variables = ComputationGraph(cost).variables
+    variables = ComputationGraph(hidden_states).variables
     wrt = [
         var for var in variables if
         (var.name is not None) and (re.match("pre_rnn.*", var.name))]
