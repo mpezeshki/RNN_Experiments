@@ -108,15 +108,18 @@ def build_model_vanilla(vocab_size, args, dtype=floatX):
     last_states = {}
     if layers > 1:
         # Save all the last states
+        hidden_states = []
         for d in range(layers):
             last_states[d] = h[d][-1, :, :]
+            h[d].name = "hidden_state_" + str(d)
+            hidden_states.append(h[d])
         if skip_connections or skip_output:
             h = tensor.concatenate(h, axis=2)
         else:
             h = h[-1]
     else:
         last_states[0] = h[-1, :, :]
-    h.name = "hidden_state"
+    h.name = "hidden_state_all"
 
     # The updates of the hidden states
     updates = []
@@ -154,4 +157,4 @@ def build_model_vanilla(vocab_size, args, dtype=floatX):
     output_layer.biases_init = initialization.Constant(0)
     output_layer.initialize()
 
-    return cost, cross_entropy, updates
+    return cost, cross_entropy, updates, hidden_states

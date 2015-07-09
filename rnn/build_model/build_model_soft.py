@@ -144,13 +144,16 @@ def build_model_soft(vocab_size, args, dtype=floatX):
 
     # Save all the last states
     last_states = {}
+    hidden_states = []
     for d in range(layers):
         last_states[d] = h[d][-1, :, :]
+        h[d].name = "hidden_state_" + str(d)
+        hidden_states.append(h[d])
 
     # Concatenate all the states
     if layers > 1:
         h = tensor.concatenate(h, axis=2)
-    h.name = "hidden_state"
+    h.name = "hidden_state_all"
 
     # The updates of the hidden states
     updates = []
@@ -188,4 +191,4 @@ def build_model_soft(vocab_size, args, dtype=floatX):
     output_layer.biases_init = initialization.Constant(0)
     output_layer.initialize()
 
-    return cost, cross_entropy, updates, gate_values
+    return cost, cross_entropy, updates, gate_values, hidden_states

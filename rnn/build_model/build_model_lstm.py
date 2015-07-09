@@ -113,9 +113,14 @@ def build_model_lstm(vocab_size, args, dtype=floatX):
 
     last_states = {}
     last_cells = {}
+    hidden_states = []
     for d in range(layers):
         last_states[d] = h[5 * d][-1, :, :]
         last_cells[d] = h[5 * d + 1][-1, :, :]
+
+        h[5 * d].name = "hidden_state_" + str(d)
+        h[5 * d + 1].name = "hidden_cell_" + str(d)
+        hidden_states.extend([h[5 * d], h[5 * d + 1]])
 
     # The updates of the hidden states
     updates = []
@@ -150,7 +155,7 @@ def build_model_lstm(vocab_size, args, dtype=floatX):
             h = h[-1]
     else:
         h = h[0]
-    h.name = "hidden_state"
+    h.name = "hidden_state_all"
 
     presoft = output_layer.apply(h[context:, :, :])
     # Define the cost
@@ -187,4 +192,4 @@ def build_model_lstm(vocab_size, args, dtype=floatX):
     output_layer.biases_init = initialization.Constant(0)
     output_layer.initialize()
 
-    return cost, cross_entropy, updates, gate_values
+    return cost, cross_entropy, updates, gate_values, hidden_states

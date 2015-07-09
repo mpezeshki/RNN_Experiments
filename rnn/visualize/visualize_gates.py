@@ -14,7 +14,7 @@ logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
 
 
-def visualize_gates_lstm(gate_values, updates,
+def visualize_gates_lstm(gate_values, hidden_states, updates,
                          train_stream, valid_stream,
                          args):
 
@@ -34,25 +34,27 @@ def visualize_gates_lstm(gate_values, updates,
 
     # Compile the function
     compiled = theano.function(inputs=cg.inputs, outputs=gate_values,
-                               givens=givens, updates=f_updates)
+                               givens=givens, updates=f_updates,
+                               mode='FAST_COMPILE')
 
     # Generate
     epoch_iterator = valid_stream.get_epoch_iterator()
-    init_ = next(epoch_iterator)[0][0: text_length, 0:1]
+    for i in range(10):
+        init_ = next(epoch_iterator)[0][0: text_length, 0:1]
 
-    last_output = compiled(init_)
-    layers = len(last_output)
-    time = last_output[0].shape[0]
-    for i in range(layers):
-        plt.subplot(layers, 1, i + 1)
-        plt.plot(np.arange(time), last_output[i][:, 0, 0])
-        plt.xticks(range(text_length), tuple(init_[:, 0]))
-        plt.grid(True)
-        plt.title("gate of layer " + str(i))
-    plt.show()
+        last_output = compiled(init_)
+        layers = len(last_output)
+        time = last_output[0].shape[0]
+        for i in range(layers):
+            plt.subplot(layers, 1, i + 1)
+            plt.plot(np.arange(time), last_output[i][:, 0, 0])
+            plt.xticks(range(text_length), tuple(init_[:, 0]))
+            plt.grid(True)
+            plt.title("gate of layer " + str(i))
+        plt.show()
 
 
-def visualize_gates_soft(gate_values, updates,
+def visualize_gates_soft(gate_values, hidden_states, updates,
                          train_stream, valid_stream,
                          args):
 
@@ -78,47 +80,51 @@ def visualize_gates_soft(gate_values, updates,
     generate_in = theano.function(inputs=cg_in.inputs,
                                   outputs=in_gates,
                                   givens=givens,
-                                  updates=f_updates)
+                                  updates=f_updates,
+                                  mode='FAST_COMPILE')
     generate_out = theano.function(inputs=cg_out.inputs,
                                    outputs=out_gates,
                                    givens=givens,
-                                   updates=f_updates)
+                                   updates=f_updates,
+                                   mode='FAST_COMPILE')
     generate_forget = theano.function(inputs=cg_forget.inputs,
                                       outputs=forget_gates,
                                       givens=givens,
-                                      updates=f_updates)
+                                      updates=f_updates,
+                                      mode='FAST_COMPILE')
 
     # Generate
     epoch_iterator = valid_stream.get_epoch_iterator()
-    init_ = next(epoch_iterator)[0][0: text_length, 0:1]
+    for _ in range(10):
+        init_ = next(epoch_iterator)[0][0: text_length, 0:1]
 
-    last_output_in = generate_in(init_)
-    last_output_out = generate_out(init_)
-    last_output_forget = generate_forget(init_)
-    layers = len(last_output_in)
+        last_output_in = generate_in(init_)
+        last_output_out = generate_out(init_)
+        last_output_forget = generate_forget(init_)
+        layers = len(last_output_in)
 
-    time = last_output_in[0].shape[0]
+        time = last_output_in[0].shape[0]
 
-    for i in range(layers):
+        for i in range(layers):
 
-        plt.subplot(3, layers, i * 3 + 1)
-        for j in range(last_output_in[i].shape[2]):
-            plt.plot(np.arange(time), last_output_in[i][:, 0, j])
-        plt.xticks(range(text_length), tuple(init_[:, 0]))
-        plt.grid(True)
-        plt.title("in_gate of layer " + str(i))
+            plt.subplot(3, layers, i * 3 + 1)
+            for j in range(last_output_in[i].shape[2]):
+                plt.plot(np.arange(time), last_output_in[i][:, 0, j])
+            plt.xticks(range(text_length), tuple(init_[:, 0]))
+            plt.grid(True)
+            plt.title("in_gate of layer " + str(i))
 
-        plt.subplot(3, layers, i * 3 + 2)
-        for j in range(last_output_in[i].shape[2]):
-            plt.plot(np.arange(time), last_output_out[i][:, 0, j])
-        plt.xticks(range(text_length), tuple(init_[:, 0]))
-        plt.grid(True)
-        plt.title("out_gate of layer " + str(i))
+            plt.subplot(3, layers, i * 3 + 2)
+            for j in range(last_output_in[i].shape[2]):
+                plt.plot(np.arange(time), last_output_out[i][:, 0, j])
+            plt.xticks(range(text_length), tuple(init_[:, 0]))
+            plt.grid(True)
+            plt.title("out_gate of layer " + str(i))
 
-        plt.subplot(3, layers, i * 3 + 3)
-        for j in range(last_output_in[i].shape[2]):
-            plt.plot(np.arange(time), last_output_forget[i][:, 0, j])
-        plt.xticks(range(text_length), tuple(init_[:, 0]))
-        plt.grid(True)
-        plt.title("forget_gate of layer " + str(i))
-    plt.show()
+            plt.subplot(3, layers, i * 3 + 3)
+            for j in range(last_output_in[i].shape[2]):
+                plt.plot(np.arange(time), last_output_forget[i][:, 0, j])
+            plt.xticks(range(text_length), tuple(init_[:, 0]))
+            plt.grid(True)
+            plt.title("forget_gate of layer " + str(i))
+        plt.show()

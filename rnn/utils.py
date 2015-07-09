@@ -11,12 +11,12 @@ def parse_args():
     # Model options
     parser.add_argument('--rnn_type', choices=['lstm', 'simple', 'clockwork',
                                                'soft', 'hard'],
-                        default='simple')
+                        default='lstm')
 
     parser.add_argument('--layers', type=int,
-                        default=1)
+                        default=4)
     parser.add_argument('--state_dim', type=int,
-                        default=10)
+                        default=5)
     parser.add_argument('--skip_connections', action='store_true',
                         default=False)
     parser.add_argument('--skip_output', action="store_true",
@@ -35,7 +35,7 @@ def parse_args():
     # Options for the clockwork
     parser.add_argument('--module_order', choices=["slow_in_fast",
                                                    "fast_in_slow"],
-                        default="fast_in_slow")
+                        default="slow_in_fast")
 
     # Experiment options
     parser.add_argument('--dataset',
@@ -95,7 +95,7 @@ def parse_args():
                         default=False)
     parser.add_argument('--visualize', choices=["nothing", "gates",
                                                 "states", "gradients"],
-                        default="states")
+                        default="nothing")
     parser.add_argument('--visualize_length', type=int, default=75)
 
     args = parser.parse_args()

@@ -27,17 +27,20 @@ if __name__ == "__main__":
     # Build the model
     gate_values = None
     if rnn_type == "simple":
-        cost, cross_entropy, updates = build_model_vanilla(vocab_size, args)
+        cost, cross_entropy, updates, hidden_states = build_model_vanilla(
+            vocab_size, args)
     elif rnn_type == "clockwork":
-        cost, cross_entropy, updates = build_model_cw(vocab_size, args)
+        cost, cross_entropy, updates, hidden_states = build_model_cw(
+            vocab_size, args)
     elif rnn_type == "lstm":
-        cost, cross_entropy, updates, gate_values = build_model_lstm(
+        (cost, cross_entropy, updates, gate_values, hidden_states) = build_model_lstm(
             vocab_size, args)
     elif rnn_type == "soft":
-        cost, cross_entropy, updates, gate_values = build_model_soft(
+        (cost, cross_entropy, updates, gate_values, hidden_states) = build_model_soft(
             vocab_size, args)
     elif rnn_type == "hard":
-        cost, cross_entropy, updates = build_model_hard(vocab_size, args)
+        cost, cross_entropy, updates, hidden_states = build_model_hard(
+            vocab_size, args)
     else:
         assert(False)
 
@@ -51,4 +54,5 @@ if __name__ == "__main__":
         run_visualizations(cost, updates,
                            train_stream, valid_stream,
                            args,
-                           gate_values=gate_values)
+                           hidden_states=hidden_states,
+                           gate_values=gate_values,)

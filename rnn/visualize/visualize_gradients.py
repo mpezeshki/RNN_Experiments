@@ -15,36 +15,17 @@ logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
 
 
-def visualize_gradients(cost, updates,
+def visualize_gradients(cost, hidden_states, updates,
                         train_stream, valid_stream,
                         args):
 
     # Time length of the visualization
     text_length = args.visualize_length
 
-    # Boolean to know if there are several states to see
-    see_several_states = (args.layers > 1 and (
-        args.skip_connections or args.skip_output)) or (
-        args.rnn_type in ["soft", "hard", "clockwork"])
+    # Get all the hidden_states
+    h = hidden_states
 
-    # Get the hidden_state
-    name = "hidden_state"
-    variables = ComputationGraph(cost).variables
-
-    outputs = [var for var in variables
-               if hasattr(var.tag, 'name') and
-               name == var.name]
-
-    assert len(outputs) == 1
-
-    if see_several_states:
-        h = []
-        dim = args.state_dim
-        for i in range(args.layers):
-            h.append(
-                outputs[0][:, :, dim * i: dim * (i + 1)])
-    else:
-        h = outputs
+    assert len(h) == args.layers
 
     cg = ComputationGraph(h)
 
@@ -54,11 +35,15 @@ def visualize_gradients(cost, updates,
     wrt_gradients = [
         var for var in ComputationGraph(cost).variables if var.name == "pre_rnn"]
 
+    assert len(wrt_gradients) == 1
+
+    print "computation of gradients started"
     gradients = []
     for state in h:
         # gradients.append(tensor.grad(tensor.mean(state[50, 0, :]), wrt_gradients[0]))
         gradients.append(
             tensor.grad(tensor.mean(tensor.abs_(state[60, 0, :])), wrt_gradients[0]))
+    print "computation of gradients done"
 
     # Handle the theano shared variables for the state
     state_vars = [theano.shared(
@@ -68,12 +53,15 @@ def visualize_gradients(cost, updates,
     f_updates = [(x, upd) for x, (_, upd) in zip(state_vars, updates)]
 
     # Compile the function
+    print "compilation started"
     compiled = theano.function(inputs=cg.inputs, outputs=gradients,
-                               givens=givens, updates=f_updates)
+                               givens=givens, updates=f_updates, mode='FAST_COMPILE')
+
+    print "compiled"
 
     # Generate
     epoch_iterator = valid_stream.get_epoch_iterator()
-    for i in range(10):
+    for _ in range(10):
         init_ = next(epoch_iterator)[0][
             0: text_length, 0:1]
 

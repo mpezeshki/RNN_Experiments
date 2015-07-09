@@ -117,15 +117,18 @@ def build_model_cw(vocab_size, args, dtype=floatX):
     # If we have skip connections, concatenate all the states
     # Else only consider the state of the highest layer
     last_states = {}
+    hidden_states = []
     if layers > 1:
         # Save all the last states
         for d in range(layers):
             last_states[d] = h[d][-1, :, :]
+            h[d].name = "hidden_state_" + str(d)
+            hidden_states.append(h[d])
         h = tensor.concatenate(h, axis=2)
     else:
         h = h[0]
         last_states[0] = h[-1, :, :]
-    h.name = "hidden_state"
+    h.name = "hidden_state_all"
 
     # The updates of the hidden states
     updates = []
@@ -163,4 +166,4 @@ def build_model_cw(vocab_size, args, dtype=floatX):
     output_layer.biases_init = initialization.Constant(0)
     output_layer.initialize()
 
-    return cost, cross_entropy, updates
+    return cost, cross_entropy, updates, hidden_states

@@ -59,10 +59,11 @@ def visualize_states(cost, updates,
 
     # Compile the function
     compiled = theano.function(inputs=cg.inputs, outputs=h,
-                               givens=givens, updates=f_updates)
+                               givens=givens, updates=f_updates,
+                               mode='FAST_COMPILE')
 
     epoch_iterator = valid_stream.get_epoch_iterator()
-    for i in range(10):
+    for _ in range(10):
         init_ = next(epoch_iterator)[0][
             0: text_length, 0:1]
 

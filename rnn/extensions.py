@@ -161,8 +161,9 @@ class TextGenerationExtension(SimpleExtension):
         self.interactive_mode = interactive_mode
         super(TextGenerationExtension, self).__init__(**kwargs)
 
+        variables = ComputationGraph(cost).variables
         outputs = [
-            variable for variable in ComputationGraph(cost).variables if variable.name == "presoft"]
+            var for var in variables if var.name == "presoft"]
         cg = ComputationGraph(outputs)
         ####
         outputs = [variable for variable in cg.variables
