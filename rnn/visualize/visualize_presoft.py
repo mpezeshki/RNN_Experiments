@@ -29,59 +29,31 @@ def visualize_presoft(cost, hidden_states, updates,
         var for var in hidden_states if re.match("hidden_state_.*", var.name)]
     all_states = sorted(all_states, key=lambda var: var.name[-1])
 
-    # Get all the hidden_cells
-    all_cells = [var for var in hidden_states if re.match(
-        "hidden_cell_.*", var.name)]
-    all_cells = sorted(all_cells, key=lambda var: var.name[-1])
-
     # Assertion part
     assert len(all_states) == args.layers
-    assert len(all_cells) == (args.layers * (args.rnn_type == "lstm"))
 
     logger.info("The computation of the gradients has started")
     gradients = []
-    # This is for cells
-    if args.rnn_type == "lstm" and args.visualize_cells:
+
+    for i in range(args.visualize_length - args.context):
         gradients.extend(
-            tensor.grad(tensor.mean(tensor.abs_(presoft[60, 0, :])), all_cells))
-        logger.info("The computation of the gradients is done")
+            tensor.grad(tensor.mean(tensor.abs_(presoft[i, 0, :])), all_states))
+    logger.info("The computation of the gradients is done")
 
-        # Handle the theano shared variables for the state
-        state_vars = [theano.shared(
-            v[0:1, :].zeros_like().eval(), v.name + '-gen')
-            for v, _ in updates]
-        givens = [(v, x) for (v, _), x in zip(updates, state_vars)]
-        f_updates = [(x, upd) for x, (_, upd) in zip(state_vars, updates)]
+    # Handle the theano shared variables for the state
+    state_vars = [theano.shared(
+        v[0:1, :].zeros_like().eval(), v.name + '-gen')
+        for v, _ in updates]
+    givens = [(v, x) for (v, _), x in zip(updates, state_vars)]
+    f_updates = [(x, upd) for x, (_, upd) in zip(state_vars, updates)]
 
-        # Compile the function
-        logger.info("The compilation of the function has started")
-        compiled = theano.function(inputs=ComputationGraph(presoft).inputs,
-                                   outputs=gradients,
-                                   givens=givens, updates=f_updates,
-                                   mode='FAST_COMPILE')
-        logger.info("The function has been compiled")
-
-    # This is for state
-    else:
-        for i in range(args.visualize_length - args.context):
-            gradients.extend(
-                tensor.grad(tensor.mean(tensor.abs_(presoft[i, 0, :])), all_states))
-        logger.info("The computation of the gradients is done")
-
-        # Handle the theano shared variables for the state
-        state_vars = [theano.shared(
-            v[0:1, :].zeros_like().eval(), v.name + '-gen')
-            for v, _ in updates]
-        givens = [(v, x) for (v, _), x in zip(updates, state_vars)]
-        f_updates = [(x, upd) for x, (_, upd) in zip(state_vars, updates)]
-
-        # Compile the function
-        logger.info("The compilation of the function has started")
-        compiled = theano.function(inputs=ComputationGraph(presoft).inputs,
-                                   outputs=gradients,
-                                   givens=givens, updates=f_updates,
-                                   mode='FAST_COMPILE')
-        logger.info("The function has been compiled")
+    # Compile the function
+    logger.info("The compilation of the function has started")
+    compiled = theano.function(inputs=ComputationGraph(presoft).inputs,
+                               outputs=gradients,
+                               givens=givens, updates=f_updates,
+                               mode='FAST_COMPILE')
+    logger.info("The function has been compiled")
 
     # Generate
     epoch_iterator = train_stream.get_epoch_iterator()
