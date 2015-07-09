@@ -119,7 +119,6 @@ def build_model_vanilla(vocab_size, args, dtype=floatX):
             h = h[-1]
     else:
         last_states[0] = h[-1, :, :]
-    h.name = "hidden_state_all"
 
     # The updates of the hidden states
     updates = []

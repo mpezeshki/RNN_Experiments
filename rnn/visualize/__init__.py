@@ -5,6 +5,7 @@ from rnn.visualize.visualize_gates import (
     visualize_gates_soft, visualize_gates_lstm)
 from rnn.visualize.visualize_states import visualize_states
 from rnn.visualize.visualize_gradients import visualize_gradients
+from rnn.visualize.visualize_presoft import visualize_presoft
 
 
 def run_visualizations(cost, updates,
@@ -40,5 +41,10 @@ def run_visualizations(cost, updates,
                             train_stream, valid_stream,
                             args)
 
+    elif args.visualize == "presoft":
+        visualize_presoft(cost,
+                          hidden_states, updates,
+                          train_stream, valid_stream,
+                          args)
     else:
         assert False

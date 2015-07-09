@@ -61,8 +61,8 @@ def visualize_states(hidden_states, updates,
 
         for d in range(layers):
             plt.subplot(layers, 1, d + 1)
-            for j in range(args.state_dim):
-                plt.plot(np.arange(time), hidden_state[d][:, 0, j])
+            plt.plot(np.arange(time), np.mean(
+                np.abs(hidden_state[d][:, 0, :]), axis=1))
             plt.xticks(range(args.visualize_length), tuple(init_[:, 0]))
             plt.grid(True)
             plt.title("hidden_state_of_layer_" + str(d))

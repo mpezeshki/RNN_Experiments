@@ -94,7 +94,8 @@ def parse_args():
     parser.add_argument('--interactive_mode', action='store_true',
                         default=False)
     parser.add_argument('--visualize', choices=["nothing", "gates",
-                                                "states", "gradients"],
+                                                "states", "gradients",
+                                                "presoft"],
                         default="nothing")
     parser.add_argument('--visualize_length', type=int,
                         default=75)
