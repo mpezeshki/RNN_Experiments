@@ -96,7 +96,10 @@ def parse_args():
     parser.add_argument('--visualize', choices=["nothing", "gates",
                                                 "states", "gradients"],
                         default="nothing")
-    parser.add_argument('--visualize_length', type=int, default=75)
+    parser.add_argument('--visualize_length', type=int,
+                        default=75)
+    parser.add_argument('--visualize_cells', action="store_true",
+                        default=False)
 
     args = parser.parse_args()
 
