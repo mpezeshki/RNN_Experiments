@@ -18,7 +18,7 @@ def parse_args():
     parser.add_argument('--state_dim', type=int,
                         default=500)
     parser.add_argument('--skip_connections', action='store_true',
-                        default=True)
+                        default=False)
     parser.add_argument('--skip_output', action="store_true",
                         default=False)
     parser.add_argument('--algorithm', choices=['rms_prop', 'adam', 'sgd'],
@@ -35,7 +35,7 @@ def parse_args():
     # Options for the clockwork
     parser.add_argument('--module_order', choices=["slow_in_fast",
                                                    "fast_in_slow"],
-                        default="slow_in_fast")
+                        default="fast_in_slow")
 
     # Experiment options
     parser.add_argument('--dataset',
