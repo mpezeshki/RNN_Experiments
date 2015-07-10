@@ -41,7 +41,8 @@ def visualize_gates_soft(gate_values, hidden_states, updates,
         time = last_output[0].shape[0]
         for i in range(layers):
             plt.subplot(layers, 1, i + 1)
-            plt.plot(np.arange(time), last_output[i][:, 0, 0])
+            for j in range(last_output[i].shape[2]):
+                plt.plot(np.arange(time), last_output[i][:, 0, j])
             plt.xticks(range(args.visualize_length), tuple(init_[:, 0]))
             plt.grid(True)
             plt.title("gate of layer " + str(i))

@@ -5,6 +5,7 @@ import numpy as np
 
 import theano
 from theano import tensor
+from theano.compile import Mode
 
 from blocks.graph import ComputationGraph
 
@@ -48,52 +49,33 @@ def visualize_gradients(hidden_states, updates,
     else:
         assert len_wrt == 1
 
+    # Comupute the gradients of states or cells
+    if args.rnn_type == "lstm" and args.visualize_cells:
+        states = all_cells
+    else:
+        states = all_states
+
     logger.info("The computation of the gradients has started")
     gradients = []
+    for i, state in enumerate(states):
+        gradients.extend(
+            tensor.grad(tensor.mean(tensor.abs_(state[60, 0, :])), wrt[:i + 1]))
+    logger.info("The computation of the gradients is done")
 
-    # This is for cells
-    if args.rnn_type == "lstm" and args.visualize_cells:
-        for i, state in enumerate(all_cells):
-            gradients.extend(
-                tensor.grad(tensor.mean(tensor.abs_(state[60, 0, :])), wrt[:i + 1]))
-        logger.info("The computation of the gradients is done")
+    # Handle the theano shared variables for the state
+    state_vars = [theano.shared(
+        v[0:1, :].zeros_like().eval(), v.name + '-gen')
+        for v, _ in updates]
+    givens = [(v, x) for (v, _), x in zip(updates, state_vars)]
+    f_updates = [(x, upd) for x, (_, upd) in zip(state_vars, updates)]
 
-        # Handle the theano shared variables for the state
-        state_vars = [theano.shared(
-            v[0:1, :].zeros_like().eval(), v.name + '-gen')
-            for v, _ in updates]
-        givens = [(v, x) for (v, _), x in zip(updates, state_vars)]
-        f_updates = [(x, upd) for x, (_, upd) in zip(state_vars, updates)]
-
-        # Compile the function
-        logger.info("The compilation of the function has started")
-        compiled = theano.function(inputs=ComputationGraph(all_cells).inputs,
-                                   outputs=gradients,
-                                   givens=givens, updates=f_updates,
-                                   mode='FAST_COMPILE')
-        logger.info("The function has been compiled")
-
-    # This is for state
-    else:
-        for i, state in enumerate(all_states):
-            gradients.extend(
-                tensor.grad(tensor.mean(tensor.abs_(state[60, 0, :])), wrt[:i + 1]))
-        logger.info("The computation of the gradients is done")
-
-        # Handle the theano shared variables for the state
-        state_vars = [theano.shared(
-            v[0:1, :].zeros_like().eval(), v.name + '-gen')
-            for v, _ in updates]
-        givens = [(v, x) for (v, _), x in zip(updates, state_vars)]
-        f_updates = [(x, upd) for x, (_, upd) in zip(state_vars, updates)]
-
-        # Compile the function
-        logger.info("The compilation of the function has started")
-        compiled = theano.function(inputs=ComputationGraph(all_states).inputs,
-                                   outputs=gradients,
-                                   givens=givens, updates=f_updates,
-                                   mode='FAST_COMPILE')
-        logger.info("The function has been compiled")
+    # Compile the function
+    logger.info("The compilation of the function has started")
+    compiled = theano.function(inputs=ComputationGraph(states).inputs,
+                               outputs=gradients,
+                               givens=givens, updates=f_updates,
+                               mode=Mode("fast_compile"))
+    logger.info("The function has been compiled")
 
     # Generate
     epoch_iterator = train_stream.get_epoch_iterator()
