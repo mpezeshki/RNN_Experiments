@@ -6,6 +6,7 @@ import numpy as np
 import theano
 
 from blocks.graph import ComputationGraph
+from rnn.datasets.dataset import conv_into_char
 
 import matplotlib.pyplot as plt
 # Force matplotlib to not use any Xwindows backend.
@@ -58,12 +59,12 @@ def visualize_states(hidden_states, updates,
 
         layers = len(hidden_state)
         time = hidden_state[0].shape[0]
+        ticks = tuple(conv_into_char(init_[:, 0], args.dataset))
 
-        ticks = tuple(init_[:, 0])
         for d in range(layers):
             plt.subplot(layers, 1, d + 1)
-            plt.plot(np.arange(time), np.mean(
-                np.abs(hidden_state[d][:, 0, :]), axis=1))
+            for j in range(args.state_dim):
+                plt.plot(np.arange(time), hidden_state[d][:, 0, j])
             plt.xticks(range(args.visualize_length), ticks)
             plt.grid(True)
             plt.title("hidden_state_of_layer_" + str(d))

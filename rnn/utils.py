@@ -16,9 +16,9 @@ def parse_args():
     parser.add_argument('--layers', type=int,
                         default=4)
     parser.add_argument('--state_dim', type=int,
-                        default=5)
+                        default=500)
     parser.add_argument('--skip_connections', action='store_true',
-                        default=False)
+                        default=True)
     parser.add_argument('--skip_output', action="store_true",
                         default=False)
     parser.add_argument('--algorithm', choices=['rms_prop', 'adam', 'sgd'],
@@ -42,7 +42,7 @@ def parse_args():
                         choices=['wikipedia', 'penntree',
                                  'mytext', 'wikipedia_junyoung', 'toy',
                                  'new_toy'],
-                        default='new_toy')
+                        default='wikipedia')
     parser.add_argument('--time_length', type=int,
                         default=150)
     parser.add_argument('--mini_batch_size', type=int,

@@ -7,6 +7,7 @@ import theano
 from theano import tensor
 
 from blocks.graph import ComputationGraph
+from rnn.datasets.dataset import conv_into_char
 
 import matplotlib.pyplot as plt
 # Force matplotlib to not use any Xwindows backend.
@@ -72,13 +73,14 @@ def visualize_presoft(cost, hidden_states, updates,
                 value_of_layer[d] += hidden_state[d + i * args.layers]
 
         time = hidden_state[0].shape[0]
+        ticks = tuple(conv_into_char(init_[:, 0], args.dataset))
 
         for d in range(args.layers):
             plt.plot(
                 np.arange(time),
                 np.mean(np.abs(value_of_layer[d][:, 0, :]), axis=1),
                 label="Layer " + str(d))
-        plt.xticks(range(args.visualize_length), tuple(init_[:, 0]))
+        plt.xticks(range(args.visualize_length), ticks)
         plt.grid(True)
         plt.title("hidden_state_of_layer_" + str(d))
         plt.legend()

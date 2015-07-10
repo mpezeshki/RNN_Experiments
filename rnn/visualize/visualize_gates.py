@@ -5,6 +5,7 @@ import numpy as np
 import theano
 
 from blocks.graph import ComputationGraph
+from rnn.datasets.dataset import conv_into_char
 
 import matplotlib.pyplot as plt
 # Force matplotlib to not use any Xwindows backend.
@@ -39,11 +40,13 @@ def visualize_gates_soft(gate_values, hidden_states, updates,
         last_output = compiled(init_)
         layers = len(last_output)
         time = last_output[0].shape[0]
+        ticks = tuple(conv_into_char(init_[:, 0], args.dataset))
+
         for i in range(layers):
             plt.subplot(layers, 1, i + 1)
             for j in range(last_output[i].shape[2]):
                 plt.plot(np.arange(time), last_output[i][:, 0, j])
-            plt.xticks(range(args.visualize_length), tuple(init_[:, 0]))
+            plt.xticks(range(args.visualize_length), ticks)
             plt.grid(True)
             plt.title("gate of layer " + str(i))
         plt.show()
@@ -90,27 +93,28 @@ def visualize_gates_lstm(gate_values, hidden_states, updates,
         layers = len(last_output_in)
 
         time = last_output_in[0].shape[0]
+        ticks = tuple(conv_into_char(init_[:, 0], args.dataset))
 
         for i in range(layers):
 
-            plt.subplot(3, layers, i * 3 + 1)
+            plt.subplot(3, layers, 1 + i)
             for j in range(last_output_in[i].shape[2]):
                 plt.plot(np.arange(time), last_output_in[i][:, 0, j])
-            plt.xticks(range(args.visualize_length), tuple(init_[:, 0]))
+            plt.xticks(range(args.visualize_length), ticks)
             plt.grid(True)
             plt.title("in_gate of layer " + str(i))
 
-            plt.subplot(3, layers, i * 3 + 2)
+            plt.subplot(3, layers, layers + 1 + i)
             for j in range(last_output_in[i].shape[2]):
                 plt.plot(np.arange(time), last_output_out[i][:, 0, j])
-            plt.xticks(range(args.visualize_length), tuple(init_[:, 0]))
+            plt.xticks(range(args.visualize_length), ticks)
             plt.grid(True)
             plt.title("out_gate of layer " + str(i))
 
-            plt.subplot(3, layers, i * 3 + 3)
+            plt.subplot(3, layers, 2 * layers + 1 + i)
             for j in range(last_output_in[i].shape[2]):
                 plt.plot(np.arange(time), last_output_forget[i][:, 0, j])
-            plt.xticks(range(args.visualize_length), tuple(init_[:, 0]))
+            plt.xticks(range(args.visualize_length), ticks)
             plt.grid(True)
             plt.title("forget_gate of layer " + str(i))
         plt.show()

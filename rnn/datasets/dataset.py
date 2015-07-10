@@ -32,6 +32,11 @@ def get_character(dataset):
     return data["vocab"]
 
 
+def conv_into_char(vector, dataset):
+    correspondance = get_character(dataset)
+    return correspondance[vector]
+
+
 def get_stream_char(dataset, which_set, time_length, mini_batch_size,
                     total_train_chars=None):
     data = get_data(dataset)
