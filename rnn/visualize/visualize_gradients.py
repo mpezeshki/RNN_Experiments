@@ -5,7 +5,6 @@ import numpy as np
 
 import theano
 from theano import tensor
-from theano.compile import Mode
 
 from blocks.graph import ComputationGraph
 
@@ -74,7 +73,7 @@ def visualize_gradients(hidden_states, updates,
     compiled = theano.function(inputs=ComputationGraph(states).inputs,
                                outputs=gradients,
                                givens=givens, updates=f_updates,
-                               mode=Mode("fast_compile"))
+                               mode="FAST_COMPILE")
     logger.info("The function has been compiled")
 
     # Generate
