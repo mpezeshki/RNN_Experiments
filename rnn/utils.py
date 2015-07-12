@@ -75,9 +75,9 @@ def parse_args():
     # Monitoring options
     parser.add_argument('--generate', action="store_true", default=False)
     parser.add_argument('--initial_text_length', type=int,
-                        default=60)
+                        default=10)
     parser.add_argument('--generated_text_lenght', type=int,
-                        default=400)
+                        default=50)
     parser.add_argument('--patience', type=int,
                         default=20)
     parser.add_argument('--monitoring_freq', type=int,
