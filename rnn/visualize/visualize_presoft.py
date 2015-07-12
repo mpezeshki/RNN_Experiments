@@ -10,9 +10,10 @@ from theano.compile import Mode
 from blocks.graph import ComputationGraph
 from rnn.datasets.dataset import conv_into_char
 
-import matplotlib.pyplot as plt
+import matplotlib
 # Force matplotlib to not use any Xwindows backend.
-# matplotlib.use('Agg')
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
@@ -59,7 +60,7 @@ def visualize_presoft(cost, hidden_states, updates,
 
     # Generate
     epoch_iterator = train_stream.get_epoch_iterator()
-    for _ in range(10):
+    for num in range(10):
         init_ = next(epoch_iterator)[0][
             0: args.visualize_length, 0:1]
 
@@ -85,4 +86,6 @@ def visualize_presoft(cost, hidden_states, updates,
         plt.grid(True)
         plt.title("hidden_state_of_layer_" + str(d))
         plt.legend()
-        plt.show()
+        plt.savefig(args.save_path + "/visualize_presoft_" + str(num) + ".png")
+        logger.info("Figure \"visualize_presoft_" + str(num) +
+                    ".png\" saved at directory: " + args.save_path)
