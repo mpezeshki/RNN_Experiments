@@ -3,6 +3,7 @@ import logging
 import numpy as np
 
 import theano
+from theano.compile import Mode
 
 from blocks.graph import ComputationGraph
 from rnn.datasets.dataset import conv_into_char
@@ -30,7 +31,7 @@ def visualize_gates_soft(gate_values, hidden_states, updates,
     compiled = theano.function(inputs=ComputationGraph(gate_values).inputs,
                                outputs=gate_values,
                                givens=givens, updates=f_updates,
-                               mode='FAST_COMPILE')
+                               mode=Mode(optimizer='fast_compile'))
 
     # Generate
     epoch_iterator = valid_stream.get_epoch_iterator()
@@ -70,17 +71,17 @@ def visualize_gates_lstm(gate_values, hidden_states, updates,
                                   outputs=in_gates,
                                   givens=givens,
                                   updates=f_updates,
-                                  mode='FAST_COMPILE')
+                                  mode=Mode(optimizer='fast_compile'))
     generate_out = theano.function(inputs=ComputationGraph(out_gates).inputs,
                                    outputs=out_gates,
                                    givens=givens,
                                    updates=f_updates,
-                                   mode='FAST_COMPILE')
+                                   mode=Mode(optimizer='fast_compile'))
     generate_forget = theano.function(inputs=ComputationGraph(forget_gates).inputs,
                                       outputs=forget_gates,
                                       givens=givens,
                                       updates=f_updates,
-                                      mode='FAST_COMPILE')
+                                      mode=Mode(optimizer='fast_compile'))
 
     # Generate
     epoch_iterator = valid_stream.get_epoch_iterator()
