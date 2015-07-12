@@ -4,6 +4,7 @@ import re
 import numpy as np
 
 import theano
+from theano.compile import Mode
 
 from blocks.graph import ComputationGraph
 from rnn.datasets.dataset import conv_into_char
@@ -43,13 +44,13 @@ def visualize_states(hidden_states, updates,
         compiled = theano.function(inputs=ComputationGraph(all_cells).inputs,
                                    outputs=all_cells,
                                    givens=givens, updates=f_updates,
-                                   mode='FAST_COMPILE')
+                                   mode=Mode(optimizer='fast_compile'))
     else:
         compiled = theano.function(inputs=ComputationGraph(all_states).inputs,
                                    outputs=all_states,
                                    givens=givens, updates=f_updates,
-                                   mode='FAST_COMPILE')
-
+                                   mode=Mode(optimizer='fast_compile'))
+    import ipdb; ipdb.set_trace()
     epoch_iterator = train_stream.get_epoch_iterator()
     for _ in range(10):
         init_ = next(epoch_iterator)[0][
