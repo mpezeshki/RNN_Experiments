@@ -5,6 +5,7 @@ import numpy as np
 
 import theano
 from theano import tensor
+from theano.compile import Mode
 
 from blocks.graph import ComputationGraph
 from rnn.datasets.dataset import conv_into_char
@@ -74,12 +75,12 @@ def visualize_gradients(hidden_states, updates,
     compiled = theano.function(inputs=ComputationGraph(states).inputs,
                                outputs=gradients,
                                givens=givens, updates=f_updates,
-                               mode="FAST_COMPILE")
+                               mode=Mode(optimizer='fast_compile'))
     logger.info("The function has been compiled")
 
     # Generate
     epoch_iterator = train_stream.get_epoch_iterator()
-    for _ in range(10):
+    for i in range(10):
         init_ = next(epoch_iterator)[0][
             0: args.visualize_length, 0:1]
 
@@ -110,4 +111,6 @@ def visualize_gradients(hidden_states, updates,
             axes.set_ylim([5e-20, 5e-1])
             plt.title("gradients plotting w.r.t pre_rrn" + str(var))
             plt.legend()
-        plt.show()
+        plt.savefig(args.save_path + "/visualize_gradients_" + str(i) + ".png")
+        logger.info("Figure \"visualize_gradients_" + str(i) +
+                    ".png\" saved at directory: " + args.save_path)
