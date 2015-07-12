@@ -9,9 +9,10 @@ from theano.compile import Mode
 from blocks.graph import ComputationGraph
 from rnn.datasets.dataset import conv_into_char
 
-import matplotlib.pyplot as plt
+import matplotlib
 # Force matplotlib to not use any Xwindows backend.
-# matplotlib.use('Agg')
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
@@ -52,7 +53,7 @@ def visualize_states(hidden_states, updates,
                                    mode=Mode(optimizer='fast_compile'))
 
     epoch_iterator = train_stream.get_epoch_iterator()
-    for _ in range(10):
+    for i in range(10):
         init_ = next(epoch_iterator)[0][
             0: args.visualize_length, 0:1]
 
@@ -69,4 +70,6 @@ def visualize_states(hidden_states, updates,
             plt.xticks(range(args.visualize_length), ticks)
             plt.grid(True)
             plt.title("hidden_state_of_layer_" + str(d))
-        plt.show()
+        plt.savefig(args.save_path + "/visualize_states_" + str(i) + ".png")
+        logger.info("Figure \"visualize_states_" + str(i) +
+                    ".png\" saved at directory: " + args.save_path)
