@@ -86,6 +86,7 @@ def visualize_presoft(cost, hidden_states, updates,
         plt.grid(True)
         plt.title("hidden_state_of_layer_" + str(d))
         plt.legend()
+        plt.tight_layout()
         plt.savefig(args.save_path + "/visualize_presoft_" + str(num) + ".png")
         logger.info("Figure \"visualize_presoft_" + str(num) +
                     ".png\" saved at directory: " + args.save_path)
