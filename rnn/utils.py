@@ -95,15 +95,12 @@ def parse_args():
                         default=False)
     parser.add_argument('--visualize', choices=["nothing", "gates",
                                                 "states", "gradients",
-                                                "presoft"],
+                                                "presoft", "gradient_flow_pie",
+                                                "rained_singular_values"],
                         default="nothing")
     parser.add_argument('--visualize_length', type=int,
                         default=75)
     parser.add_argument('--visualize_cells', action="store_true",
-                        default=False)
-    parser.add_argument('--visualize_gradient_flow_pie', action="store_true",
-                        default=False)
-    parser.add_argument('--trained_singular_values', action="store_true",
                         default=False)
 
     args = parser.parse_args()
