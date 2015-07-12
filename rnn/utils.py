@@ -103,6 +103,8 @@ def parse_args():
                         default=False)
     parser.add_argument('--visualize_gradient_flow_pie', action="store_true",
                         default=False)
+    parser.add_argument('--trained_singular_values', action="store_true",
+                        default=False)
 
     args = parser.parse_args()
 
