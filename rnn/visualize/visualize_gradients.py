@@ -10,9 +10,10 @@ from theano.compile import Mode
 from blocks.graph import ComputationGraph
 from rnn.datasets.dataset import conv_into_char
 
-import matplotlib.pyplot as plt
+import matplotlib
 # Force matplotlib to not use any Xwindows backend.
-# matplotlib.use('Agg')
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
@@ -80,7 +81,7 @@ def visualize_gradients(hidden_states, updates,
 
     # Generate
     epoch_iterator = train_stream.get_epoch_iterator()
-    for i in range(10):
+    for num in range(10):
         init_ = next(epoch_iterator)[0][
             0: args.visualize_length, 0:1]
 
@@ -111,6 +112,7 @@ def visualize_gradients(hidden_states, updates,
             axes.set_ylim([5e-20, 5e-1])
             plt.title("gradients plotting w.r.t pre_rrn" + str(var))
             plt.legend()
-        plt.savefig(args.save_path + "/visualize_gradients_" + str(i) + ".png")
-        logger.info("Figure \"visualize_gradients_" + str(i) +
+        plt.tight_layout()
+        plt.savefig(args.save_path + "/visualize_gradients_" + str(num) + ".png")
+        logger.info("Figure \"visualize_gradients_" + str(num) +
                     ".png\" saved at directory: " + args.save_path)
