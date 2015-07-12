@@ -50,7 +50,7 @@ def visualize_states(hidden_states, updates,
                                    outputs=all_states,
                                    givens=givens, updates=f_updates,
                                    mode=Mode(optimizer='fast_compile'))
-    import ipdb; ipdb.set_trace()
+
     epoch_iterator = train_stream.get_epoch_iterator()
     for _ in range(10):
         init_ = next(epoch_iterator)[0][
