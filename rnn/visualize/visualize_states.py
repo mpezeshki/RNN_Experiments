@@ -53,7 +53,7 @@ def visualize_states(hidden_states, updates,
                                    mode=Mode(optimizer='fast_compile'))
 
     epoch_iterator = train_stream.get_epoch_iterator()
-    for i in range(10):
+    for num in range(10):
         init_ = next(epoch_iterator)[0][
             0: args.visualize_length, 0:1]
 
@@ -70,6 +70,6 @@ def visualize_states(hidden_states, updates,
             plt.xticks(range(args.visualize_length), ticks)
             plt.grid(True)
             plt.title("hidden_state_of_layer_" + str(d))
-        plt.savefig(args.save_path + "/visualize_states_" + str(i) + ".png")
-        logger.info("Figure \"visualize_states_" + str(i) +
+        plt.savefig(args.save_path + "/visualize_states_" + str(num) + ".png")
+        logger.info("Figure \"visualize_states_" + str(num) +
                     ".png\" saved at directory: " + args.save_path)
