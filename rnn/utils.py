@@ -95,7 +95,8 @@ def parse_args():
                         default=False)
     parser.add_argument('--visualize', choices=["nothing", "gates",
                                                 "states", "gradients",
-                                                "presoft", "gradient_flow_pie",
+                                                "presoft",
+                                                "gradients_flow_pie",
                                                 "trained_singular_values"],
                         default="nothing")
     parser.add_argument('--visualize_length', type=int,
