@@ -13,10 +13,10 @@ from blocks.extensions import SimpleExtension
 from blocks.extensions.monitoring import MonitoringExtension
 
 import matplotlib
+# Force matplotlib to not use any Xwindows backend.
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.table import Table
-# Force matplotlib to not use any Xwindows backend.
-# matplotlib.use('Agg')
 
 from rnn.datasets.dataset import get_character
 
