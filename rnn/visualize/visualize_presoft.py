@@ -5,6 +5,7 @@ import numpy as np
 
 import theano
 from theano import tensor
+from theano.compile import Mode
 
 from blocks.graph import ComputationGraph
 from rnn.datasets.dataset import conv_into_char
@@ -53,7 +54,7 @@ def visualize_presoft(cost, hidden_states, updates,
     compiled = theano.function(inputs=ComputationGraph(presoft).inputs,
                                outputs=gradients,
                                givens=givens, updates=f_updates,
-                               mode='FAST_COMPILE')
+                               mode=Mode(optimizer='fast_compile'))
     logger.info("The function has been compiled")
 
     # Generate
