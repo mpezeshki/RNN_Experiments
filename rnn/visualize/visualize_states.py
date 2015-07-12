@@ -70,6 +70,7 @@ def visualize_states(hidden_states, updates,
             plt.xticks(range(args.visualize_length), ticks)
             plt.grid(True)
             plt.title("hidden_state_of_layer_" + str(d))
+        plt.tight_layout()
         plt.savefig(args.save_path + "/visualize_states_" + str(num) + ".png")
         logger.info("Figure \"visualize_states_" + str(num) +
                     ".png\" saved at directory: " + args.save_path)
