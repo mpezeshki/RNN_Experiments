@@ -6,8 +6,9 @@ from rnn.visualize.visualize_gates import (
 from rnn.visualize.visualize_states import visualize_states
 from rnn.visualize.visualize_gradients import visualize_gradients
 from rnn.visualize.visualize_presoft import visualize_presoft
+from rnn.visualize.visualize_matrices import visualize_matrices
 from rnn.visualize.visualize_singular_values import visualize_singular_values
-from rnn.visualize.visualize_gradient_flow_pie import visualize_gradient_flow_pie
+from rnn.visualize.visualize_gradients_flow_pie import visualize_gradients_flow_pie
 
 
 def run_visualizations(cost, updates,
@@ -49,17 +50,15 @@ def run_visualizations(cost, updates,
                           train_stream, valid_stream,
                           args)
 
+    elif args.visualize == "matrices":
+        visualize_matrices(args)
+
     elif args.visualize == "trained_singular_values":
-        visualize_singular_values(cost,
-                                  hidden_states, updates,
-                                  train_stream, valid_stream,
-                                  args)
+        visualize_singular_values(args)
 
     elif args.visualize == "gradients_flow_pie":
-        visualize_gradient_flow_pie(cost,
-                                    hidden_states, updates,
-                                    train_stream, valid_stream,
-                                    args)
+        visualize_gradients_flow_pie(hidden_states, updates,
+                                     args)
 
     else:
         assert False
