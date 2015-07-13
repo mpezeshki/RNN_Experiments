@@ -115,8 +115,14 @@ def plot_pie_charts(data, layers, time_steps, path, per_layer=1):
         sizes = data[i % time_steps][
             :, (i / time_steps) % (per_layer * layers)]
         colors = table
+        if i / time_steps == layers - 1:
+            labels = tuple([str(i % time_steps)] +
+                           ['' for _ in range(len(sizes) - 1)])
+        else:
+            labels = None
         wedges, _ = ax1.pie(x=sizes, colors=colors,
-                            startangle=90, labeldistance=0.8)
+                            startangle=90, labeldistance=0.0,
+                            labels=labels)
         for w in wedges:
             w.set_linewidth(0)
 
