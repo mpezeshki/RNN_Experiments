@@ -87,10 +87,11 @@ def visualize_gradients_flow_pie(hidden_states, updates,
     # +1 is to show inputs as well
     plot_pie_charts(data=all_time_steps, layers=args.layers + 1,
                     time_steps=unfolding_length,
-                    path=args.save_path + '/pie.png')
+                    path=args.save_path + '/pie.png',
+                    text=text)
 
 
-def plot_pie_charts(data, layers, time_steps, path, per_layer=1):
+def plot_pie_charts(data, layers, time_steps, path, text, per_layer=1):
     # These are the "Table 20" colors as RGB.
     table = [(31, 119, 180), (174, 199, 232), (255, 127, 14), (255, 187, 120),
              (44, 160, 44), (152, 223, 138), (214, 39, 40), (255, 152, 150),
@@ -116,7 +117,7 @@ def plot_pie_charts(data, layers, time_steps, path, per_layer=1):
             :, (i / time_steps) % (per_layer * layers)]
         colors = table
         if i / time_steps == layers - 1:
-            labels = tuple([str(i % time_steps)] +
+            labels = tuple([text[i % time_steps]] +
                            ['' for _ in range(len(sizes) - 1)])
         else:
             labels = None
