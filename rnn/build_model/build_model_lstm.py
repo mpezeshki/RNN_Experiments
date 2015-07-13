@@ -106,7 +106,7 @@ def build_model_lstm(vocab_size, args, dtype=floatX):
         kwargs['cells' + suffix] = init_cells[d]
 
     # Apply the RNN to the inputs
-    h = rnn.apply(low_memory=True, **kwargs)
+    h = rnn.apply(**kwargs)
 
     # h = [state, cell, in, forget, out, state_1,
     #        cell_1, in_1, forget_1, out_1 ...]
