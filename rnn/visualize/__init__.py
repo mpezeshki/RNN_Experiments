@@ -6,6 +6,8 @@ from rnn.visualize.visualize_gates import (
 from rnn.visualize.visualize_states import visualize_states
 from rnn.visualize.visualize_gradients import visualize_gradients
 from rnn.visualize.visualize_presoft import visualize_presoft
+# from rnn.visualize.visualize_matrices import visualize_matrices
+from rnn.visualize.visualize_eigenvalues import visualize_eigenvalues
 
 
 def run_visualizations(cost, updates,
@@ -46,5 +48,12 @@ def run_visualizations(cost, updates,
                           hidden_states, updates,
                           train_stream, valid_stream,
                           args)
+
+    elif args.visualize == "matrices":
+        visualize_matrices(args)
+
+    elif args.visualize == "eigenvalues":
+        visualize_eigenvalues(args)
+
     else:
         assert False

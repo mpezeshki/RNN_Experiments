@@ -1,0 +1,7 @@
+gates: skip_output 
+input gates lower and lower
+correlation between forget and output
+
+gradients:
+skipoutput: as we go deeper the gradients gets larger
+skipconnections: no distinction between layers, exponentially vanishing gradients (same for simple)

@@ -82,6 +82,6 @@ def visualize_presoft(cost, hidden_states, updates,
                 label="Layer " + str(d))
         plt.xticks(range(args.visualize_length), ticks)
         plt.grid(True)
-        plt.title("hidden_state_of_layer_" + str(d))
+        plt.title("gradients of the output wrt states")
         plt.legend()
         plt.show()

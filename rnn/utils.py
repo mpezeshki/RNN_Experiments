@@ -11,12 +11,12 @@ def parse_args():
     # Model options
     parser.add_argument('--rnn_type', choices=['lstm', 'simple', 'clockwork',
                                                'soft', 'hard'],
-                        default='lstm')
+                        default='simple')
 
     parser.add_argument('--layers', type=int,
                         default=4)
     parser.add_argument('--state_dim', type=int,
-                        default=500)
+                        default=5)
     parser.add_argument('--skip_connections', action='store_true',
                         default=False)
     parser.add_argument('--skip_output', action="store_true",
@@ -42,7 +42,7 @@ def parse_args():
                         choices=['wikipedia', 'penntree',
                                  'mytext', 'wikipedia_junyoung', 'toy',
                                  'new_toy'],
-                        default='wikipedia')
+                        default='new_toy')
     parser.add_argument('--time_length', type=int,
                         default=150)
     parser.add_argument('--mini_batch_size', type=int,
@@ -95,11 +95,15 @@ def parse_args():
                         default=False)
     parser.add_argument('--visualize', choices=["nothing", "gates",
                                                 "states", "gradients",
-                                                "presoft"],
+                                                "presoft", "matrices",
+                                                "eigenvalues"],
                         default="nothing")
     parser.add_argument('--visualize_length', type=int,
                         default=75)
     parser.add_argument('--visualize_cells', action="store_true",
+                        default=False)
+
+    parser.add_argument('--rnn_output', action="store_true",
                         default=False)
 
     args = parser.parse_args()

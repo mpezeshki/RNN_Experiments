@@ -63,10 +63,28 @@ def build_model_vanilla(vocab_size, args, dtype=floatX):
     # If skip_connections: dim = layers * state_dim
     # else: dim = state_dim
     use_all_states = skip_connections or skip_output
-    output_layer = Linear(
-        input_dim=use_all_states * layers *
-        state_dim + (1 - use_all_states) * state_dim,
-        output_dim=vocab_size, name="output_layer")
+
+    if not args.rnn_output:
+        output_layer = Linear(
+            input_dim=use_all_states * layers *
+            state_dim + (1 - use_all_states) * state_dim,
+            output_dim=vocab_size, name="output_layer")
+    else:
+        output_layer = Linear(
+            input_dim=state_dim,
+            output_dim=vocab_size, name="output_layer")
+
+    if args.rnn_output:
+        output_rnn = SimpleRecurrent(dim=state_dim, activation=Tanh())
+        output_rnn.weights_init = initialization.Orthogonal()
+        output_rnn.biases_init = initialization.Constant(0)
+        output_rnn.initialize()
+
+        pre_output_rnn = Linear(input_dim=state_dim, output_dim=state_dim,
+                                name="pre_output_rnn")
+        pre_output_rnn.weights_init = initialization.IsotropicGaussian(0.1)
+        pre_output_rnn.biases_init = initialization.Constant(0)
+        pre_output_rnn.initialize()
 
     # Return list of 3D Tensor, one for each layer
     # (Time X Batch X embedding_dim)
@@ -107,13 +125,27 @@ def build_model_vanilla(vocab_size, args, dtype=floatX):
     # Else only consider the state of the highest layer
     last_states = {}
     if layers > 1:
-        # Save all the last states
+        # Save all the last states1
         hidden_states = []
         for d in range(layers):
             last_states[d] = h[d][-1, :, :]
             h[d].name = "hidden_state_" + str(d)
             hidden_states.append(h[d])
-        if skip_connections or skip_output:
+        if args.rnn_output:
+            # Reverse states order
+            h = h[::-1]
+            for d in range(layers):
+                h[d] = h[d].dimshuffle("x", 0, 1, 2)
+            h = tensor.concatenate(tuple(h), axis=0)
+            # h = [layers, time, batch, features]
+            l, t, b, f = h.shape
+            h = tensor.reshape(h, (l, t * b, f))
+            h = pre_output_rnn.apply(h)
+            # h = [layers, time * batch, features]
+            new_h = output_rnn.apply(h)[-1]
+            h = tensor.reshape(new_h, (t, b, f))
+
+        elif skip_connections or skip_output:
             h = tensor.concatenate(h, axis=2)
         else:
             h = h[-1]
@@ -126,6 +158,7 @@ def build_model_vanilla(vocab_size, args, dtype=floatX):
         updates.append((init_states[d], last_states[d]))
 
     presoft = output_layer.apply(h[context:, :, :])
+
     # Define the cost
     # Compute the probability distribution
     time, batch, feat = presoft.shape
