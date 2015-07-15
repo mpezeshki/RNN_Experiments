@@ -9,8 +9,6 @@ from blocks.graph import ComputationGraph
 from rnn.datasets.dataset import conv_into_char
 
 import matplotlib
-# Force matplotlib to not use any Xwindows backend.
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 logging.basicConfig(level='INFO')
@@ -20,6 +18,9 @@ logger = logging.getLogger(__name__)
 def visualize_gates_soft(gate_values, hidden_states, updates,
                          train_stream, valid_stream,
                          args):
+    if not args.local:
+        # Force matplotlib to not use any Xwindows backend.
+        matplotlib.use('Agg')
 
     # Handle the theano shared variables for the state
     state_vars = [theano.shared(
@@ -100,19 +101,22 @@ def visualize_gates_lstm(gate_values, hidden_states, updates,
         for i in range(layers):
 
             plt.subplot(3, layers, 1 + i)
-            plt.plot(np.arange(time), np.mean(np.abs(last_output_in[i][:, 0, :]), axis=1))
+            plt.plot(np.arange(time), np.mean(
+                np.abs(last_output_in[i][:, 0, :]), axis=1))
             plt.xticks(range(args.visualize_length), ticks)
             plt.grid(True)
             plt.title("in_gate of layer " + str(i))
 
             plt.subplot(3, layers, layers + 1 + i)
-            plt.plot(np.arange(time), np.mean(np.abs(last_output_out[i][:, 0, :]), axis=1))
+            plt.plot(np.arange(time), np.mean(
+                np.abs(last_output_out[i][:, 0, :]), axis=1))
             plt.xticks(range(args.visualize_length), ticks)
             plt.grid(True)
             plt.title("out_gate of layer " + str(i))
 
             plt.subplot(3, layers, 2 * layers + 1 + i)
-            plt.plot(np.arange(time), np.mean(np.abs(last_output_forget[i][:, 0, :]), axis=1))
+            plt.plot(np.arange(time), np.mean(
+                np.abs(last_output_forget[i][:, 0, :]), axis=1))
             plt.xticks(range(args.visualize_length), ticks)
             plt.grid(True)
             plt.title("forget_gate of layer " + str(i))

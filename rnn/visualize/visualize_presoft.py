@@ -11,8 +11,6 @@ from blocks.graph import ComputationGraph
 from rnn.datasets.dataset import conv_into_char
 
 import matplotlib
-# Force matplotlib to not use any Xwindows backend.
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 logging.basicConfig(level='INFO')
@@ -22,6 +20,10 @@ logger = logging.getLogger(__name__)
 def visualize_presoft(cost, hidden_states, updates,
                       train_stream, valid_stream,
                       args):
+
+    if not args.local:
+        # Force matplotlib to not use any Xwindows backend.
+        matplotlib.use('Agg')
 
     variables = ComputationGraph(cost).variables
     presoft = [var for var in variables if var.name == "presoft"]

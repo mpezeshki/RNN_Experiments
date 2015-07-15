@@ -103,6 +103,8 @@ def parse_args():
                         default=75)
     parser.add_argument('--visualize_cells', action="store_true",
                         default=False)
+    parser.add_argument('--local', action="store_true",
+                        default=False)
 
     args = parser.parse_args()
 

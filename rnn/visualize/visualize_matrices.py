@@ -5,8 +5,6 @@ import numpy as np
 from blocks.serialization import load_parameter_values
 
 import matplotlib
-# Force matplotlib to not use any Xwindows backend.
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 logging.basicConfig(level='INFO')
@@ -14,9 +12,12 @@ logger = logging.getLogger(__name__)
 
 
 def visualize_matrices(args):
+    if not args.local:
+        # Force matplotlib to not use any Xwindows backend.
+        matplotlib.use('Agg')
 
     param_values = load_parameter_values(args.load_path)
-    print param_values.keys()
+    print(param_values.keys())
 
     input0 = param_values["/fork/fork_inputs/lookuptable.W_lookup"]
     input1 = param_values["/fork/fork_inputs_1/lookuptable.W_lookup"]
