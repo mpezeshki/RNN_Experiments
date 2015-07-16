@@ -21,6 +21,7 @@ from rnn.extensions import (EarlyStopping, TextGenerationExtension,
                             ResetStates, InteractiveMode)
 
 from rnn.datastream_monitoring import DataStreamMonitoring
+from rnn.fine_tuning import fine_tuning
 
 floatX = theano.config.floatX
 logging.basicConfig(level='INFO')
@@ -81,6 +82,9 @@ def train_model(cost, cross_entropy, updates,
     # Load from a dumped model
     if args.load_path is not None:
         extensions.append(Load(args.load_path))
+
+    if args.fine_tuning is not None:
+        cost = fine_tuning(cost, args)
 
     # Generation extension
     if args.generate:

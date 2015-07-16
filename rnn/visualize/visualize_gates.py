@@ -2,14 +2,15 @@ import logging
 
 import numpy as np
 
+import matplotlib
+import matplotlib.pyplot as plt
+
 import theano
 from theano.compile import Mode
 
 from blocks.graph import ComputationGraph
 from rnn.datasets.dataset import conv_into_char
 
-import matplotlib
-import matplotlib.pyplot as plt
 
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
@@ -18,10 +19,6 @@ logger = logging.getLogger(__name__)
 def visualize_gates_soft(gate_values, hidden_states, updates,
                          train_stream, valid_stream,
                          args):
-    if not args.local:
-        # Force matplotlib to not use any Xwindows backend.
-        matplotlib.use('Agg')
-
     # Handle the theano shared variables for the state
     state_vars = [theano.shared(
         v[0:1, :].zeros_like().eval(), v.name + '-gen')
@@ -121,6 +118,12 @@ def visualize_gates_lstm(gate_values, hidden_states, updates,
             plt.grid(True)
             plt.title("forget_gate of layer " + str(i))
         plt.tight_layout()
-        plt.savefig(args.save_path + "/visualize_gates_" + str(num) + ".png")
-        logger.info("Figure \"visualize_gates_" + str(num) +
-                    ".png\" saved at directory: " + args.save_path)
+
+        if args.local:
+            plt.switch_backend("qt5agg")
+            plt.show()
+        else:
+            plt.savefig(
+                args.save_path + "/visualize_gates_" + str(num) + ".png")
+            logger.info("Figure \"visualize_gates_" + str(num) +
+                        ".png\" saved at directory: " + args.save_path)
