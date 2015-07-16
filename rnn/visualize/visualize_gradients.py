@@ -58,7 +58,8 @@ def visualize_gradients(hidden_states, updates,
     gradients = []
     for i, state in enumerate(states):
         gradients.extend(
-            tensor.grad(tensor.mean(tensor.abs_(state[60, 0, :])), wrt[:i + 1]))
+            tensor.grad(tensor.mean(tensor.abs_(
+                state[args.visualize_length, 0, :])), wrt[:i + 1]))
     logger.info("The computation of the gradients is done")
 
     # Handle the theano shared variables for the state
