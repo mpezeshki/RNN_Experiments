@@ -5,6 +5,7 @@ from rnn.visualize.visualize_gates import (
     visualize_gates_soft, visualize_gates_lstm)
 from rnn.visualize.visualize_states import visualize_states
 from rnn.visualize.visualize_gradients import visualize_gradients
+from rnn.visualize.visualize_gradients import visualize_jacobian
 from rnn.visualize.visualize_presoft import visualize_presoft
 from rnn.visualize.visualize_matrices import visualize_matrices
 from rnn.visualize.visualize_singular_values import visualize_singular_values
@@ -43,6 +44,11 @@ def run_visualizations(cost, updates,
         visualize_gradients(hidden_states, updates,
                             train_stream, valid_stream,
                             args)
+
+    elif args.visualize == "jacobian":
+        visualize_jacobian(hidden_states, updates,
+                           train_stream, valid_stream,
+                           args)
 
     elif args.visualize == "presoft":
         visualize_presoft(cost,

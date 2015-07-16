@@ -97,7 +97,8 @@ def parse_args():
                                                 "states", "gradients",
                                                 "presoft", "matrices",
                                                 "gradients_flow_pie",
-                                                "trained_singular_values"],
+                                                "trained_singular_values",
+                                                "jacobian"],
                         default="nothing")
     parser.add_argument('--visualize_length', type=int,
                         default=75)
