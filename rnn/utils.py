@@ -42,7 +42,7 @@ def parse_args():
                         choices=['wikipedia', 'penntree',
                                  'mytext', 'wikipedia_junyoung', 'toy',
                                  'new_toy'],
-                        default='wikipedia')
+                        default='new_toy')
     parser.add_argument('--time_length', type=int,
                         default=150)
     parser.add_argument('--mini_batch_size', type=int,

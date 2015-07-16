@@ -3,14 +3,14 @@ import re
 
 import numpy as np
 
+import matplotlib.pyplot as plt
+
 import theano
 from theano.compile import Mode
 
 from blocks.graph import ComputationGraph
 from rnn.datasets.dataset import conv_into_char
 
-import matplotlib
-import matplotlib.pyplot as plt
 
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
@@ -19,10 +19,6 @@ logger = logging.getLogger(__name__)
 def visualize_states(hidden_states, updates,
                      train_stream, valid_stream,
                      args):
-
-    if not args.local:
-        # Force matplotlib to not use any Xwindows backend.
-        matplotlib.use('Agg')
 
     # Get all the hidden_states
     all_states = [
@@ -62,6 +58,7 @@ def visualize_states(hidden_states, updates,
         hidden_state = compiled(init_)
 
         layers = len(hidden_state)
+
         time = hidden_state[0].shape[0]
         ticks = tuple(conv_into_char(init_[:, 0], args.dataset))
 
@@ -73,6 +70,10 @@ def visualize_states(hidden_states, updates,
             plt.grid(True)
             plt.title("hidden_state_of_layer_" + str(d))
         plt.tight_layout()
-        plt.savefig(args.save_path + "/visualize_states_" + str(num) + ".png")
-        logger.info("Figure \"visualize_states_" + str(num) +
-                    ".png\" saved at directory: " + args.save_path)
+        if args.local:
+            plt.show()
+        else:
+            plt.savefig(
+                args.save_path + "/visualize_states_" + str(num) + ".png")
+            logger.info("Figure \"visualize_states_" + str(num) +
+                        ".png\" saved at directory: " + args.save_path)

@@ -106,9 +106,9 @@ def build_model_vanilla(vocab_size, args, dtype=floatX):
     # If we have skip connections, concatenate all the states
     # Else only consider the state of the highest layer
     last_states = {}
+    hidden_states = []
     if layers > 1:
         # Save all the last states
-        hidden_states = []
         for d in range(layers):
             last_states[d] = h[d][-1, :, :]
             h[d].name = "hidden_state_" + str(d)
@@ -118,6 +118,8 @@ def build_model_vanilla(vocab_size, args, dtype=floatX):
         else:
             h = h[-1]
     else:
+        hidden_states.append(h)
+        hidden_states[0].name = "hidden_state_0"
         last_states[0] = h[-1, :, :]
 
     # The updates of the hidden states

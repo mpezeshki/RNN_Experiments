@@ -3,15 +3,14 @@ import re
 
 import numpy as np
 
+import matplotlib.pyplot as plt
+
 import theano
 from theano import tensor
 from theano.compile import Mode
 
 from blocks.graph import ComputationGraph
 from rnn.datasets.dataset import conv_into_char
-
-import matplotlib
-import matplotlib.pyplot as plt
 
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
@@ -20,10 +19,6 @@ logger = logging.getLogger(__name__)
 def visualize_presoft(cost, hidden_states, updates,
                       train_stream, valid_stream,
                       args):
-
-    if not args.local:
-        # Force matplotlib to not use any Xwindows backend.
-        matplotlib.use('Agg')
 
     variables = ComputationGraph(cost).variables
     presoft = [var for var in variables if var.name == "presoft"]
@@ -89,6 +84,10 @@ def visualize_presoft(cost, hidden_states, updates,
         plt.title("hidden_state_of_layer_" + str(d))
         plt.legend()
         plt.tight_layout()
-        plt.savefig(args.save_path + "/visualize_presoft_" + str(num) + ".png")
-        logger.info("Figure \"visualize_presoft_" + str(num) +
-                    ".png\" saved at directory: " + args.save_path)
+        if args.local:
+            plt.show()
+        else:
+            plt.savefig(
+                args.save_path + "/visualize_presoft_" + str(num) + ".png")
+            logger.info("Figure \"visualize_presoft_" + str(num) +
+                        ".png\" saved at directory: " + args.save_path)
