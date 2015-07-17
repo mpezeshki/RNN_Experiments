@@ -9,7 +9,7 @@ from theano.compile import Mode
 
 from blocks.graph import ComputationGraph
 from rnn.datasets.dataset import conv_into_char
-from rnn.plot import plot
+from rnn.visualize.plot import plot
 
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
