@@ -22,6 +22,9 @@ def get_data(dataset):
     elif dataset == "new_toy":
         path = os.path.join(config.data_path, 'toy_dependencies',
                             'new_05_40.npz')
+    elif dataset == "xml":
+        path = os.path.join(config.data_path, 'xml_tags',
+                            'data.npz')
     else:
         assert False
     return numpy.load(path, 'rb')
