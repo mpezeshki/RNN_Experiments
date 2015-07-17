@@ -9,6 +9,7 @@ from theano.compile import Mode
 
 from blocks.graph import ComputationGraph
 from rnn.datasets.dataset import conv_into_char
+from rnn.visualize.plot import plot
 
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
@@ -31,24 +32,7 @@ def visualize_gates_soft(gate_values, hidden_states, updates,
                                givens=givens, updates=f_updates,
                                mode=Mode(optimizer='fast_compile'))
 
-    # Generate
-    epoch_iterator = valid_stream.get_epoch_iterator()
-    for i in range(10):
-        init_ = next(epoch_iterator)[0][0: args.visualize_length, 0:1]
-
-        last_output = compiled(init_)
-        layers = len(last_output)
-        time = last_output[0].shape[0]
-        ticks = tuple(conv_into_char(init_[:, 0], args.dataset))
-
-        for i in range(layers):
-            plt.subplot(layers, 1, i + 1)
-            for j in range(last_output[i].shape[2]):
-                plt.plot(np.arange(time), last_output[i][:, 0, j])
-            plt.xticks(range(args.visualize_length), ticks)
-            plt.grid(True)
-            plt.title("gate of layer " + str(i))
-        plt.show()
+    plot("gates_soft", train_stream, compiled, args)
 
 
 def visualize_gates_lstm(gate_values, hidden_states, updates,
