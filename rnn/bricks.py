@@ -9,7 +9,6 @@ from blocks.roles import add_role, WEIGHT, BIAS, INITIAL_STATE
 from blocks.utils import (
     check_theano_variable, shared_floatx_nans, shared_floatx_zeros)
 
-#test
 class LookupTable(Initializable):
 
     """Encapsulates representations of a range of integers.
