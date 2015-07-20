@@ -21,13 +21,9 @@ logger = logging.getLogger(__name__)
 def build_model_lstm(vocab_size, args, dtype=floatX):
     logger.info('Building model ...')
 
-    # In both cases: Time X Batch
-    x = tensor.lmatrix('features')
-    y = tensor.lmatrix('targets')
-
     # Return list of 3D Tensor, one for each layer
     # (Time X Batch X embedding_dim)
-    pre_rnn = get_prernn(x, args)
+    pre_rnn = get_prernn(args)
 
     transitions = [LSTM(dim=args.state_dim, activation=Tanh())
                    for _ in range(args.layers)]
@@ -91,7 +87,7 @@ def build_model_lstm(vocab_size, args, dtype=floatX):
 
     presoft = get_presoft(h, args)
 
-    cost, cross_entropy = get_costs(presoft, y, args)
+    cost, cross_entropy = get_costs(presoft, args)
 
     # Initialize the model
     logger.info('Initializing...')

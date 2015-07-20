@@ -8,7 +8,7 @@ from theano import tensor
 from blocks import initialization
 from blocks.bricks import Linear, Softmax, FeedforwardSequence
 from blocks.bricks.parallel import Fork
-from rnn.datasets.dataset import get_minibatch_char
+from rnn.datasets.dataset import get_vocab_size
 
 from rnn.bricks import LookupTable
 
@@ -16,8 +16,11 @@ floatX = theano.config.floatX
 RECURRENTSTACK_SEPARATOR = '#'
 
 
-def get_prernn(x, args):
-    _, _, vocab_size = get_minibatch_char(
+def get_prernn(args):
+
+    x = tensor.lmatrix('features')
+
+    vocab_size = get_vocab_size(
         args.dataset, args.mini_batch_size, args.mini_batch_size_valid,
         args.time_length, args.tot_num_char)
     if args.rnn_type == 'lstm':
@@ -55,7 +58,7 @@ def get_prernn(x, args):
 
 
 def get_presoft(h, args):
-    _, _, vocab_size = get_minibatch_char(
+    vocab_size = get_vocab_size(
         args.dataset, args.mini_batch_size, args.mini_batch_size_valid,
         args.time_length, args.tot_num_char)
     # If args.skip_connections: dim = args.layers * args.state_dim
@@ -105,7 +108,11 @@ def get_rnn_kwargs(pre_rnn, args):
     return kwargs, inits
 
 
-def get_costs(presoft, y, args):
+def get_costs(presoft, args):
+
+    # Targets: (Time X Batch)
+    y = tensor.lmatrix('targets')
+
     time, batch, feat = presoft.shape
     cross_entropy = Softmax().categorical_cross_entropy(
         y[args.context:, :].flatten(),

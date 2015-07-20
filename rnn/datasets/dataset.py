@@ -35,6 +35,11 @@ def get_character(dataset):
     return data["vocab"]
 
 
+def get_vocab_size(dataset):
+    data = get_data(dataset)
+    return data["vocab_size"]
+
+
 def conv_into_char(vector, dataset):
     correspondance = get_character(dataset)
     return correspondance[vector]

@@ -1,5 +1,4 @@
 import logging
-import re
 
 import numpy as np
 
@@ -38,11 +37,12 @@ def visualize_presoft(cost, hidden_states, updates,
 
     for i in range(args.visualize_length - args.context):
         gradients.extend(
-            tensor.grad(tensor.mean(tensor.abs_(presoft[i, 0, :])), all_states))
+            tensor.grad(tensor.mean(tensor.abs_(presoft[i, 0, :])),
+                        all_states))
     logger.info("The computation of the gradients is done")
 
     # Handle the theano shared variables that allow carrying the hidden state
-    givens, f_updates = carry_hidden_state(updates)
+    givens, f_updates = carry_hidden_state(updates, 1)
 
     # Compile the function
     logger.info("The compilation of the function has started")

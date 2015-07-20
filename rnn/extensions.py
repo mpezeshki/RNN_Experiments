@@ -181,7 +181,7 @@ class TextGenerationExtension(SimpleExtension):
 
         # Handle the theano shared variables that allow carrying the hidden
         # state
-        givens, f_updates = carry_hidden_state(updates)
+        givens, f_updates = carry_hidden_state(updates, 1)
 
         self.generate = theano.function(inputs=cg.inputs, outputs=outputs,
                                         givens=givens, updates=f_updates)
