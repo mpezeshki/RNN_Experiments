@@ -43,7 +43,7 @@ def parse_args():
     parser.add_argument('--dataset',
                         choices=['wikipedia', 'penntree',
                                  'mytext', 'wikipedia_junyoung', 'toy',
-                                 'new_toy', 'xml'],
+                                 'xml', 'sine'],
                         default='xml')
     parser.add_argument('--time_length', type=int,
                         default=150)

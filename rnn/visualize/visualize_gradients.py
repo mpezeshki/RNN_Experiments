@@ -2,6 +2,8 @@ import logging
 
 import numpy as np
 
+import matplotlib.pyplot as plt
+
 import theano
 from theano import tensor
 from theano.compile import Mode
@@ -61,7 +63,7 @@ def visualize_gradients(hidden_states, updates,
     logger.info("The computation of the gradients is done")
 
     # Handle the theano shared variables that allow carrying the hidden state
-    givens, f_updates = carry_hidden_state(updates)
+    givens, f_updates = carry_hidden_state(updates, 1)
 
     # Compile the function
     logger.info("The compilation of the function has started")
@@ -71,11 +73,6 @@ def visualize_gradients(hidden_states, updates,
                                mode=Mode(optimizer='fast_compile'))
     logger.info("The function has been compiled")
 
-    # importing plt
-    import matplotlib
-    if not args.local:
-        matplotlib.use('Agg')
-    import matplotlib.pyplot as plt
     # Generate
     epoch_iterator = train_stream.get_epoch_iterator()
     for num in range(10):

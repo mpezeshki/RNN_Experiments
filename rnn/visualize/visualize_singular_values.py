@@ -4,9 +4,6 @@ import numpy as np
 
 from blocks.serialization import load_parameter_values
 
-import matplotlib
-# Force matplotlib to not use any Xwindows backend.
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 logging.basicConfig(level='INFO')

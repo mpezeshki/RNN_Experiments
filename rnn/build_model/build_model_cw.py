@@ -17,7 +17,7 @@ logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
 
 
-def build_model_cw(vocab_size, args, dtype=floatX):
+def build_model_cw(args, dtype=floatX):
     logger.info('Building model ...')
 
     # Return list of 3D Tensor, one for each layer
@@ -39,6 +39,7 @@ def build_model_cw(vocab_size, args, dtype=floatX):
         assert False
 
     rnn = RecurrentStack(transitions, skip_connections=args.skip_connections)
+    initialize_rnn(rnn)
 
     # Prepare inputs and initial states for the RNN
     kwargs, inits = get_rnn_kwargs(pre_rnn, args)
@@ -77,9 +78,6 @@ def build_model_cw(vocab_size, args, dtype=floatX):
 
     presoft = get_presoft(h, args)
 
-    cost, cross_entropy = get_costs(presoft, args)
+    cost, unregularized_cost = get_costs(presoft, args)
 
-    # Initialize RNN
-    initialize_rnn(rnn)
-
-    return cost, cross_entropy, updates, hidden_states
+    return cost, unregularized_cost, updates, hidden_states

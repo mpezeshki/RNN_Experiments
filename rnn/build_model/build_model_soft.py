@@ -17,7 +17,7 @@ logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
 
 
-def build_model_soft(vocab_size, args, dtype=floatX):
+def build_model_soft(args, dtype=floatX):
     logger.info('Building model ...')
 
     # Return list of 3D Tensor, one for each layer

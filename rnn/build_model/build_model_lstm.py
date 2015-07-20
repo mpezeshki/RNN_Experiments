@@ -18,7 +18,7 @@ logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
 
 
-def build_model_lstm(vocab_size, args, dtype=floatX):
+def build_model_lstm(args, dtype=floatX):
     logger.info('Building model ...')
 
     # Return list of 3D Tensor, one for each layer
@@ -88,6 +88,6 @@ def build_model_lstm(vocab_size, args, dtype=floatX):
 
     presoft = get_presoft(h, args)
 
-    cost, cross_entropy = get_costs(presoft, args)
+    cost, unregularized_cost = get_costs(presoft, args)
 
-    return cost, cross_entropy, updates, gate_values, hidden_states
+    return cost, unregularized_cost, updates, gate_values, hidden_states

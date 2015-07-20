@@ -2,6 +2,8 @@ import logging
 
 import numpy as np
 
+import matplotlib.pyplot as plt
+
 from blocks.serialization import load_parameter_values
 
 logging.basicConfig(level='INFO')
@@ -9,11 +11,6 @@ logger = logging.getLogger(__name__)
 
 
 def visualize_matrices(args):
-
-    import matplotlib
-    if not args.local:
-        matplotlib.use('Agg')
-    import matplotlib.pyplot as plt
 
     param_values = load_parameter_values(args.load_path)
     print(param_values.keys())
