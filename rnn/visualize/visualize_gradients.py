@@ -1,5 +1,4 @@
 import logging
-import re
 
 import numpy as np
 
@@ -7,6 +6,7 @@ import theano
 from theano import tensor
 from theano.compile import Mode
 
+from blocks.filter import VariableFilter
 from blocks.graph import ComputationGraph
 from rnn.datasets.dataset import conv_into_char
 
@@ -19,20 +19,18 @@ def visualize_gradients(hidden_states, updates,
                         args):
 
     # Get all the hidden_states
-    all_states = [
-        var for var in hidden_states if re.match("hidden_state_.*", var.name)]
+    filter_states = VariableFilter(theano_name_regex="hidden_state_.*")
+    all_states = filter_states(hidden_states)
     all_states = sorted(all_states, key=lambda var: var.name[-1])
 
     # Get all the hidden_cells
-    all_cells = [var for var in hidden_states if re.match(
-        "hidden_cell_.*", var.name)]
+    filter_cells = VariableFilter(theano_name_regex="hidden_cells_.*")
+    all_cells = filter_cells(hidden_states)
     all_cells = sorted(all_cells, key=lambda var: var.name[-1])
 
     # Get the variable on which we compute the gradients
-    variables = ComputationGraph(hidden_states).variables
-    wrt = [
-        var for var in variables if
-        (var.name is not None) and (re.match("pre_rnn.*", var.name))]
+    filter_pre_rnn = VariableFilter(theano_name_regex="pre_rnn.*")
+    wrt = filter_pre_rnn(ComputationGraph(hidden_states).variables)
     wrt = sorted(wrt, key=lambda var: var.name[-1])
     len_wrt = len(wrt)
 

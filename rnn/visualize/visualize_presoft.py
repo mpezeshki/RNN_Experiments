@@ -9,6 +9,7 @@ import theano
 from theano import tensor
 from theano.compile import Mode
 
+from blocks.filter import VariableFilter
 from blocks.graph import ComputationGraph
 from rnn.datasets.dataset import conv_into_char
 
@@ -20,13 +21,12 @@ def visualize_presoft(cost, hidden_states, updates,
                       train_stream, valid_stream,
                       args):
 
-    variables = ComputationGraph(cost).variables
-    presoft = [var for var in variables if var.name == "presoft"]
-    presoft = presoft[0]
+    filter_presoft = VariableFilter(theano_name="presoft")
+    presoft = filter_presoft(ComputationGraph(cost).variables)[0]
 
     # Get all the hidden_states
-    all_states = [
-        var for var in hidden_states if re.match("hidden_state_.*", var.name)]
+    filter_states = VariableFilter(theano_name_regex="hidden_state_.*")
+    all_states = filter_states(hidden_states)
     all_states = sorted(all_states, key=lambda var: var.name[-1])
 
     # Assertion part

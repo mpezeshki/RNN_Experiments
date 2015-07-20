@@ -1,13 +1,9 @@
 import logging
-import re
-
-import numpy as np
-
-import matplotlib.pyplot as plt
 
 import theano
 from theano.compile import Mode
 
+from blocks.filter import VariableFilter
 from blocks.graph import ComputationGraph
 from rnn.visualize.plot import plot
 
@@ -21,13 +17,13 @@ def visualize_states(hidden_states, updates,
                      args):
 
     # Get all the hidden_states
-    all_states = [
-        var for var in hidden_states if re.match("hidden_state_.*", var.name)]
+    filter_states = VariableFilter(theano_name_regex="hidden_state_.*")
+    all_states = filter_states(hidden_states)
     all_states = sorted(all_states, key=lambda var: var.name[-1])
 
     # Get all the hidden_cells
-    all_cells = [var for var in hidden_states if re.match(
-        "hidden_cell_.*", var.name)]
+    filter_cells = VariableFilter(theano_name_regex="hidden_cells_.*")
+    all_cells = filter_cells(hidden_states)
     all_cells = sorted(all_cells, key=lambda var: var.name[-1])
 
     # Handle the theano shared variables for the state
