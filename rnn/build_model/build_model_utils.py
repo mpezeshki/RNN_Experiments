@@ -141,7 +141,8 @@ def get_costs(presoft, args):
     else:
         # Targets: (Time X Batch X Features)
         y = tensor.tensor3('targets', dtype=floatX)
-        unregularized_cost = SquaredError(presoft, y)
+        # Note: The target are one time step smaller that the features
+        unregularized_cost = SquaredError(presoft[:-1, :, :], y)
         unregularized_cost.name = "mean_squared_error"
 
     # TODO: add regularisation for the cost

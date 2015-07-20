@@ -1,4 +1,3 @@
-import matplotlib.pylab as plt
 import numpy as np
 
 
@@ -6,30 +5,50 @@ import numpy as np
 # TODO check the datastream
 class GenerateSineWave(object):
 
-    def __init__(self, depth, example_length):
+    def __init__(self, depth, time):
         self.depth = depth
-        self.example_length = example_length
+        self.time = time
 
-    def generate(self, length):
-        data = np.zeros((0), dtype=np.float32)
-        for i in range(length):
-            new_example = np.zeros((self.example_length,), dtype=np.float32)
+    def generate(self, batch):
+        data = np.zeros((self.time, batch), dtype=np.float32)
+        for i in range(batch):
             for d in range(depth):
                 phase = np.random.randn(1)[0]
-                new_example += np.sin(phase + (d + 1) *
-                                      np.linspace(0, 2 * np.pi,
-                                                  self.example_length))
-            data = np.concatenate((data, new_example), axis=1)
+                data[:, i] += np.sin(phase + (d + 1) *
+                                     np.linspace(0, 3 * np.pi, self.time))
+
+        # Center and normalize the data
+        data -= np.mean(data, axis=0)
+        data /= np.max(np.abs(data), axis=0)
+
+        data = data[:, :, None]
         return data
+
+
+def save(destination, train, valid, test):
+    np.savez(destination,
+             train=train,
+             valid=valid,
+             test=test,
+             feature_size=1)
 
 
 if __name__ == "__main__":
     depth = 5
-    example_length = 150
-    length = 3
+    time = 150
+    generator = GenerateSineWave(depth, time)
 
-    generator = GenerateSineWave(depth, example_length)
-    data = generator.generate(length)
+    # Train
+    batch = 10000000
+    train = generator.generate(batch)
 
-    # plt.plot(range(length * example_length), data)
-    # plt.show()
+    # Valid
+    batch = 500000
+    valid = generator.generate(batch)
+
+    # Test
+    batch = 500000
+    test = generator.generate(batch)
+
+    # Save the data
+    save("/media/win/Users/Eloi/dataset/sine_waves/data", train, valid, test)

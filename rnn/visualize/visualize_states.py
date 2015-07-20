@@ -28,7 +28,7 @@ def visualize_states(hidden_states, updates,
     all_cells = sorted(all_cells, key=lambda var: var.name[-1])
 
     # Handle the theano shared variables that allow carrying the hidden state
-    givens, f_updates = carry_hidden_state(updates)
+    givens, f_updates = carry_hidden_state(updates, 1)
 
     # Compile the function
     logger.info("The compilation of the function has started")

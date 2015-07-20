@@ -61,7 +61,7 @@ def visualize_gradients(hidden_states, updates,
     logger.info("The computation of the gradients is done")
 
     # Handle the theano shared variables that allow carrying the hidden state
-    givens, f_updates = carry_hidden_state(updates)
+    givens, f_updates = carry_hidden_state(updates, 1)
 
     # Compile the function
     logger.info("The compilation of the function has started")

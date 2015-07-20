@@ -21,7 +21,7 @@ def visualize_gates_soft(gate_values, hidden_states, updates,
                          args):
 
     # Handle the theano shared variables that allow carrying the hidden state
-    givens, f_updates = carry_hidden_state(updates)
+    givens, f_updates = carry_hidden_state(updates, 1)
 
     # Compile the function
     compiled = theano.function(inputs=ComputationGraph(gate_values).inputs,
@@ -41,7 +41,7 @@ def visualize_gates_lstm(gate_values, hidden_states, updates,
     forget_gates = gate_values["forget_gates"]
 
     # Handle the theano shared variables that allow carrying the hidden state
-    givens, f_updates = carry_hidden_state(updates)
+    givens, f_updates = carry_hidden_state(updates, 1)
 
     generate_in = theano.function(inputs=ComputationGraph(in_gates).inputs,
                                   outputs=in_gates,
