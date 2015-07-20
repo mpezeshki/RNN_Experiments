@@ -3,6 +3,8 @@ import re
 
 import numpy as np
 
+import matplotlib.pyplot as plt
+
 import theano
 from theano import tensor
 from theano.compile import Mode
@@ -74,13 +76,9 @@ def visualize_jacobian(hidden_states, updates,
                                givens=givens, updates=f_updates,
                                mode=Mode(optimizer='fast_compile'))
     logger.info("The function has been compiled")
-    import ipdb; ipdb.set_trace()
+    import ipdb
+    ipdb.set_trace()
 
-    # importing plt
-    import matplotlib
-    if not args.local:
-        matplotlib.use('Agg')
-    import matplotlib.pyplot as plt
     # Generate
     epoch_iterator = train_stream.get_epoch_iterator()
     for num in range(10):

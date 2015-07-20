@@ -2,6 +2,9 @@ import logging
 
 import numpy as np
 
+import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
+
 import theano
 from theano import tensor
 from theano.compile import Mode
@@ -9,11 +12,6 @@ from theano.compile import Mode
 from blocks.graph import ComputationGraph
 from rnn.datasets.dataset import get_character
 
-import matplotlib
-# Force matplotlib to not use any Xwindows backend.
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
 
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)

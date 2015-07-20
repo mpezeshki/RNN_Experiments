@@ -7,7 +7,7 @@ from theano import tensor
 
 from blocks import initialization
 from blocks.bricks import Linear, Softmax, FeedforwardSequence
-from blcoks.bricks.cost import SquaredError
+from blocks.bricks.cost import SquaredError
 from blocks.bricks.parallel import Fork
 from rnn.datasets.dataset import has_indices, get_vocab_size, get_feature_size
 

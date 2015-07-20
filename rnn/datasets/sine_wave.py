@@ -1,8 +1,6 @@
 import numpy as np
 
 
-# TODO normalize data
-# TODO check the datastream
 class GenerateSineWave(object):
 
     def __init__(self, depth, time):
