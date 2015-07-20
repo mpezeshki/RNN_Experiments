@@ -20,9 +20,7 @@ def get_prernn(args):
 
     x = tensor.lmatrix('features')
 
-    vocab_size = get_vocab_size(
-        args.dataset, args.mini_batch_size, args.mini_batch_size_valid,
-        args.time_length, args.tot_num_char)
+    vocab_size = get_vocab_size(args.dataset)
     if args.rnn_type == 'lstm':
         state_dim = 4 * args.state_dim
     else:
@@ -58,9 +56,7 @@ def get_prernn(args):
 
 
 def get_presoft(h, args):
-    vocab_size = get_vocab_size(
-        args.dataset, args.mini_batch_size, args.mini_batch_size_valid,
-        args.time_length, args.tot_num_char)
+    vocab_size = get_vocab_size(args.dataset)
     # If args.skip_connections: dim = args.layers * args.state_dim
     # else: dim = args.state_dim
     use_all_states = args.skip_connections or args.skip_output
