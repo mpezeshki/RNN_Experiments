@@ -98,8 +98,7 @@ def train_model(cost, cross_entropy, updates,
     # Training and Validation score monitoring
     extensions.extend([
         TrainingDataMonitoring([cost], prefix='train',
-                               every_n_batches=args.monitoring_freq,
-                               after_epoch=True),
+                               every_n_batches=args.monitoring_freq),
         DataStreamMonitoring([cost, cross_entropy],
                              valid_stream, args.mini_batch_size_valid,
                              state_updates=updates,

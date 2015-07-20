@@ -37,16 +37,16 @@ if __name__ == "__main__":
     generator = GenerateSineWave(depth, time)
 
     # Train
-    batch = 10000000
+    batch = 1000
     train = generator.generate(batch)
 
     # Valid
-    batch = 500000
+    batch = 1000
     valid = generator.generate(batch)
 
     # Test
-    batch = 500000
+    batch = 1000
     test = generator.generate(batch)
 
     # Save the data
-    save("/media/win/Users/Eloi/dataset/sine_waves/data", train, valid, test)
+    save("/media/win/Users/Eloi/dataset/sine_waves/datatmp", train, valid, test)

@@ -42,6 +42,7 @@ def get_prernn(args):
     # fixed vocabulary, x is 2D tensor) or if it gives raw values
     # (x is 3D tensor)
     if has_indices(args.dataset):
+        features = args.mini_batch_size
         x = tensor.lmatrix('features')
         vocab_size = get_vocab_size(args.dataset)
         lookup = LookupTable(length=vocab_size, dim=state_dim)
@@ -52,12 +53,12 @@ def get_prernn(args):
     else:
         x = tensor.tensor3('features', dtype=floatX)
         features = get_feature_size(args.dataset)
-        forked = Linear(length=features, dim=state_dim)
+        forked = Linear(input_dim=features, output_dim=state_dim)
         forked.weights_init = initialization.IsotropicGaussian(0.1)
         forked.biases_init = initialization.Constant(0)
 
     # Define the fork
-    fork = Fork(output_names=output_names, input_dim=args.mini_batch_size,
+    fork = Fork(output_names=output_names, input_dim=features,
                 output_dims=output_dims,
                 prototype=forked)
     fork.initialize()
@@ -76,7 +77,10 @@ def get_prernn(args):
 
 
 def get_presoft(h, args):
-    vocab_size = get_vocab_size(args.dataset)
+    if has_indices(args.dataset):
+        vocab_size = get_vocab_size(args.dataset)
+    else:
+        vocab_size = get_feature_size(args.dataset)
     # If args.skip_connections: dim = args.layers * args.state_dim
     # else: dim = args.state_dim
     use_all_states = args.skip_connections or args.skip_output
@@ -120,7 +124,7 @@ def get_rnn_kwargs(pre_rnn, args):
             kwargs['cells' + suffix] = init_cells[d]
     inits = [init_states]
     if args.rnn_type == 'lstm':
-            inits.append(init_cells)
+        inits.append(init_cells)
     return kwargs, inits
 
 
@@ -142,7 +146,8 @@ def get_costs(presoft, args):
         # Targets: (Time X Batch X Features)
         y = tensor.tensor3('targets', dtype=floatX)
         # Note: The target are one time step smaller that the features
-        unregularized_cost = SquaredError(presoft[:-1, :, :], y)
+        unregularized_cost = SquaredError().apply(presoft[:-1, :, :],
+                                                  y[args.context:, :, :])
         unregularized_cost.name = "mean_squared_error"
 
     # TODO: add regularisation for the cost

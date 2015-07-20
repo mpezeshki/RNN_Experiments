@@ -24,7 +24,7 @@ def get_data(dataset):
                             'data.npz')
     elif dataset == "sine":
         path = os.path.join(config.data_path, 'sine_waves',
-                            'data.npz')
+                            'datatmp.npz')
     else:
         assert False
     return numpy.load(path, 'rb')
@@ -112,6 +112,7 @@ def get_stream_raw(dataset, which_set, mini_batch_size):
     dataset = data[which_set]
     time, batch, features = dataset.shape
     nb_mini_batches = batch / mini_batch_size
+    dataset = dataset[:, :nb_mini_batches * mini_batch_size, :]
 
     # Create the target_dataset
     targets_dataset = dataset[1:, :, :]
@@ -122,8 +123,9 @@ def get_stream_raw(dataset, which_set, mini_batch_size):
     targets_dataset = numpy.swapaxes(targets_dataset, 0, 1)
     dataset = numpy.reshape(dataset, (nb_mini_batches, mini_batch_size,
                                       time, features))
-    dataset = numpy.reshape(dataset, (nb_mini_batches, mini_batch_size,
-                                      time - 1, features))
+    targets_dataset = numpy.reshape(targets_dataset, (nb_mini_batches,
+                                                      mini_batch_size,
+                                                      time - 1, features))
     dataset = numpy.swapaxes(dataset, 1, 2)
     targets_dataset = numpy.swapaxes(targets_dataset, 1, 2)
 
@@ -147,7 +149,7 @@ def get_minibatch(dataset, mini_batch_size, mini_batch_size_valid,
                                        total_train_chars)
     else:
         train_stream = get_stream_raw(dataset, "train", mini_batch_size)
-        valid_stream = get_stream_raw(dataset, "valid", mini_batch_size)
+        valid_stream = get_stream_raw(dataset, "valid", mini_batch_size_valid)
     return train_stream, valid_stream
 
 if __name__ == "__main__":
