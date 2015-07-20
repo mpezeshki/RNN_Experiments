@@ -12,11 +12,6 @@ if __name__ == "__main__":
 
     args = parse_args()
 
-    # Choose the correct plotting backend
-    import matplotlib
-    if not args.local:
-        matplotlib.use('Agg', force=True)
-
     dataset = args.dataset
     mini_batch_size = args.mini_batch_size
     mini_batch_size_valid = args.mini_batch_size_valid
