@@ -17,7 +17,8 @@ class GenerateSineWave(object):
             for d in range(depth):
                 phase = np.random.randn(1)[0]
                 new_example += np.sin(phase + (d + 1) *
-                                      np.linspace(0, 4 * np.pi, self.example_length))
+                                      np.linspace(0, 2 * np.pi,
+                                                  self.example_length))
             data = np.concatenate((data, new_example), axis=1)
         return data
 
