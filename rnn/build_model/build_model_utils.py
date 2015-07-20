@@ -73,7 +73,11 @@ def get_prernn(args):
     else:
         prernn.name = "pre_rnn"
 
-    return prernn
+    # time x batch
+    # x_mask = tensor.imatrix('features_mask')
+    x_mask = tensor.ones_like(x).astype(floatX)
+
+    return prernn, x_mask
 
 
 def get_presoft(h, args):
@@ -128,7 +132,7 @@ def get_rnn_kwargs(pre_rnn, args):
     return kwargs, inits
 
 
-def get_costs(presoft, args):
+def get_costs(presoft, mask, args):
 
     if has_indices(args.dataset):
         # Targets: (Time X Batch)
@@ -136,10 +140,18 @@ def get_costs(presoft, args):
 
         time, batch, feat = presoft.shape
         cross_entropy = Softmax().categorical_cross_entropy(
-            y[args.context:, :].flatten(),
-            presoft.reshape((batch * time, feat)))
+            (y[args.context:, :].flatten() *
+                mask.reshape((batch * time, )).astype('int32')),
+            (presoft.reshape((batch * time, feat)) *
+                mask.reshape((batch * time, 1))))
 
-        unregularized_cost = cross_entropy / tensor.log(2)
+        # renormalization
+        renormalized_cross_entropy = cross_entropy * (
+            tensor.sum(tensor.ones_like(mask)) /
+            tensor.sum(mask))
+
+        # BPC: Bits Per Character
+        unregularized_cost = renormalized_cross_entropy / tensor.log(2)
         unregularized_cost.name = "cross_entropy"
 
     else:
