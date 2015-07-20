@@ -31,5 +31,5 @@ if __name__ == "__main__":
     generator = GenerateSineWave(depth, example_length)
     data = generator.generate(length)
 
-    plt.plot(range(length * example_length), data)
-    plt.show()
+    # plt.plot(range(length * example_length), data)
+    # plt.show()

@@ -18,16 +18,33 @@ def get_data(dataset):
                             'char_level_penntree.npz')
     elif dataset == "toy":
         path = os.path.join(config.data_path, 'toy_dependencies',
-                            'toy_dependencies.npz')
-    elif dataset == "new_toy":
-        path = os.path.join(config.data_path, 'toy_dependencies',
                             'new_05_40.npz')
     elif dataset == "xml":
         path = os.path.join(config.data_path, 'xml_tags',
                             'data.npz')
+    elif dataset == "sine":
+        path = os.path.join(config.data_path, 'sine_waves',
+                            'data.npz')
     else:
         assert False
     return numpy.load(path, 'rb')
+
+
+def has_indices(dataset):
+    if dataset == "wikipedia":
+        return True
+    elif dataset == "wikipedia_junyoung":
+        return True
+    elif dataset == "penntree":
+        return True
+    elif dataset == "toy":
+        return True
+    elif dataset == "xml":
+        return True
+    elif dataset == "sine":
+        return False
+    else:
+        assert False
 
 
 def get_character(dataset):
@@ -38,6 +55,11 @@ def get_character(dataset):
 def get_vocab_size(dataset):
     data = get_data(dataset)
     return data["vocab_size"]
+
+
+def get_feature_size(dataset):
+    data = get_data(dataset)
+    return data["feature_size"]
 
 
 def conv_into_char(vector, dataset):

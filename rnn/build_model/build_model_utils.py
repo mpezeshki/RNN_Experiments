@@ -7,8 +7,9 @@ from theano import tensor
 
 from blocks import initialization
 from blocks.bricks import Linear, Softmax, FeedforwardSequence
+from blcoks.bricks.cost import SquaredError
 from blocks.bricks.parallel import Fork
-from rnn.datasets.dataset import get_vocab_size
+from rnn.datasets.dataset import has_indices, get_vocab_size, get_feature_size
 
 from rnn.bricks import LookupTable
 
@@ -18,13 +19,13 @@ RECURRENTSTACK_SEPARATOR = '#'
 
 def get_prernn(args):
 
-    x = tensor.lmatrix('features')
-
-    vocab_size = get_vocab_size(args.dataset)
+    # Compute the state dim
     if args.rnn_type == 'lstm':
         state_dim = 4 * args.state_dim
     else:
         state_dim = args.state_dim
+
+    # Prepare the arguments for the fork
     output_names = []
     output_dims = []
     for d in range(args.layers):
@@ -36,22 +37,41 @@ def get_prernn(args):
             output_names.append("inputs" + suffix)
             output_dims.append(state_dim)
 
-    lookup = LookupTable(length=vocab_size, dim=state_dim)
-    lookup.weights_init = initialization.IsotropicGaussian(0.1)
-    lookup.biases_init = initialization.Constant(0)
+    # Prepare the brick to be forked (LookupTable or Linear)
+    # Check if the dataset provides indices (in the case of a
+    # fixed vocabulary, x is 2D tensor) or if it gives raw values
+    # (x is 3D tensor)
+    if has_indices(args.dataset):
+        x = tensor.lmatrix('features')
+        vocab_size = get_vocab_size(args.dataset)
+        lookup = LookupTable(length=vocab_size, dim=state_dim)
+        lookup.weights_init = initialization.IsotropicGaussian(0.1)
+        lookup.biases_init = initialization.Constant(0)
+        forked = FeedforwardSequence([lookup.apply])
 
+    else:
+        x = tensor.tensor3('features', dtype=floatX)
+        features = get_feature_size(args.dataset)
+        forked = Linear(length=features, dim=state_dim)
+        forked.weights_init = initialization.IsotropicGaussian(0.1)
+        forked.biases_init = initialization.Constant(0)
+
+    # Define the fork
     fork = Fork(output_names=output_names, input_dim=args.mini_batch_size,
                 output_dims=output_dims,
-                prototype=FeedforwardSequence(
-                    [lookup.apply]))
+                prototype=forked)
     fork.initialize()
+
+    # Apply the fork
     prernn = fork.apply(x)
+
     # Give a name to the input of each layer
     if args.skip_connections:
         for t in range(len(prernn)):
             prernn[t].name = "pre_rnn_" + str(t)
     else:
         prernn.name = "pre_rnn"
+
     return prernn
 
 
@@ -106,22 +126,30 @@ def get_rnn_kwargs(pre_rnn, args):
 
 def get_costs(presoft, args):
 
-    # Targets: (Time X Batch)
-    y = tensor.lmatrix('targets')
+    if has_indices(args.dataset):
+        # Targets: (Time X Batch)
+        y = tensor.lmatrix('targets')
 
-    time, batch, feat = presoft.shape
-    cross_entropy = Softmax().categorical_cross_entropy(
-        y[args.context:, :].flatten(),
-        presoft.reshape((batch * time, feat)))
-    cross_entropy = cross_entropy / tensor.log(2)
-    cross_entropy.name = "cross_entropy"
+        time, batch, feat = presoft.shape
+        cross_entropy = Softmax().categorical_cross_entropy(
+            y[args.context:, :].flatten(),
+            presoft.reshape((batch * time, feat)))
+
+        unregularized_cost = cross_entropy / tensor.log(2)
+        unregularized_cost.name = "cross_entropy"
+
+    else:
+        # Targets: (Time X Batch X Features)
+        y = tensor.tensor3('targets', dtype=floatX)
+        unregularized_cost = SquaredError(presoft, y)
+        unregularized_cost.name = "mean_squared_error"
 
     # TODO: add regularisation for the cost
     # the log(1) is here in order to differentiate the two variables
     # for monitoring
-    cost = cross_entropy + tensor.log(1)
+    cost = unregularized_cost + tensor.log(1)
     cost.name = "regularized_cost"
-    return cost, cross_entropy
+    return cost, unregularized_cost
 
 
 def initialize_rnn(rnn, args):
