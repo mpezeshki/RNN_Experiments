@@ -3,13 +3,13 @@ import logging
 import theano
 from theano import tensor
 
-from blocks import initialization
 from blocks.bricks import Tanh
 from blocks.bricks.recurrent import RecurrentStack
 
 from rnn.bricks import ClockworkBase
 from rnn.build_model.build_model_utils import (get_prernn, get_presoft,
-                                               get_rnn_kwargs, get_costs)
+                                               get_rnn_kwargs, get_costs,
+                                               initialize_rnn)
 
 
 floatX = theano.config.floatX
@@ -79,11 +79,7 @@ def build_model_cw(vocab_size, args, dtype=floatX):
 
     cost, cross_entropy = get_costs(presoft, args)
 
-    # Initialize the model
-    logger.info('Initializing...')
-
-    rnn.weights_init = initialization.Orthogonal()
-    rnn.biases_init = initialization.Constant(0)
-    rnn.initialize()
+    # Initialize RNN
+    initialize_rnn(rnn)
 
     return cost, cross_entropy, updates, hidden_states

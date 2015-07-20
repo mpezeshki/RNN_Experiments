@@ -9,7 +9,8 @@ from blocks.bricks.recurrent import SimpleRecurrent, RecurrentStack
 
 from rnn.bricks import SoftGatedRecurrent, HardLogistic
 from rnn.build_model.build_model_utils import (get_prernn, get_presoft,
-                                               get_rnn_kwargs, get_costs)
+                                               get_rnn_kwargs, get_costs,
+                                               initialize_rnn)
 
 floatX = theano.config.floatX
 logging.basicConfig(level='INFO')
@@ -56,6 +57,7 @@ def build_model_soft(vocab_size, args, dtype=floatX):
                                activation=Tanh()))
 
     rnn = RecurrentStack(transitions, skip_connections=args.skip_connections)
+    initialize_rnn(rnn, args)
 
     # Prepare inputs and initial states for the RNN
     kwargs, inits = get_rnn_kwargs(pre_rnn, args)
@@ -100,12 +102,5 @@ def build_model_soft(vocab_size, args, dtype=floatX):
     presoft = get_presoft(h, args)
 
     cost, cross_entropy = get_costs(presoft, args)
-
-    # Initialize the model
-    logger.info('Initializing...')
-
-    rnn.weights_init = initialization.Orthogonal()
-    rnn.biases_init = initialization.Constant(0)
-    rnn.initialize()
 
     return cost, cross_entropy, updates, gate_values, hidden_states

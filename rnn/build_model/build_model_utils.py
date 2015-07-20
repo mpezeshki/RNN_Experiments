@@ -126,3 +126,13 @@ def get_costs(presoft, args):
     cost = cross_entropy + tensor.log(1)
     cost.name = "regularized_cost"
     return cost, cross_entropy
+
+
+def initialize_rnn(rnn, args):
+    # Dont initialize as Orthogonal if we are about to load new parameters
+    if args.load_path is not None:
+        rnn.weights_init = initialization.Constant(0)
+    else:
+        rnn.weights_init = initialization.Orthogonal()
+    rnn.biases_init = initialization.Constant(0)
+    rnn.initialize()
