@@ -15,7 +15,7 @@ if __name__ == "__main__":
     # Choose the correct plotting backend
     import matplotlib
     if not args.local:
-        matplotlib.use('Agg')
+        matplotlib.use('Agg', force=True)
 
     dataset = args.dataset
     mini_batch_size = args.mini_batch_size

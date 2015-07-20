@@ -152,7 +152,7 @@ def get_minibatch(dataset, mini_batch_size, mini_batch_size_valid,
 
 if __name__ == "__main__":
     # Test
-    dataset = "sine"
+    dataset = "xml"
     time_length = 7
     mini_batch_size = 4
     mini_batch_size_valid = 20
