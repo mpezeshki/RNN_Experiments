@@ -34,18 +34,18 @@ class LookupTable(Initializable):
 
     @property
     def W(self):
-        return self.params[0]
+        return self.parameters[0]
 
     @property
     def b(self):
-        return self.params[1]
+        return self.parameters[1]
 
     def _allocate(self):
         W = shared_floatx_nans((self.length, self.dim), name='W_lookup')
-        self.params.append(W)
+        self.parameters.append(W)
         add_role(W, WEIGHT)
         b = shared_floatx_nans((self.dim,), name='b_lookup')
-        self.params.append(b)
+        self.parameters.append(b)
         add_role(b, BIAS)
 
     def _initialize(self):
@@ -86,7 +86,7 @@ class ClockworkBase(BaseRecurrent, Initializable):
 
     @property
     def W(self):
-        return self.params[0]
+        return self.parameters[0]
 
     def get_dim(self, name):
         if name == 'mask':
@@ -97,14 +97,14 @@ class ClockworkBase(BaseRecurrent, Initializable):
         return super(ClockworkBase, self).get_dim(name)
 
     def _allocate(self):
-        self.params.append(shared_floatx_nans((self.dim, self.dim), name="W"))
-        add_role(self.params[0], WEIGHT)
-        self.params.append(shared_floatx_zeros((self.dim,),
+        self.parameters.append(shared_floatx_nans((self.dim, self.dim), name="W"))
+        add_role(self.parameters[0], WEIGHT)
+        self.parameters.append(shared_floatx_zeros((self.dim,),
                                                name="initial_state"))
-        add_role(self.params[1], INITIAL_STATE)
+        add_role(self.parameters[1], INITIAL_STATE)
 
-        self.params.append(shared_floatx_zeros((1,), name="initial_time"))
-        add_role(self.params[2], INITIAL_STATE)
+        self.parameters.append(shared_floatx_zeros((1,), name="initial_time"))
+        add_role(self.parameters[2], INITIAL_STATE)
 
     def _initialize(self):
         self.weights_init.initialize(self.W, self.rng)
@@ -142,8 +142,8 @@ class ClockworkBase(BaseRecurrent, Initializable):
 
     @application(outputs=apply.states)
     def initial_states(self, batch_size, *args, **kwargs):
-        return [tensor.repeat(self.params[1][None, :], batch_size, 0),
-                self.params[2][None, :]]
+        return [tensor.repeat(self.parameters[1][None, :], batch_size, 0),
+                self.parameters[2][None, :]]
 
 
 class SoftGatedRecurrent(BaseRecurrent, Initializable):
@@ -165,11 +165,11 @@ class SoftGatedRecurrent(BaseRecurrent, Initializable):
 
     @property
     def state_to_state(self):
-        return self.params[0]
+        return self.parameters[0]
 
     @property
     def matrix_gate(self):
-        return self.params[1]
+        return self.parameters[1]
 
     def get_dim(self, name):
         if name == 'mask':
@@ -179,12 +179,12 @@ class SoftGatedRecurrent(BaseRecurrent, Initializable):
         return super(SoftGatedRecurrent, self).get_dim(name)
 
     def _allocate(self):
-        self.params.append(shared_floatx_nans((self.dim, self.dim),
+        self.parameters.append(shared_floatx_nans((self.dim, self.dim),
                                               name='state_to_state'))
-        self.params.append(shared_floatx_zeros((self.dim,),
+        self.parameters.append(shared_floatx_zeros((self.dim,),
                                                name="initial_state"))
-        add_role(self.params[0], WEIGHT)
-        add_role(self.params[1], INITIAL_STATE)
+        add_role(self.parameters[0], WEIGHT)
+        add_role(self.parameters[1], INITIAL_STATE)
 
     def _initialize(self):
         self.weights_init.initialize(self.state_to_state, self.rng)
@@ -235,7 +235,7 @@ class SoftGatedRecurrent(BaseRecurrent, Initializable):
 
     @application(outputs=apply.states)
     def initial_states(self, batch_size, *args, **kwargs):
-        return [tensor.repeat(self.params[2][None, :], batch_size, 0)]
+        return [tensor.repeat(self.parameters[2][None, :], batch_size, 0)]
 
 
 class HardGatedRecurrent(BaseRecurrent, Initializable):
@@ -260,11 +260,11 @@ class HardGatedRecurrent(BaseRecurrent, Initializable):
 
     @property
     def state_to_state(self):
-        return self.params[0]
+        return self.parameters[0]
 
     @property
     def matrix_gate(self):
-        return self.params[1]
+        return self.parameters[1]
 
     def get_dim(self, name):
         if name == 'mask':
@@ -274,12 +274,12 @@ class HardGatedRecurrent(BaseRecurrent, Initializable):
         return super(HardGatedRecurrent, self).get_dim(name)
 
     def _allocate(self):
-        self.params.append(shared_floatx_nans((self.dim, self.dim),
+        self.parameters.append(shared_floatx_nans((self.dim, self.dim),
                                               name='state_to_state'))
-        self.params.append(shared_floatx_zeros((self.dim,),
+        self.parameters.append(shared_floatx_zeros((self.dim,),
                                                name="initial_state"))
-        add_role(self.params[0], WEIGHT)
-        add_role(self.params[1], INITIAL_STATE)
+        add_role(self.parameters[0], WEIGHT)
+        add_role(self.parameters[1], INITIAL_STATE)
 
     def _initialize(self):
         self.weights_init.initialize(self.state_to_state, self.rng)
@@ -332,7 +332,7 @@ class HardGatedRecurrent(BaseRecurrent, Initializable):
 
     @application(outputs=apply.states)
     def initial_states(self, batch_size, *args, **kwargs):
-        return [tensor.repeat(self.params[2][None, :], batch_size, 0)]
+        return [tensor.repeat(self.parameters[2][None, :], batch_size, 0)]
 
 
 class LSTM(BaseRecurrent, Initializable):
@@ -368,11 +368,11 @@ class LSTM(BaseRecurrent, Initializable):
         add_role(self.initial_state_, INITIAL_STATE)
         add_role(self.initial_cells, INITIAL_STATE)
 
-        self.params = [
+        self.parameters = [
             self.W_state, self.initial_state_, self.initial_cells]
 
     def _initialize(self):
-        self.weights_init.initialize(self.params[0], self.rng)
+        self.weights_init.initialize(self.parameters[0], self.rng)
 
     @recurrent(sequences=['inputs', 'mask'], states=['states', 'cells'],
                contexts=[], outputs=['states', 'cells', 'in_gate',

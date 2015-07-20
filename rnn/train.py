@@ -71,7 +71,7 @@ def train_model(cost, cross_entropy, updates,
 
     # Define algorithm
     algorithm = GradientDescent(cost=cost, step_rule=step_rule,
-                                params=cg.parameters)
+                                parameters=cg.parameters)
     # Add the updates to carry the hidden state
     algorithm.add_updates(updates)
 

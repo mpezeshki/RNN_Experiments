@@ -79,7 +79,8 @@ class EarlyStopping(SimpleExtension):
             f.write(str(self.main_loop.log))
             f.close()
             logger.info("Dumping best model ...")
-            secure_dump(self.main_loop.model.params, path, use_cpickle=True)
+            secure_dump(
+                self.main_loop.model.parameters, path, use_cpickle=True)
         except Exception:
             self.main_loop.log.current_row['saved_best_to'] = None
             raise

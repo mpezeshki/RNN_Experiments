@@ -20,7 +20,7 @@ def run_visualizations(cost, updates,
     # Load the parameters from a dumped model
     assert args.load_path is not None
     model = Model(cost)
-    model.set_param_values(load_parameter_values(args.load_path))
+    model.set_parameter_values(load_parameter_values(args.load_path))
 
     # Run a visualization
     if args.visualize == "gates" and (gate_values is not None):

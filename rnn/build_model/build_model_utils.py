@@ -1,4 +1,3 @@
-import logging
 from collections import OrderedDict
 
 import numpy
@@ -7,14 +6,14 @@ import theano
 from theano import tensor
 
 from blocks import initialization
-from blocks.bricks import Linear, Tanh, Softmax, FeedforwardSequence
+from blocks.bricks import Linear, Softmax, FeedforwardSequence
 from blocks.bricks.parallel import Fork
-from blocks.bricks.recurrent import RecurrentStack
 from rnn.datasets.dataset import get_minibatch_char
 
-from rnn.bricks import LookupTable, ClockworkBase
+from rnn.bricks import LookupTable
 
 floatX = theano.config.floatX
+RECURRENTSTACK_SEPARATOR = '#'
 
 
 def get_prernn(x, args):
@@ -29,7 +28,7 @@ def get_prernn(x, args):
     output_dims = []
     for d in range(args.layers):
         if d > 0:
-            suffix = '_' + str(d)
+            suffix = RECURRENTSTACK_SEPARATOR + str(d)
         else:
             suffix = ''
         if d == 0 or args.skip_connections:
@@ -82,7 +81,7 @@ def get_rnn_kwargs(pre_rnn, args):
         init_cells = {}
     for d in range(args.layers):
         if d > 0:
-            suffix = '_' + str(d)
+            suffix = RECURRENTSTACK_SEPARATOR + str(d)
         else:
             suffix = ''
         if args.skip_connections:
