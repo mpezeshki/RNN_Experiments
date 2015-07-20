@@ -12,6 +12,7 @@ from theano.compile import Mode
 from blocks.filter import VariableFilter
 from blocks.graph import ComputationGraph
 from rnn.datasets.dataset import conv_into_char
+from rnn.utils import carry_hidden_state
 
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
@@ -40,12 +41,8 @@ def visualize_presoft(cost, hidden_states, updates,
             tensor.grad(tensor.mean(tensor.abs_(presoft[i, 0, :])), all_states))
     logger.info("The computation of the gradients is done")
 
-    # Handle the theano shared variables for the state
-    state_vars = [theano.shared(
-        v[0:1, :].zeros_like().eval(), v.name + '-gen')
-        for v, _ in updates]
-    givens = [(v, x) for (v, _), x in zip(updates, state_vars)]
-    f_updates = [(x, upd) for x, (_, upd) in zip(state_vars, updates)]
+    # Handle the theano shared variables that allow carrying the hidden state
+    givens, f_updates = carry_hidden_state(updates)
 
     # Compile the function
     logger.info("The compilation of the function has started")

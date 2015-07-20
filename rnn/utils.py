@@ -1,5 +1,7 @@
 import argparse
 import logging
+import numpy
+import theano
 
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
@@ -118,47 +120,11 @@ def parse_args():
     return args
 
 
-# Compute the number of parameters given a particular architecture
-def compute_params(dim, layers, skip_connections, vocab_size, unit_type):
-    virtual_dim = dim
-    if unit_type == 'lstm':
-        virtual_dim = 4 * dim
-
-    if skip_connections:
-        input_to_layers = virtual_dim * vocab_size * layers
-        between_layers = 0.5 * layers * (layers - 1) * virtual_dim * dim
-    else:
-        input_to_layers = virtual_dim * vocab_size
-        between_layers = (layers - 1) * virtual_dim * dim
-
-    in_layers = virtual_dim * dim * layers
-    output = layers * dim * vocab_size
-
-    param = input_to_layers + in_layers + between_layers + output
-
-    return param
-
-
-# Stupidely compute the number of units in each layer given the total number
-# of parameters allowed
-def compute_units(param, layers, skip_connections, vocab_size, unit_type):
-    unit = 1
-    while(compute_params(
-            unit, layers, skip_connections, vocab_size, unit_type) < param):
-        unit += 1
-    return unit
-
-
-# 1 layer of 1000 LSTM = 4,250,000 parameters
-# 1 layer of 2013 SIMPLE = 4,250,000 parameters
-# 3 layers of 406 LSTM = 4,250,000 parameters
-# 3 layers of 817 SIMPLE = 4,250,000 parameters
-if __name__ == "__main__":
-    param = compute_params(1000, 1, False, 50, "simple")
-    param2 = compute_params(400, 3, True, 50, "simple")
-    unit = compute_units(4250000, 1, False, 50, "simple")
-    unit2 = compute_units(4250000, 3, True, 50, "simple")
-    print(param)
-    print(param2)
-    print(unit)
-    print(unit2)
+def carry_hidden_state(updates, mini_batch_size):
+    state_vars = [theano.shared(
+        numpy.zeros((mini_batch_size, v.shape[1].eval()),
+                    dtype=numpy.float32),
+        v.name + '-gen') for v, _ in updates]
+    givens = [(v, x) for (v, _), x in zip(updates, state_vars)]
+    f_updates = [(x, upd) for x, (_, upd) in zip(state_vars, updates)]
+    return givens, f_updates

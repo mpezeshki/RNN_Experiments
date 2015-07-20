@@ -9,6 +9,7 @@ from theano.compile import Mode
 
 from blocks.graph import ComputationGraph
 from rnn.datasets.dataset import conv_into_char
+from rnn.utils import carry_hidden_state
 from rnn.visualize.plot import plot
 
 logging.basicConfig(level='INFO')
@@ -19,12 +20,8 @@ def visualize_gates_soft(gate_values, hidden_states, updates,
                          train_stream, valid_stream,
                          args):
 
-    # Handle the theano shared variables for the state
-    state_vars = [theano.shared(
-        v[0:1, :].zeros_like().eval(), v.name + '-gen')
-        for v, _ in updates]
-    givens = [(v, x) for (v, _), x in zip(updates, state_vars)]
-    f_updates = [(x, upd) for x, (_, upd) in zip(state_vars, updates)]
+    # Handle the theano shared variables that allow carrying the hidden state
+    givens, f_updates = carry_hidden_state(updates)
 
     # Compile the function
     compiled = theano.function(inputs=ComputationGraph(gate_values).inputs,
@@ -43,11 +40,8 @@ def visualize_gates_lstm(gate_values, hidden_states, updates,
     out_gates = gate_values["out_gates"]
     forget_gates = gate_values["forget_gates"]
 
-    state_vars = [theano.shared(
-        v[0:1, :].zeros_like().eval(), v.name + '-gen')
-        for v, _ in updates]
-    givens = [(v, x) for (v, _), x in zip(updates, state_vars)]
-    f_updates = [(x, upd) for x, (_, upd) in zip(state_vars, updates)]
+    # Handle the theano shared variables that allow carrying the hidden state
+    givens, f_updates = carry_hidden_state(updates)
 
     generate_in = theano.function(inputs=ComputationGraph(in_gates).inputs,
                                   outputs=in_gates,

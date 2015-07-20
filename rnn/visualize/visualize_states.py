@@ -5,6 +5,7 @@ from theano.compile import Mode
 
 from blocks.filter import VariableFilter
 from blocks.graph import ComputationGraph
+from rnn.utils import carry_hidden_state
 from rnn.visualize.plot import plot
 
 
@@ -26,12 +27,8 @@ def visualize_states(hidden_states, updates,
     all_cells = filter_cells(hidden_states)
     all_cells = sorted(all_cells, key=lambda var: var.name[-1])
 
-    # Handle the theano shared variables for the state
-    state_vars = [theano.shared(
-        v[0:1, :].zeros_like().eval(), v.name + '-gen')
-        for v, _ in updates]
-    givens = [(v, x) for (v, _), x in zip(updates, state_vars)]
-    f_updates = [(x, upd) for x, (_, upd) in zip(state_vars, updates)]
+    # Handle the theano shared variables that allow carrying the hidden state
+    givens, f_updates = carry_hidden_state(updates)
 
     # Compile the function
     logger.info("The compilation of the function has started")

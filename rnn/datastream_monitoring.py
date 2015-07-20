@@ -2,7 +2,6 @@ from collections import OrderedDict
 import logging
 
 import theano
-import numpy
 
 from blocks.extensions import SimpleExtension
 from blocks.extensions.monitoring import MonitoringExtension
@@ -10,6 +9,8 @@ from blocks.monitoring.aggregation import MonitoredQuantity
 from blocks.monitoring.evaluators import (MonitoredQuantityBuffer,
                                           AggregationBuffer)
 from blocks.utils import dict_subset, reraise_as
+
+from rnn.utils import carry_hidden_state
 
 logger = logging.getLogger()
 
@@ -119,14 +120,8 @@ class DatasetEvaluator(object):
         outputs = []
         updates = None
 
-        state_vars = [theano.shared(numpy.zeros((self.mini_batch_size,
-                                                 v.shape[1].eval()),
-                                                dtype=numpy.float32),
-                                    v.name + '-gen')
-                      for v, _ in state_updates]
-        givens = [(v, x) for (v, _), x in zip(state_updates, state_vars)]
-        f_updates = [(x, upd)
-                     for x, (_, upd) in zip(state_vars, state_updates)]
+        givens, f_updates = carry_hidden_state(state_updates,
+                                               self.mini_batch_size)
 
         if self.theano_buffer.accumulation_updates:
             updates = OrderedDict()
