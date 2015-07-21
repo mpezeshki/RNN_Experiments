@@ -51,7 +51,7 @@ def learning_algorithm(args):
     return step_rule
 
 
-def train_model(cost, cross_entropy, updates,
+def train_model(cost, unregularized_cost, updates,
                 train_stream, valid_stream, args, gate_values=None):
 
     step_rule = learning_algorithm(args)
@@ -99,7 +99,7 @@ def train_model(cost, cross_entropy, updates,
     extensions.extend([
         TrainingDataMonitoring([cost], prefix='train',
                                every_n_batches=args.monitoring_freq),
-        DataStreamMonitoring([cost, cross_entropy],
+        DataStreamMonitoring([cost, unregularized_cost],
                              valid_stream, args.mini_batch_size_valid,
                              state_updates=updates,
                              prefix='valid',
@@ -116,7 +116,7 @@ def train_model(cost, cross_entropy, updates,
             raise Exception('Directory already exists')
 
     # Early stopping
-    extensions.append(EarlyStopping('valid_cross_entropy',
+    extensions.append(EarlyStopping('valid_' + unregularized_cost.name,
                                     args.patience, args.save_path,
                                     every_n_batches=args.monitoring_freq))
 
@@ -125,8 +125,12 @@ def train_model(cost, cross_entropy, updates,
     extensions.append(Printing(every_n_batches=args.monitoring_freq))
 
     # Reset the initial states
+    if args.dataset == "sine":
+        reset_frequency = 1
+    else:
+        reset_frequency = 100
     extensions.append(ResetStates([v for v, _ in updates],
-                                  every_n_batches=100))
+                                  every_n_batches=reset_frequency))
 
     # Visualizing extensions
     if args.interactive_mode:

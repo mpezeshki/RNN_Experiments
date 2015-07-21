@@ -1,5 +1,5 @@
 import numpy as np
-
+import matplotlib.pyplot as plt
 
 class GenerateSineWave(object):
 
@@ -32,21 +32,25 @@ def save(destination, train, valid, test):
 
 
 if __name__ == "__main__":
-    depth = 5
+    depth = 20
     time = 150
     generator = GenerateSineWave(depth, time)
 
     # Train
-    batch = 1000
+    batch = 100000
     train = generator.generate(batch)
 
     # Valid
-    batch = 1000
+    batch = 50000
     valid = generator.generate(batch)
 
     # Test
-    batch = 1000
+    batch = 50000
     test = generator.generate(batch)
 
     # Save the data
-    save("/media/win/Users/Eloi/dataset/sine_waves/datatmp", train, valid, test)
+    save("/media/win/Users/Eloi/dataset/sine_waves/data_d20", train,
+         valid, test)
+
+    plt.plot(range(time), train[:, 0, 0])
+    plt.show()

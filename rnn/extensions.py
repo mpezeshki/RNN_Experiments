@@ -7,6 +7,7 @@ from scipy.linalg import svd
 
 import theano
 
+from blocks.filter import VariableFilter
 from blocks.graph import ComputationGraph
 from blocks.serialization import secure_dump
 from blocks.extensions import SimpleExtension
@@ -15,7 +16,7 @@ from blocks.extensions.monitoring import MonitoringExtension
 import matplotlib.pyplot as plt
 from matplotlib.table import Table
 
-from rnn.datasets.dataset import get_character
+from rnn.datasets.dataset import get_character, conv_into_char, get_vocab_size
 from rnn.utils import carry_hidden_state
 
 logging.basicConfig(level='INFO')
@@ -144,7 +145,6 @@ class SvdExtension(SimpleExtension, MonitoringExtension):
                                            network.name] = w_svd[1]
 
 
-# Help from Alex Auvolat
 class TextGenerationExtension(SimpleExtension):
 
     def __init__(self, cost, generation_length, dataset,
@@ -152,38 +152,25 @@ class TextGenerationExtension(SimpleExtension):
                  updates, ploting_path=None,
                  interactive_mode=False, **kwargs):
         self.generation_length = generation_length
-        self.initial_text_length = initial_text_length
+        self.init_length = initial_text_length
         self.dataset = dataset
+        self.vocab_size = get_vocab_size(dataset)
         self.ploting_path = ploting_path
         self.softmax_sampling = softmax_sampling
         self.interactive_mode = interactive_mode
         super(TextGenerationExtension, self).__init__(**kwargs)
 
-        variables = ComputationGraph(cost).variables
-        outputs = [
-            var for var in variables if var.name == "presoft"]
-        cg = ComputationGraph(outputs)
-        ####
-        outputs = [variable for variable in cg.variables
-                   if (variable.name == "lstm_0_apply_cells"
-                       or variable.name == "lstm_1_apply_cells"
-                       or variable.name == "lstm_2_apply_cells"
-                       or variable.name == "lstm_3_apply_cells"
-                       or variable.name == "lstm_0_apply_states"
-                       or variable.name == "lstm_1_apply_states"
-                       or variable.name == "lstm_2_apply_states"
-                       or variable.name == "lstm_3_apply_states"
-                       or variable.name == "pre_rnn"
-                       or variable.name == "presoft")]
-        ####
-        assert(len(cg.inputs) == 1)
-        assert(cg.inputs[0].name == "features")
+        # Get presoft and its computation graph
+        filter_presoft = VariableFilter(theano_name="presoft")
+        presoft = filter_presoft(ComputationGraph(cost).variables)
+        cg = ComputationGraph(presoft)
 
         # Handle the theano shared variables that allow carrying the hidden
         # state
         givens, f_updates = carry_hidden_state(updates, 1)
 
-        self.generate = theano.function(inputs=cg.inputs, outputs=outputs,
+        # Compile the theano function
+        self.generate = theano.function(inputs=cg.inputs, outputs=presoft,
                                         givens=givens, updates=f_updates)
 
     def do(self, *args):
@@ -193,50 +180,44 @@ class TextGenerationExtension(SimpleExtension):
         # self.main_loop.epoch_iterator is not accessible.
         if self.interactive_mode:
             # TEMPORARY HACK
-            it = self.main_loop.data_stream.get_epoch_iterator()
-            init_ = next(
-                it)[0][
-                0: self.initial_text_length,
-                2:3]
+            iterator = self.main_loop.data_stream.get_epoch_iterator()
+            init_ = next(iterator)[0][0: self.init_length, 2:3]
         else:
-            init_ = next(
-                self.main_loop.epoch_iterator)["features"][
-                0: self.initial_text_length,
-                0:1]
-        inputs_ = init_
-        all_output_probabilities = []
+            iterator = self.main_loop.epoch_iterator
+            init_ = next(iterator)["features"][0: self.init_length, 0:1]
+
+        # Time X Batch X Features
+        probability_array = np.zeros((0, 1, self.vocab_size))
+        generated_text = init_
+
         logger.info("\nGeneration:")
         for i in range(self.generation_length):
-            # time x batch x features (1 x 1 x vocab_size)
-            last_output = self.generate(inputs_)[-1][-1:, :, :]
-            # time x features (1 x vocab_size) '0' is for removing one dim
-            last_output_probabilities = softmax(last_output[0])
-            all_output_probabilities += [last_output_probabilities]
-            # 1 x 1
-            if self.softmax_sampling == 'argmax':
-                argmax = True
-            else:
-                argmax = False
-            last_output_sample = sample(last_output_probabilities, argmax)
-            inputs_ = np.vstack([inputs_, last_output_sample])
-        # time x batch
-        whole_sentence_code = inputs_
-        vocab = get_character(self.dataset)
-        # whole_sentence
-        whole_sentence = ''
-        for char in vocab[whole_sentence_code[:, 0]]:
-            whole_sentence += str(char)
-        logger.info(whole_sentence[:init_.shape[0]] + ' ...')
+            presoft = self.generate(generated_text)[0]
+            # Get the last value of presoft
+            last_presoft = presoft[-1:, :, :]
+
+            # Compute the probability distribution
+            probabilities = softmax(last_presoft)
+            # Store it in the list
+            probability_array = np.vstack([probabilities, probabilities])
+
+            # Sample a character out of the probability distribution
+            argmax = (self.softmax_sampling == 'argmax')
+            last_output_sample = sample(probabilities, argmax)
+
+            # Concatenate the new value to the text
+            generated_text = np.vstack([generated_text, last_output_sample])
+
+        # Convert with real characters
+        whole_sentence = conv_into_char(generated_text[:, 0], self.dataset)
+        initial_sentence = whole_sentence[:init_.shape[0]]
+
+        logger.info(initial_sentence + '...')
         logger.info(whole_sentence)
 
         if self.ploting_path is not None:
-            all_output_probabilities_array = np.zeros(
-                (self.generation_length, all_output_probabilities[0].shape[1]))
-            for i, output_probabilities in enumerate(all_output_probabilities):
-                all_output_probabilities_array[i] = output_probabilities
-            probability_plot(all_output_probabilities_array,
-                             whole_sentence[init_.shape[0]:],
-                             vocab, self.ploting_path)
+            probability_plot(probability_array, initial_sentence,
+                             get_character(self.dataset), self.ploting_path)
 
     def interactive_generate(self, initial_text, generation_length, *args):
         vocab = get_character(self.dataset)
@@ -289,6 +270,7 @@ def sample(probs, argmax=False):
 # python plotting
 def probability_plot(probabilities, selected, vocab, ploting_path,
                      top_n_probabilities=20, max_length=120):
+
     selected = selected[:max_length]
     probabilities = probabilities[:max_length]
     # target = ['a', 'b', 'c', 'd', 'e', 'f', 'a', 'b', 'c', 'd']
