@@ -40,19 +40,20 @@ def visualize_generate(cost, hidden_states, updates,
     epoch_iterator = train_stream.get_epoch_iterator()
     for num in range(10):
         all_sequence = next(epoch_iterator)[0][:, 0:1]
-        init_ = all_sequence[:args.initial_text_length]
 
-        # Time X Features
-        probability_array = np.zeros((0, output_size))
-        generated_text = init_
+        # In the case of characters and text
+        if use_indices:
+            init_ = all_sequence[:args.initial_text_length]
 
-        logger.info("\nGeneration:")
-        for i in range(args.generated_text_lenght):
-            presoft = compiled(generated_text)
-            # Get the last value of presoft
-            last_presoft = presoft[-1:, 0, :]
+            # Time X Features
+            probability_array = np.zeros((0, output_size))
+            generated_text = init_
 
-            if use_indices:
+            for i in range(args.generated_text_lenght):
+                presoft = compiled(generated_text)
+                # Get the last value of presoft
+                last_presoft = presoft[-1:, 0, :]
+
                 # Compute the probability distribution
                 probabilities = softmax(last_presoft)
                 # Store it in the list
@@ -63,37 +64,37 @@ def visualize_generate(cost, hidden_states, updates,
                 argmax = (args.softmax_sampling == 'argmax')
                 last_output_sample = sample(probabilities, argmax)[:, None, :]
 
-            else:
-                last_output_sample = last_presoft[:, None, :]
+                # Concatenate the new value to the text
+                generated_text = np.vstack(
+                    [generated_text, last_output_sample])
 
-            # Concatenate the new value to the text
-            generated_text = np.vstack([generated_text, last_output_sample])
+                ploting_path = None
+                if args.save_path is not None:
+                    ploting_path = os.path.join(
+                        args.save_path, 'prob_plot.png')
 
-        # In the case of characters and text
-        if use_indices:
-            ploting_path = None
-            if args.save_path is not None:
-                ploting_path = os.path.join(args.save_path, 'prob_plot.png')
+                # Convert with real characters
+                whole_sentence = conv_into_char(
+                    generated_text[:, 0], args.dataset)
+                initial_sentence = whole_sentence[:init_.shape[0]]
+                selected_sentence = whole_sentence[init_.shape[0]:]
 
-            # Convert with real characters
-            whole_sentence = conv_into_char(generated_text[:, 0], args.dataset)
-            initial_sentence = whole_sentence[:init_.shape[0]]
-            selected_sentence = whole_sentence[init_.shape[0]:]
+                logger.info(''.join(initial_sentence) + '...')
+                logger.info(''.join(whole_sentence))
 
-            logger.info(''.join(initial_sentence) + '...')
-            logger.info(''.join(whole_sentence))
-
-            if ploting_path is not None:
-                probability_plot(probability_array, selected_sentence,
-                                 args.dataset, ploting_path)
+                if ploting_path is not None:
+                    probability_plot(probability_array, selected_sentence,
+                                     args.dataset, ploting_path)
 
         # In the case of sine wave dataset for example
         else:
-            time_plot = min([all_sequence.shape[0], generated_text.shape[0]])
+            presoft = compiled(all_sequence)
 
-            plt.plot(np.arange(time_plot), all_sequence[:time_plot, 0, 0],
+            time_plot = presoft.shape[0] - 1
+
+            plt.plot(np.arange(time_plot), all_sequence[2:time_plot + 2, 0, 0],
                      label="target")
-            plt.plot(np.arange(time_plot), generated_text[:time_plot, 0, 0],
+            plt.plot(np.arange(time_plot), presoft[:time_plot, 0, 0],
                      label="predicted")
             plt.legend()
             plt.show()

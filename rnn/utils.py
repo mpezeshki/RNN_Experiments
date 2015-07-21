@@ -50,7 +50,7 @@ def parse_args():
     parser.add_argument('--mini_batch_size', type=int,
                         default=5)
     parser.add_argument('--mini_batch_size_valid', type=int,
-                        default=10000)
+                        default=512)
 
     parser.add_argument('--context', type=int,
                         default=1)

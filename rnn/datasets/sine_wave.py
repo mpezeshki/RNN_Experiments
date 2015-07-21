@@ -35,29 +35,29 @@ def save(destination, train, valid, test):
 
 
 if __name__ == "__main__":
-    depth = 4
-    time = 150
+    depth = 30
+    time = 300
     generator = GenerateSineWave(depth, time)
 
     # Train
-    batch = 1
+    batch = 100000
     train = generator.generate(batch)
 
-    # # Valid
-    # batch = 10000
-    # valid = generator.generate(batch)
+    # Valid
+    batch = 10000
+    valid = generator.generate(batch)
 
-    # # Test
-    # batch = 10000
-    # test = generator.generate(batch)
+    # Test
+    batch = 10000
+    test = generator.generate(batch)
 
-    # # Save the data
-    # save("/media/win/Users/Eloi/dataset/sine_waves/data_d2_more_waves",
-    #      train,
-    #      valid,
-    #      test)
+    # Save the data
+    save("/media/win/Users/Eloi/dataset/sine_waves/data_d30_300ts",
+         train,
+         valid,
+         test)
 
-    for i in range(batch):
-        plt.plot(range(time), train[:, i, 0])
-    plt.grid()
-    plt.show()
+    # for i in range(batch):
+    #     plt.plot(range(time), train[:, i, 0])
+    # plt.grid()
+    # plt.show()
