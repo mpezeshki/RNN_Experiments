@@ -23,7 +23,7 @@ def build_model_lstm(args, dtype=floatX):
 
     # Return list of 3D Tensor, one for each layer
     # (Time X Batch X embedding_dim)
-    pre_rnn = get_prernn(args)
+    pre_rnn, x_mask = get_prernn(args)
 
     transitions = [LSTM(dim=args.state_dim, activation=Tanh())
                    for _ in range(args.layers)]
@@ -35,7 +35,7 @@ def build_model_lstm(args, dtype=floatX):
     kwargs, inits = get_rnn_kwargs(pre_rnn, args)
 
     # Apply the RNN to the inputs
-    h = rnn.apply(**kwargs)
+    h = rnn.apply(mask=x_mask, **kwargs)
 
     # h = [state, cell, in, forget, out, state_1,
     #        cell_1, in_1, forget_1, out_1 ...]
@@ -44,6 +44,9 @@ def build_model_lstm(args, dtype=floatX):
     last_cells = {}
     hidden_states = []
     for d in range(args.layers):
+        h[5 * d] = h[5 * d] * x_mask
+        h[5 * d + 1] = h[5 * d + 1] * x_mask
+
         last_states[d] = h[5 * d][-1, :, :]
         last_cells[d] = h[5 * d + 1][-1, :, :]
 
@@ -52,6 +55,8 @@ def build_model_lstm(args, dtype=floatX):
         hidden_states.extend([h[5 * d], h[5 * d + 1]])
 
     # The updates of the hidden states
+    # Note: if we have mask, then updating initial state
+    # with last state does not make sence anymore.
     updates = []
     for d in range(args.layers):
         updates.append((inits[0][d], last_states[d]))
@@ -88,6 +93,6 @@ def build_model_lstm(args, dtype=floatX):
 
     presoft = get_presoft(h, args)
 
-    cost, unregularized_cost = get_costs(presoft, args)
+    cost, unregularized_cost = get_costs(presoft, x_mask, args)
 
     return cost, unregularized_cost, updates, gate_values, hidden_states
