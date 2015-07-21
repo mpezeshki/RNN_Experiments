@@ -24,7 +24,7 @@ def get_data(dataset):
                             'data.npz')
     elif dataset == "sine":
         path = os.path.join(config.data_path, 'sine_waves',
-                            'data_d20.npz')
+                            'data_d10.npz')
     else:
         assert False
     return numpy.load(path, 'rb')
@@ -47,19 +47,17 @@ def has_indices(dataset):
         assert False
 
 
+def get_output_size(dataset):
+    data = get_data(dataset)
+    if has_indices(dataset):
+        return data["vocab_size"]
+    else:
+        return data["feature_size"]
+
+
 def get_character(dataset):
     data = get_data(dataset)
     return data["vocab"]
-
-
-def get_vocab_size(dataset):
-    data = get_data(dataset)
-    return data["vocab_size"]
-
-
-def get_feature_size(dataset):
-    data = get_data(dataset)
-    return data["feature_size"]
 
 
 def conv_into_char(vector, dataset):

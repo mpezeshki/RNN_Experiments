@@ -16,7 +16,8 @@ from blocks.extensions.monitoring import MonitoringExtension
 import matplotlib.pyplot as plt
 from matplotlib.table import Table
 
-from rnn.datasets.dataset import get_character, conv_into_char, get_vocab_size
+from rnn.datasets.dataset import (get_character, conv_into_char,
+                                  get_output_size, has_indices)
 from rnn.utils import carry_hidden_state
 
 logging.basicConfig(level='INFO')
@@ -154,10 +155,11 @@ class TextGenerationExtension(SimpleExtension):
         self.generation_length = generation_length
         self.init_length = initial_text_length
         self.dataset = dataset
-        self.vocab_size = get_vocab_size(dataset)
+        self.output_size = get_output_size(dataset)
         self.ploting_path = ploting_path
         self.softmax_sampling = softmax_sampling
         self.interactive_mode = interactive_mode
+        self.has_indices = has_indices(dataset)
         super(TextGenerationExtension, self).__init__(**kwargs)
 
         # Get presoft and its computation graph
@@ -181,13 +183,15 @@ class TextGenerationExtension(SimpleExtension):
         if self.interactive_mode:
             # TEMPORARY HACK
             iterator = self.main_loop.data_stream.get_epoch_iterator()
-            init_ = next(iterator)[0][0: self.init_length, 2:3]
+            all_sequence = next(iterator)[0][:, 0:1]
         else:
             iterator = self.main_loop.epoch_iterator
-            init_ = next(iterator)["features"][0: self.init_length, 0:1]
+            all_sequence = next(iterator)["features"][:, 0:1]
+
+        init_ = all_sequence[:self.init_length]
 
         # Time X Features
-        probability_array = np.zeros((0, self.vocab_size))
+        probability_array = np.zeros((0, self.output_size))
         generated_text = init_
 
         logger.info("\nGeneration:")
@@ -196,29 +200,43 @@ class TextGenerationExtension(SimpleExtension):
             # Get the last value of presoft
             last_presoft = presoft[-1:, 0, :]
 
-            # Compute the probability distribution
-            probabilities = softmax(last_presoft)
-            # Store it in the list
-            probability_array = np.vstack([probability_array, probabilities])
+            if self.has_indices:
+                # Compute the probability distribution
+                probabilities = softmax(last_presoft)
+                # Store it in the list
+                probability_array = np.vstack([probability_array,
+                                               probabilities])
 
-            # Sample a character out of the probability distribution
-            argmax = (self.softmax_sampling == 'argmax')
-            last_output_sample = sample(probabilities, argmax)
+                # Sample a character out of the probability distribution
+                argmax = (self.softmax_sampling == 'argmax')
+                last_output_sample = sample(probabilities, argmax)[:, None, :]
+
+            else:
+                last_output_sample = sigmoid(last_presoft)[:, None, :]
 
             # Concatenate the new value to the text
             generated_text = np.vstack([generated_text, last_output_sample])
 
-        # Convert with real characters
-        whole_sentence = conv_into_char(generated_text[:, 0], self.dataset)
-        initial_sentence = whole_sentence[:init_.shape[0]]
-        selected_sentence = whole_sentence[init_.shape[0]:]
+        # In the case of characters and text
+        if self.has_indices:
+            # Convert with real characters
+            whole_sentence = conv_into_char(generated_text[:, 0], self.dataset)
+            initial_sentence = whole_sentence[:init_.shape[0]]
+            selected_sentence = whole_sentence[init_.shape[0]:]
 
-        logger.info(''.join(initial_sentence) + '...')
-        logger.info(''.join(whole_sentence))
+            logger.info(''.join(initial_sentence) + '...')
+            logger.info(''.join(whole_sentence))
 
-        if self.ploting_path is not None:
-            probability_plot(probability_array, selected_sentence,
-                             self.dataset, self.ploting_path)
+            if self.ploting_path is not None:
+                probability_plot(probability_array, selected_sentence,
+                                 self.dataset, self.ploting_path)
+
+        # In the case of sine wave dataset for example
+        else:
+            time_plot = min([all_sequence.shape[0], generated_text.shape[0]])
+            plt.plot(np.arange(time_plot), all_sequence[:time_plot, 0, 0])
+            plt.plot(np.arange(time_plot), generated_text[:time_plot, 0, 0])
+            plt.show()
 
     def interactive_generate(self, initial_text, generation_length, *args):
         vocab = get_character(self.dataset)
@@ -257,6 +275,10 @@ def softmax(w):
     e = np.exp(w)
     dist = e / np.sum(e, axis=1)
     return dist
+
+
+def sigmoid(w):
+    return 1 / (1 + np.exp(-w))
 
 
 # python sampling
