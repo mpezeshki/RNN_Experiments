@@ -234,7 +234,7 @@ class SoftGatedRecurrent(BaseRecurrent, Initializable):
 
     @application(outputs=apply.states)
     def initial_states(self, batch_size, *args, **kwargs):
-        return [tensor.repeat(self.parameters[2][None, :], batch_size, 0)]
+        return [tensor.repeat(self.parameters[1][None, :], batch_size, 0)]
 
 
 class HardGatedRecurrent(BaseRecurrent, Initializable):
