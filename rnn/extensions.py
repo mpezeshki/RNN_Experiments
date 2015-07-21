@@ -186,20 +186,20 @@ class TextGenerationExtension(SimpleExtension):
             iterator = self.main_loop.epoch_iterator
             init_ = next(iterator)["features"][0: self.init_length, 0:1]
 
-        # Time X Batch X Features
-        probability_array = np.zeros((0, 1, self.vocab_size))
+        # Time X Features
+        probability_array = np.zeros((0, self.vocab_size))
         generated_text = init_
 
         logger.info("\nGeneration:")
         for i in range(self.generation_length):
             presoft = self.generate(generated_text)[0]
             # Get the last value of presoft
-            last_presoft = presoft[-1:, :, :]
+            last_presoft = presoft[-1:, 0, :]
 
             # Compute the probability distribution
             probabilities = softmax(last_presoft)
             # Store it in the list
-            probability_array = np.vstack([probabilities, probabilities])
+            probability_array = np.vstack([probability_array, probabilities])
 
             # Sample a character out of the probability distribution
             argmax = (self.softmax_sampling == 'argmax')
@@ -211,13 +211,14 @@ class TextGenerationExtension(SimpleExtension):
         # Convert with real characters
         whole_sentence = conv_into_char(generated_text[:, 0], self.dataset)
         initial_sentence = whole_sentence[:init_.shape[0]]
+        selected_sentence = whole_sentence[init_.shape[0]:]
 
-        logger.info(initial_sentence + '...')
-        logger.info(whole_sentence)
+        logger.info(''.join(initial_sentence) + '...')
+        logger.info(''.join(whole_sentence))
 
         if self.ploting_path is not None:
-            probability_plot(probability_array, initial_sentence,
-                             get_character(self.dataset), self.ploting_path)
+            probability_plot(probability_array, selected_sentence,
+                             self.dataset, self.ploting_path)
 
     def interactive_generate(self, initial_text, generation_length, *args):
         vocab = get_character(self.dataset)
@@ -268,38 +269,41 @@ def sample(probs, argmax=False):
 
 
 # python plotting
-def probability_plot(probabilities, selected, vocab, ploting_path,
+def probability_plot(probabilities, selected_sentence, dataset, ploting_path,
                      top_n_probabilities=20, max_length=120):
 
-    selected = selected[:max_length]
-    probabilities = probabilities[:max_length]
-    # target = ['a', 'b', 'c', 'd', 'e', 'f', 'a', 'b', 'c', 'd']
-    # probabilities = np.random.uniform(low=0, high=1, size=(10, 6))  # T x C
-    sorted_probabilities = np.zeros(probabilities.shape)
-    sorted_indices = np.zeros(probabilities.shape)
-    for i in range(probabilities.shape[0]):
-        sorted_probabilities[i, :] = np.sort(probabilities[i, :])
-        sorted_indices[i, :] = np.argsort(probabilities[i, :])
-    concatenated = np.zeros((
-        probabilities.shape[0], probabilities.shape[1], 2))
-    concatenated[:, :, 0] = sorted_probabilities[:, ::-1]
-    concatenated[:, :, 1] = sorted_indices[:, ::-1]
-
+    # Pyplot options
     fig, ax = plt.subplots()
     ax.set_axis_off()
     tb = Table(ax, bbox=[0, 0, 1, 1])
-
-    ncols = concatenated.shape[0]
+    ncols = probabilities.shape[0]
     width, height = 1.0 / (ncols + 1), 1.0 / (top_n_probabilities + 1)
 
-    for (i, j), v in np.ndenumerate(concatenated[:, :top_n_probabilities, 0]):
+    # Truncate the time
+    selected_sentence = selected_sentence[:max_length]
+    probabilities = probabilities[:max_length]
+
+    # Sort the frequencies
+    sorted_indices = np.argsort(probabilities, axis=1)
+    probabilities = probabilities[
+        np.repeat(np.arange(probabilities.shape[0])[
+            :, None], probabilities.shape[1], axis=1),
+        sorted_indices][:, ::-1]
+
+    # Truncate the probabilities
+    probabilities = probabilities[:, :top_n_probabilities]
+
+    for (i, j), _ in np.ndenumerate(probabilities):
         tb.add_cell(j + 1, i, height, width,
-                    text=unicode(str(vocab[concatenated[i, j, 1].astype('int')]),
+                    text=unicode(str(conv_into_char(sorted_indices[i, j, 1],
+                                                    dataset)[0]),
                                  errors='ignore'),
-                    loc='center', facecolor=(1,
-                                             1 - concatenated[i, j, 0],
-                                             1 - concatenated[i, j, 0]))
-    for i, char in enumerate(selected):
+                    loc='center',
+                    facecolor=(1,
+                               1 - probabilities[i, j, 0],
+                               1 - probabilities[i, j, 0]))
+
+    for i, char in enumerate(selected_sentence):
         tb.add_cell(0, i, height, width,
                     text=unicode(char, errors='ignore'),
                     loc='center', facecolor='green')
