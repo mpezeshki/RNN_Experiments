@@ -10,6 +10,7 @@ from blocks.monitoring.evaluators import (MonitoredQuantityBuffer,
                                           AggregationBuffer)
 from blocks.utils import dict_subset, reraise_as
 
+from rnn.datasets.dataset import has_indices
 from rnn.utils import carry_hidden_state
 
 logger = logging.getLogger()
@@ -39,13 +40,13 @@ class DataStreamMonitoring(SimpleExtension, MonitoringExtension):
     """
     PREFIX_SEPARATOR = '_'
 
-    def __init__(self, variables, data_stream, mini_batch_size, state_updates,
-                 updates=None, **kwargs):
+    def __init__(self, variables, data_stream, mini_batch_size, dataset,
+                 state_updates, updates=None, **kwargs):
         kwargs.setdefault("after_epoch", True)
         kwargs.setdefault("before_first_epoch", True)
         super(DataStreamMonitoring, self).__init__(**kwargs)
         self._evaluator = DatasetEvaluator(variables, mini_batch_size,
-                                           state_updates, updates)
+                                           state_updates, dataset, updates)
         self.data_stream = data_stream
 
     def do(self, callback_name, *args):
@@ -89,7 +90,7 @@ class DatasetEvaluator(object):
     """
 
     def __init__(self, variables, mini_batch_size, state_updates,
-                 updates=None):
+                 dataset, updates=None):
         theano_variables = []
         monitored_quantities = []
         for variable in variables:
@@ -105,6 +106,7 @@ class DatasetEvaluator(object):
         self.theano_buffer = AggregationBuffer(theano_variables)
         self.monitored_quantities_buffer = MonitoredQuantityBuffer(
             monitored_quantities)
+        self.dataset = dataset
         self.updates = updates
         self.mini_batch_size = mini_batch_size
         self._compile(state_updates)
@@ -121,7 +123,8 @@ class DatasetEvaluator(object):
         updates = None
 
         givens, f_updates = carry_hidden_state(state_updates,
-                                               self.mini_batch_size)
+                                               self.mini_batch_size,
+                                               reset=has_indices(self.dataset))
 
         if self.theano_buffer.accumulation_updates:
             updates = OrderedDict()

@@ -169,7 +169,8 @@ class TextGenerationExtension(SimpleExtension):
 
         # Handle the theano shared variables that allow carrying the hidden
         # state
-        givens, f_updates = carry_hidden_state(updates, 1)
+        givens, f_updates = carry_hidden_state(updates, 1,
+                                               reset=not(self.has_indices))
 
         # Compile the theano function
         self.generate = theano.function(inputs=cg.inputs, outputs=presoft,
@@ -234,6 +235,7 @@ class TextGenerationExtension(SimpleExtension):
         # In the case of sine wave dataset for example
         else:
             time_plot = min([all_sequence.shape[0], generated_text.shape[0]])
+
             plt.plot(np.arange(time_plot), all_sequence[:time_plot, 0, 0],
                      label="target")
             plt.plot(np.arange(time_plot), generated_text[:time_plot, 0, 0],

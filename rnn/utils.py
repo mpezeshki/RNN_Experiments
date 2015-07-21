@@ -50,7 +50,7 @@ def parse_args():
     parser.add_argument('--mini_batch_size', type=int,
                         default=5)
     parser.add_argument('--mini_batch_size_valid', type=int,
-                        default=512)
+                        default=10000)
 
     parser.add_argument('--context', type=int,
                         default=1)
@@ -77,9 +77,9 @@ def parse_args():
     # Monitoring options
     parser.add_argument('--generate', action="store_true", default=False)
     parser.add_argument('--initial_text_length', type=int,
-                        default=10)
-    parser.add_argument('--generated_text_lenght', type=int,
                         default=50)
+    parser.add_argument('--generated_text_lenght', type=int,
+                        default=100)
     parser.add_argument('--patience', type=int,
                         default=20)
     parser.add_argument('--monitoring_freq', type=int,
@@ -100,7 +100,7 @@ def parse_args():
                                                 "presoft", "matrices",
                                                 "gradients_flow_pie",
                                                 "trained_singular_values",
-                                                "jacobian"],
+                                                "jacobian", "generate"],
                         default="nothing")
     parser.add_argument('--visualize_length', type=int,
                         default=75)
@@ -120,11 +120,18 @@ def parse_args():
     return args
 
 
-def carry_hidden_state(updates, mini_batch_size):
+def carry_hidden_state(updates, mini_batch_size, reset=False):
     state_vars = [theano.shared(
         numpy.zeros((mini_batch_size, v.shape[1].eval()),
                     dtype=numpy.float32),
         v.name + '-gen') for v, _ in updates]
     givens = [(v, x) for (v, _), x in zip(updates, state_vars)]
-    f_updates = [(x, upd) for x, (_, upd) in zip(state_vars, updates)]
+
+    # Keep the shared_variables constant
+    if reset:
+        f_updates = [(x, x) for x in state_vars]
+
+    # Update the shared_variables
+    else:
+        f_updates = [(x, upd) for x, (_, upd) in zip(state_vars, updates)]
     return givens, f_updates

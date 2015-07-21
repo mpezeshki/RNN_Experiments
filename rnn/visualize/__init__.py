@@ -10,6 +10,7 @@ from rnn.visualize.visualize_presoft import visualize_presoft
 from rnn.visualize.visualize_matrices import visualize_matrices
 from rnn.visualize.visualize_singular_values import visualize_singular_values
 from rnn.visualize.visualize_gradients_flow_pie import visualize_gradients_flow_pie
+from rnn.visualize.visualize_generate import visualize_generate
 
 
 def run_visualizations(cost, updates,
@@ -23,7 +24,13 @@ def run_visualizations(cost, updates,
     model.set_parameter_values(load_parameter_values(args.load_path))
 
     # Run a visualization
-    if args.visualize == "gates" and (gate_values is not None):
+    if args.visualize == "generate":
+        visualize_generate(cost,
+                           hidden_states, updates,
+                           train_stream, valid_stream,
+                           args)
+
+    elif args.visualize == "gates" and (gate_values is not None):
         if args.rnn_type == "lstm":
             visualize_gates_lstm(gate_values, hidden_states, updates,
                                  train_stream, valid_stream,
