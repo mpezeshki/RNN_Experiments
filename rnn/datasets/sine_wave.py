@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+
 class GenerateSineWave(object):
 
     def __init__(self, depth, time):
@@ -12,8 +13,9 @@ class GenerateSineWave(object):
         for i in range(batch):
             for d in range(depth):
                 phase = np.random.randn(1)[0]
-                data[:, i] += np.sin(phase + (d + 1) *
-                                     np.linspace(0, 3 * np.pi, self.time))
+                sin = np.sin(phase +
+                             (d + 1) * np.linspace(0, 4 * np.pi, self.time))
+                data[:, i] += sin / (2 * d + 1)
 
         # Center and normalize the data
         data -= np.mean(data, axis=0)
@@ -32,7 +34,7 @@ def save(destination, train, valid, test):
 
 
 if __name__ == "__main__":
-    depth = 20
+    depth = 1
     time = 150
     generator = GenerateSineWave(depth, time)
 
@@ -41,16 +43,20 @@ if __name__ == "__main__":
     train = generator.generate(batch)
 
     # Valid
-    batch = 50000
+    batch = 10000
     valid = generator.generate(batch)
 
     # Test
-    batch = 50000
+    batch = 10000
     test = generator.generate(batch)
 
     # Save the data
-    save("/media/win/Users/Eloi/dataset/sine_waves/data_d20", train,
-         valid, test)
+    save("/media/win/Users/Eloi/dataset/sine_waves/data_d1",
+         train,
+         valid,
+         test)
 
-    plt.plot(range(time), train[:, 0, 0])
+    for i in range(batch):
+        plt.plot(range(time), train[:, i, 0])
+    plt.grid()
     plt.show()

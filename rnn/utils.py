@@ -16,9 +16,9 @@ def parse_args():
                         default='lstm')
 
     parser.add_argument('--layers', type=int,
-                        default=4)
+                        default=1)
     parser.add_argument('--state_dim', type=int,
-                        default=500)
+                        default=20)
     parser.add_argument('--skip_connections', action='store_true',
                         default=False)
     parser.add_argument('--skip_output', action="store_true",
@@ -44,7 +44,7 @@ def parse_args():
                         choices=['wikipedia', 'penntree',
                                  'mytext', 'wikipedia_junyoung', 'toy',
                                  'xml', 'sine'],
-                        default='xml')
+                        default='sine')
     parser.add_argument('--time_length', type=int,
                         default=150)
     parser.add_argument('--mini_batch_size', type=int,

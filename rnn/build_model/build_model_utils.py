@@ -6,7 +6,7 @@ import theano
 from theano import tensor
 
 from blocks import initialization
-from blocks.bricks import Linear, Softmax, FeedforwardSequence
+from blocks.bricks import Linear, Softmax, FeedforwardSequence, Tanh
 from blocks.bricks.cost import SquaredError
 from blocks.bricks.parallel import Fork
 from rnn.datasets.dataset import has_indices, has_mask, get_output_size
@@ -53,7 +53,7 @@ def get_prernn(args):
         lookup.biases_init = initialization.Constant(0)
         forked = FeedforwardSequence([lookup.apply])
         if not has_mask(args.dataset):
-            x_mask = tensor.ones_like(x).astype(floatX)
+            x_mask = tensor.ones_like(x, dtype=floatX)
 
     else:
         x = tensor.tensor3('features', dtype=floatX)
@@ -62,7 +62,7 @@ def get_prernn(args):
         forked.weights_init = initialization.IsotropicGaussian(0.1)
         forked.biases_init = initialization.Constant(0)
         if not has_mask(args.dataset):
-            x_mask = tensor.ones_like(x[:, :, 0]).astype(floatX)
+            x_mask = tensor.ones_like(x[:, :, 0], dtype=floatX)
 
     # Define the fork
     fork = Fork(output_names=output_names, input_dim=features,
@@ -97,6 +97,8 @@ def get_presoft(h, args):
     output_layer.biases_init = initialization.Constant(0)
     output_layer.initialize()
     presoft = output_layer.apply(h[args.context:, :, :])
+    if not has_indices(args.dataset):
+        presoft = Tanh().apply(presoft)
     presoft.name = 'presoft'
     return presoft
 
@@ -141,7 +143,7 @@ def get_costs(presoft, mask, args):
         time, batch, feat = presoft.shape
         cross_entropy = Softmax().categorical_cross_entropy(
             (y[args.context:, :].flatten() *
-                mask.reshape((batch * time, )).astype('int32')),
+                mask.reshape((batch * time, ))),
             (presoft.reshape((batch * time, feat)) *
                 mask.reshape((batch * time, 1))))
 
@@ -158,10 +160,17 @@ def get_costs(presoft, mask, args):
         # Targets: (Time X Batch X Features)
         y = tensor.tensor3('targets', dtype=floatX)
         # Note: The target are one time step smaller that the features
-        unregularized_cost = SquaredError().apply(
-            (presoft * mask.dimshuffle(0, 1, 'x'))[:-1, :, :],
-            (y * mask.dimshuffle(0, 1, 'x').astype('int32'))[args.context:,
-                                                             :, :])
+
+        # SquaredError doesnot work on 3D tensor
+        target = (y * mask.dimshuffle(0, 1, 'x'))[args.context:, :, :]
+        target = target.reshape((target.shape[0] * target.shape[1],
+                                 target.shape[2]))
+
+        values = (presoft * mask.dimshuffle(0, 1, 'x'))[:-1, :, :]
+        values = values.reshape((values.shape[0] * values.shape[1],
+                                 values.shape[2]))
+
+        unregularized_cost = SquaredError().apply(target, values)
         # renormalization
         unregularized_cost = unregularized_cost * (
             tensor.sum(tensor.ones_like(mask)) /

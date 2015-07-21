@@ -212,7 +212,7 @@ class TextGenerationExtension(SimpleExtension):
                 last_output_sample = sample(probabilities, argmax)[:, None, :]
 
             else:
-                last_output_sample = sigmoid(last_presoft)[:, None, :]
+                last_output_sample = last_presoft[:, None, :]
 
             # Concatenate the new value to the text
             generated_text = np.vstack([generated_text, last_output_sample])
