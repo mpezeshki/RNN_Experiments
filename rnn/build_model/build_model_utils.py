@@ -9,8 +9,7 @@ from blocks import initialization
 from blocks.bricks import Linear, Softmax, FeedforwardSequence
 from blocks.bricks.cost import SquaredError
 from blocks.bricks.parallel import Fork
-from rnn.datasets.dataset import (has_indices, get_vocab_size,
-                                  get_feature_size, has_mask)
+from rnn.datasets.dataset import has_indices, has_mask, get_output_size
 
 from rnn.bricks import LookupTable
 
@@ -48,7 +47,7 @@ def get_prernn(args):
     if has_indices(args.dataset):
         features = args.mini_batch_size
         x = tensor.lmatrix('features')
-        vocab_size = get_vocab_size(args.dataset)
+        vocab_size = get_output_size(args.dataset)
         lookup = LookupTable(length=vocab_size, dim=state_dim)
         lookup.weights_init = initialization.IsotropicGaussian(0.1)
         lookup.biases_init = initialization.Constant(0)
@@ -58,7 +57,7 @@ def get_prernn(args):
 
     else:
         x = tensor.tensor3('features', dtype=floatX)
-        features = get_feature_size(args.dataset)
+        features = get_output_size(args.dataset)
         forked = Linear(input_dim=features, output_dim=state_dim)
         forked.weights_init = initialization.IsotropicGaussian(0.1)
         forked.biases_init = initialization.Constant(0)
@@ -80,21 +79,19 @@ def get_prernn(args):
             prernn[t].name = "pre_rnn_" + str(t)
     else:
         prernn.name = "pre_rnn"
+
     return prernn, x_mask
 
 
 def get_presoft(h, args):
-    if has_indices(args.dataset):
-        vocab_size = get_vocab_size(args.dataset)
-    else:
-        vocab_size = get_feature_size(args.dataset)
+    output_size = get_output_size(args.dataset)
     # If args.skip_connections: dim = args.layers * args.state_dim
     # else: dim = args.state_dim
     use_all_states = args.skip_connections or args.skip_output
     output_layer = Linear(
         input_dim=use_all_states * args.layers *
         args.state_dim + (1 - use_all_states) * args.state_dim,
-        output_dim=vocab_size, name="output_layer")
+        output_dim=output_size, name="output_layer")
 
     output_layer.weights_init = initialization.IsotropicGaussian(0.1)
     output_layer.biases_init = initialization.Constant(0)
@@ -163,12 +160,13 @@ def get_costs(presoft, mask, args):
         # Note: The target are one time step smaller that the features
         unregularized_cost = SquaredError().apply(
             (presoft * mask.dimshuffle(0, 1, 'x'))[:-1, :, :],
-            (y * mask.dimshuffle(0, 1, 'x').astype('int32'))[args.context:, :, :])
-        unregularized_cost.name = "mean_squared_error"
+            (y * mask.dimshuffle(0, 1, 'x').astype('int32'))[args.context:,
+                                                             :, :])
         # renormalization
         unregularized_cost = unregularized_cost * (
             tensor.sum(tensor.ones_like(mask)) /
             tensor.sum(mask))
+        unregularized_cost.name = "mean_squared_error"
 
     # TODO: add regularisation for the cost
     # the log(1) is here in order to differentiate the two variables

@@ -16,7 +16,8 @@ from blocks.extensions.monitoring import MonitoringExtension
 import matplotlib.pyplot as plt
 from matplotlib.table import Table
 
-from rnn.datasets.dataset import get_character, conv_into_char, get_vocab_size
+from rnn.datasets.dataset import (get_character, conv_into_char,
+                                  get_output_size, has_indices)
 from rnn.utils import carry_hidden_state
 
 logging.basicConfig(level='INFO')
@@ -154,10 +155,11 @@ class TextGenerationExtension(SimpleExtension):
         self.generation_length = generation_length
         self.init_length = initial_text_length
         self.dataset = dataset
-        self.vocab_size = get_vocab_size(dataset)
+        self.output_size = get_output_size(dataset)
         self.ploting_path = ploting_path
         self.softmax_sampling = softmax_sampling
         self.interactive_mode = interactive_mode
+        self.has_indices = has_indices(dataset)
         super(TextGenerationExtension, self).__init__(**kwargs)
 
         # Get presoft and its computation graph
@@ -181,43 +183,60 @@ class TextGenerationExtension(SimpleExtension):
         if self.interactive_mode:
             # TEMPORARY HACK
             iterator = self.main_loop.data_stream.get_epoch_iterator()
-            init_ = next(iterator)[0][0: self.init_length, 2:3]
+            all_sequence = next(iterator)[0][:, 0:1]
         else:
             iterator = self.main_loop.epoch_iterator
-            init_ = next(iterator)["features"][0: self.init_length, 0:1]
+            all_sequence = next(iterator)["features"][:, 0:1]
 
-        # Time X Batch X Features
-        probability_array = np.zeros((0, 1, self.vocab_size))
+        init_ = all_sequence[:self.init_length]
+
+        # Time X Features
+        probability_array = np.zeros((0, self.output_size))
         generated_text = init_
 
         logger.info("\nGeneration:")
         for i in range(self.generation_length):
             presoft = self.generate(generated_text)[0]
             # Get the last value of presoft
-            last_presoft = presoft[-1:, :, :]
+            last_presoft = presoft[-1:, 0, :]
 
-            # Compute the probability distribution
-            probabilities = softmax(last_presoft)
-            # Store it in the list
-            probability_array = np.vstack([probabilities, probabilities])
+            if self.has_indices:
+                # Compute the probability distribution
+                probabilities = softmax(last_presoft)
+                # Store it in the list
+                probability_array = np.vstack([probability_array,
+                                               probabilities])
 
-            # Sample a character out of the probability distribution
-            argmax = (self.softmax_sampling == 'argmax')
-            last_output_sample = sample(probabilities, argmax)
+                # Sample a character out of the probability distribution
+                argmax = (self.softmax_sampling == 'argmax')
+                last_output_sample = sample(probabilities, argmax)[:, None, :]
+
+            else:
+                last_output_sample = sigmoid(last_presoft)[:, None, :]
 
             # Concatenate the new value to the text
             generated_text = np.vstack([generated_text, last_output_sample])
 
-        # Convert with real characters
-        whole_sentence = conv_into_char(generated_text[:, 0], self.dataset)
-        initial_sentence = whole_sentence[:init_.shape[0]]
+        # In the case of characters and text
+        if self.has_indices:
+            # Convert with real characters
+            whole_sentence = conv_into_char(generated_text[:, 0], self.dataset)
+            initial_sentence = whole_sentence[:init_.shape[0]]
+            selected_sentence = whole_sentence[init_.shape[0]:]
 
-        logger.info(initial_sentence + '...')
-        logger.info(whole_sentence)
+            logger.info(''.join(initial_sentence) + '...')
+            logger.info(''.join(whole_sentence))
 
-        if self.ploting_path is not None:
-            probability_plot(probability_array, initial_sentence,
-                             get_character(self.dataset), self.ploting_path)
+            if self.ploting_path is not None:
+                probability_plot(probability_array, selected_sentence,
+                                 self.dataset, self.ploting_path)
+
+        # In the case of sine wave dataset for example
+        else:
+            time_plot = min([all_sequence.shape[0], generated_text.shape[0]])
+            plt.plot(np.arange(time_plot), all_sequence[:time_plot, 0, 0])
+            plt.plot(np.arange(time_plot), generated_text[:time_plot, 0, 0])
+            plt.show()
 
     def interactive_generate(self, initial_text, generation_length, *args):
         vocab = get_character(self.dataset)
@@ -258,6 +277,10 @@ def softmax(w):
     return dist
 
 
+def sigmoid(w):
+    return 1 / (1 + np.exp(-w))
+
+
 # python sampling
 def sample(probs, argmax=False):
     assert(probs.shape[0] == 1)
@@ -268,38 +291,41 @@ def sample(probs, argmax=False):
 
 
 # python plotting
-def probability_plot(probabilities, selected, vocab, ploting_path,
+def probability_plot(probabilities, selected_sentence, dataset, ploting_path,
                      top_n_probabilities=20, max_length=120):
 
-    selected = selected[:max_length]
-    probabilities = probabilities[:max_length]
-    # target = ['a', 'b', 'c', 'd', 'e', 'f', 'a', 'b', 'c', 'd']
-    # probabilities = np.random.uniform(low=0, high=1, size=(10, 6))  # T x C
-    sorted_probabilities = np.zeros(probabilities.shape)
-    sorted_indices = np.zeros(probabilities.shape)
-    for i in range(probabilities.shape[0]):
-        sorted_probabilities[i, :] = np.sort(probabilities[i, :])
-        sorted_indices[i, :] = np.argsort(probabilities[i, :])
-    concatenated = np.zeros((
-        probabilities.shape[0], probabilities.shape[1], 2))
-    concatenated[:, :, 0] = sorted_probabilities[:, ::-1]
-    concatenated[:, :, 1] = sorted_indices[:, ::-1]
-
+    # Pyplot options
     fig, ax = plt.subplots()
     ax.set_axis_off()
     tb = Table(ax, bbox=[0, 0, 1, 1])
-
-    ncols = concatenated.shape[0]
+    ncols = probabilities.shape[0]
     width, height = 1.0 / (ncols + 1), 1.0 / (top_n_probabilities + 1)
 
-    for (i, j), v in np.ndenumerate(concatenated[:, :top_n_probabilities, 0]):
+    # Truncate the time
+    selected_sentence = selected_sentence[:max_length]
+    probabilities = probabilities[:max_length]
+
+    # Sort the frequencies
+    sorted_indices = np.argsort(probabilities, axis=1)
+    probabilities = probabilities[
+        np.repeat(np.arange(probabilities.shape[0])[
+            :, None], probabilities.shape[1], axis=1),
+        sorted_indices][:, ::-1]
+
+    # Truncate the probabilities
+    probabilities = probabilities[:, :top_n_probabilities]
+
+    for (i, j), _ in np.ndenumerate(probabilities):
         tb.add_cell(j + 1, i, height, width,
-                    text=unicode(str(vocab[concatenated[i, j, 1].astype('int')]),
+                    text=unicode(str(conv_into_char(sorted_indices[i, j, 1],
+                                                    dataset)[0]),
                                  errors='ignore'),
-                    loc='center', facecolor=(1,
-                                             1 - concatenated[i, j, 0],
-                                             1 - concatenated[i, j, 0]))
-    for i, char in enumerate(selected):
+                    loc='center',
+                    facecolor=(1,
+                               1 - probabilities[i, j, 0],
+                               1 - probabilities[i, j, 0]))
+
+    for i, char in enumerate(selected_sentence):
         tb.add_cell(0, i, height, width,
                     text=unicode(char, errors='ignore'),
                     loc='center', facecolor='green')
