@@ -20,7 +20,7 @@ def build_model_vanilla(args, dtype=floatX):
 
     # Return list of 3D Tensor, one for each layer
     # (Time X Batch X embedding_dim)
-    pre_rnn = get_prernn(args)
+    pre_rnn, x_mask = get_prernn(args)
 
     transitions = [SimpleRecurrent(dim=args.state_dim, activation=Tanh())
                    for _ in range(args.layers)]
@@ -32,7 +32,7 @@ def build_model_vanilla(args, dtype=floatX):
     kwargs, inits = get_rnn_kwargs(pre_rnn, args)
 
     # Apply the RNN to the inputs
-    h = rnn.apply(low_memory=True, **kwargs)
+    h = rnn.apply(low_memory=True, mask=x_mask, **kwargs)
 
     # We have
     # h = [state, state_1, state_2 ...] if args.layers > 1
@@ -45,6 +45,7 @@ def build_model_vanilla(args, dtype=floatX):
     if args.layers > 1:
         # Save all the last states
         for d in range(args.layers):
+            h[d] = h[d] * x_mask
             last_states[d] = h[d][-1, :, :]
             h[d].name = "hidden_state_" + str(d)
             hidden_states.append(h[d])
@@ -53,8 +54,10 @@ def build_model_vanilla(args, dtype=floatX):
         else:
             h = h[-1]
     else:
-        hidden_states.append(h)
+        hidden_states.append(h * x_mask)
         hidden_states[0].name = "hidden_state_0"
+        # Note: if we have mask, then updating initial state
+        # with last state does not make sence anymore.
         last_states[0] = h[-1, :, :]
 
     # The updates of the hidden states
@@ -64,6 +67,6 @@ def build_model_vanilla(args, dtype=floatX):
 
     presoft = get_presoft(h, args)
 
-    cost, unregularized_cost = get_costs(presoft, args)
+    cost, unregularized_cost = get_costs(presoft, x_mask, args)
 
     return cost, unregularized_cost, updates, hidden_states

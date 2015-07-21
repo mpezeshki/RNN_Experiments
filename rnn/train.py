@@ -110,6 +110,8 @@ def train_model(cost, unregularized_cost, updates,
     if not args.interactive_mode:
         if not os.path.exists(args.save_path):
             os.makedirs(args.save_path)
+        elif 'test' in args.save_path:
+            print "Rewriting in " + args.save_path
         else:
             raise Exception('Directory already exists')
 

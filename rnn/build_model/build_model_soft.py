@@ -22,14 +22,14 @@ def build_model_soft(args, dtype=floatX):
 
     # Return list of 3D Tensor, one for each layer
     # (Time X Batch X embedding_dim)
-    pre_rnn = get_prernn(args)
+    pre_rnn, x_mask = get_prernn(args)
 
     transitions = [SimpleRecurrent(dim=args.state_dim, activation=Tanh())]
 
     # Build the MLP
     dims = [2 * args.state_dim]
     activations = []
-    for i in range(args.mlp_args.layers):
+    for i in range(args.mlp_layers):
         activations.append(Rectifier())
         dims.append(args.state_dim)
 
@@ -63,7 +63,7 @@ def build_model_soft(args, dtype=floatX):
     kwargs, inits = get_rnn_kwargs(pre_rnn, args)
 
     # Apply the RNN to the inputs
-    h = rnn.apply(low_memory=True, **kwargs)
+    h = rnn.apply(low_memory=True, mask=x_mask, **kwargs)
 
     # Now we have:
     # h = [state, state_1, gate_value_1, state_2, gate_value_2, state_3, ...]
@@ -85,6 +85,7 @@ def build_model_soft(args, dtype=floatX):
     last_states = {}
     hidden_states = []
     for d in range(args.layers):
+        h[d] = h[d] * x_mask
         last_states[d] = h[d][-1, :, :]
         h[d].name = "hidden_state_" + str(d)
         hidden_states.append(h[d])
@@ -101,6 +102,6 @@ def build_model_soft(args, dtype=floatX):
 
     presoft = get_presoft(h, args)
 
-    cost, cross_entropy = get_costs(presoft, args)
+    cost, cross_entropy = get_costs(presoft, x_mask, args)
 
     return cost, cross_entropy, updates, gate_values, hidden_states
