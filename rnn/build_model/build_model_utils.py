@@ -9,7 +9,7 @@ from blocks import initialization
 from blocks.bricks import Linear, Softmax, FeedforwardSequence
 from blocks.bricks.cost import SquaredError
 from blocks.bricks.parallel import Fork
-from rnn.datasets.dataset import has_indices, get_output_size
+from rnn.datasets.dataset import has_indices, has_mask, get_output_size
 
 from rnn.bricks import LookupTable
 
@@ -18,6 +18,9 @@ RECURRENTSTACK_SEPARATOR = '#'
 
 
 def get_prernn(args):
+
+    # time x batch
+    x_mask = tensor.fmatrix('mask')
 
     # Compute the state dim
     if args.rnn_type == 'lstm':
@@ -49,6 +52,8 @@ def get_prernn(args):
         lookup.weights_init = initialization.IsotropicGaussian(0.1)
         lookup.biases_init = initialization.Constant(0)
         forked = FeedforwardSequence([lookup.apply])
+        if not has_mask(args.dataset):
+            x_mask = tensor.ones_like(x).astype(floatX)
 
     else:
         x = tensor.tensor3('features', dtype=floatX)
@@ -56,6 +61,8 @@ def get_prernn(args):
         forked = Linear(input_dim=features, output_dim=state_dim)
         forked.weights_init = initialization.IsotropicGaussian(0.1)
         forked.biases_init = initialization.Constant(0)
+        if not has_mask(args.dataset):
+            x_mask = tensor.ones_like(x[:, :, 0]).astype(floatX)
 
     # Define the fork
     fork = Fork(output_names=output_names, input_dim=features,
@@ -72,13 +79,6 @@ def get_prernn(args):
             prernn[t].name = "pre_rnn_" + str(t)
     else:
         prernn.name = "pre_rnn"
-
-    # time x batch
-    # x_mask = tensor.imatrix('features_mask')
-    x_mask = tensor.ones_like(x).astype(floatX)
-    # TODO remove the following hack
-    if not has_indices(args.dataset):
-        x_mask = x_mask[:, :, 0]
 
     return prernn, x_mask
 

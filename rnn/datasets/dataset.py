@@ -60,6 +60,11 @@ def get_character(dataset):
     return data["vocab"]
 
 
+def has_mask(dataset):
+    data = get_data(dataset)
+    return 'mask' in data.keys()
+
+
 def conv_into_char(vector, dataset):
     correspondance = get_character(dataset)
     return correspondance[vector]
