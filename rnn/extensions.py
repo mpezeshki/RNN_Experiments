@@ -234,8 +234,11 @@ class TextGenerationExtension(SimpleExtension):
         # In the case of sine wave dataset for example
         else:
             time_plot = min([all_sequence.shape[0], generated_text.shape[0]])
-            plt.plot(np.arange(time_plot), all_sequence[:time_plot, 0, 0])
-            plt.plot(np.arange(time_plot), generated_text[:time_plot, 0, 0])
+            plt.plot(np.arange(time_plot), all_sequence[:time_plot, 0, 0],
+                     label="target")
+            plt.plot(np.arange(time_plot), generated_text[:time_plot, 0, 0],
+                     label="predicted")
+            plt.legend()
             plt.show()
 
     def interactive_generate(self, initial_text, generation_length, *args):
