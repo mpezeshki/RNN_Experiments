@@ -22,7 +22,7 @@ def build_model_cw(args, dtype=floatX):
 
     # Return list of 3D Tensor, one for each layer
     # (Time X Batch X embedding_dim)
-    pre_rnn = get_prernn(args)
+    pre_rnn, x_mask = get_prernn(args)
 
     # Note that this order of the periods makes faster modules flow in slower
     # ones with is the opposite of the original paper
@@ -39,13 +39,13 @@ def build_model_cw(args, dtype=floatX):
         assert False
 
     rnn = RecurrentStack(transitions, skip_connections=args.skip_connections)
-    initialize_rnn(rnn)
+    initialize_rnn(rnn, args)
 
     # Prepare inputs and initial states for the RNN
     kwargs, inits = get_rnn_kwargs(pre_rnn, args)
 
     # Apply the RNN to the inputs
-    h = rnn.apply(low_memory=True, **kwargs)
+    h = rnn.apply(low_memory=True, mask=x_mask, **kwargs)
 
     # In the Clockwork case:
     # h = [state, time, state_1, time_1 ...]
@@ -62,12 +62,13 @@ def build_model_cw(args, dtype=floatX):
     if args.layers > 1:
         # Save all the last states
         for d in range(args.layers):
+            h[d] = h[d] * x_mask
             last_states[d] = h[d][-1, :, :]
             h[d].name = "hidden_state_" + str(d)
             hidden_states.append(h[d])
         h = tensor.concatenate(h, axis=2)
     else:
-        h = h[0]
+        h = h[0] * x_mask
         last_states[0] = h[-1, :, :]
     h.name = "hidden_state_all"
 
@@ -78,6 +79,6 @@ def build_model_cw(args, dtype=floatX):
 
     presoft = get_presoft(h, args)
 
-    cost, unregularized_cost = get_costs(presoft, args)
+    cost, unregularized_cost = get_costs(presoft, x_mask, args)
 
     return cost, unregularized_cost, updates, hidden_states
