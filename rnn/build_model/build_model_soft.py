@@ -29,7 +29,7 @@ def build_model_soft(args, dtype=floatX):
     # Build the MLP
     dims = [2 * args.state_dim]
     activations = []
-    for i in range(args.mlp_args.layers):
+    for i in range(args.mlp_layers):
         activations.append(Rectifier())
         dims.append(args.state_dim)
 
