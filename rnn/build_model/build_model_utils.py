@@ -158,9 +158,14 @@ def get_costs(presoft, mask, args):
         # Targets: (Time X Batch X Features)
         y = tensor.tensor3('targets', dtype=floatX)
         # Note: The target are one time step smaller that the features
-        unregularized_cost = SquaredError().apply(presoft[:-1, :, :],
-                                                  y[args.context:, :, :])
+        unregularized_cost = SquaredError().apply(
+            (presoft * mask.dimshuffle(0, 1, 'x'))[:-1, :, :],
+            (y * mask.dimshuffle(0, 1, 'x').astype('int32'))[args.context:, :, :])
         unregularized_cost.name = "mean_squared_error"
+        # renormalization
+        unregularized_cost = unregularized_cost * (
+            tensor.sum(tensor.ones_like(mask)) /
+            tensor.sum(mask))
 
     # TODO: add regularisation for the cost
     # the log(1) is here in order to differentiate the two variables
