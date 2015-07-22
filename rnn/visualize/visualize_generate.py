@@ -97,6 +97,7 @@ def visualize_generate(cost, hidden_states, updates,
             plt.plot(np.arange(time_plot), presoft[:time_plot, 0, 0],
                      label="predicted")
             plt.legend()
+            plt.grid(True)
             plt.show()
 
 

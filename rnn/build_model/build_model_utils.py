@@ -87,7 +87,8 @@ def get_presoft(h, args):
     output_size = get_output_size(args.dataset)
     # If args.skip_connections: dim = args.layers * args.state_dim
     # else: dim = args.state_dim
-    use_all_states = args.skip_connections or args.skip_output
+    use_all_states = args.skip_connections or args.skip_output or args.rnn_type in [
+        "clockwork", "soft"]
     output_layer = Linear(
         input_dim=use_all_states * args.layers *
         args.state_dim + (1 - use_all_states) * args.state_dim,
