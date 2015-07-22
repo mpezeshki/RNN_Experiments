@@ -46,7 +46,7 @@ def parse_args():
                                  'xml', 'sine'],
                         default='sine')
     parser.add_argument('--time_length', type=int,
-                        default=150)
+                        default=300)
     parser.add_argument('--mini_batch_size', type=int,
                         default=5)
     parser.add_argument('--mini_batch_size_valid', type=int,

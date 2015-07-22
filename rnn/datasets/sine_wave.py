@@ -14,12 +14,11 @@ class GenerateSineWave(object):
             for d in range(depth):
                 phase = np.random.randn(1)[0]
                 sin = np.sin(phase +
-                             (d + 1 + np.random.randn(1)[0]) *
+                             (4 * d + 1 + 0.1 * np.random.randn(1)[0]) *
                              np.linspace(0, 5 * 2 * np.pi, self.time))
-                data[:, i] += sin / (2 * d + 1)
+                data[:, i] += sin / (4 * d + 1)
 
-        # Center and normalize the data
-        data -= np.mean(data, axis=0)
+        # Normalize the data
         data /= np.max(np.abs(data), axis=0)
 
         data = data[:, :, None]
@@ -35,12 +34,12 @@ def save(destination, train, valid, test):
 
 
 if __name__ == "__main__":
-    depth = 30
+    depth = 2
     time = 300
     generator = GenerateSineWave(depth, time)
 
     # Train
-    batch = 100000
+    batch = 500000
     train = generator.generate(batch)
 
     # Valid
@@ -52,7 +51,7 @@ if __name__ == "__main__":
     test = generator.generate(batch)
 
     # Save the data
-    save("/media/win/Users/Eloi/dataset/sine_waves/data_d30_300ts",
+    save("/media/win/Users/Eloi/dataset/sine_waves/data_2",
          train,
          valid,
          test)
