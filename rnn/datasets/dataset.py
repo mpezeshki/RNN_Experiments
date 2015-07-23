@@ -24,7 +24,7 @@ def get_data(dataset):
                             'data.npz')
     elif dataset == "sine":
         path = os.path.join(config.data_path, 'sine_waves',
-                            'data_1.npz')
+                            'data_5.npz')
     else:
         assert False
     return numpy.load(path, 'rb')

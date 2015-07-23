@@ -98,7 +98,7 @@ def visualize_generate(cost, hidden_states, updates,
             time_plot = presoft.shape[0] - 1
 
             plt.plot(np.arange(time_plot),
-                     targets[args.context:time_plot + args.context, 0, 0],
+                     targets[:time_plot, 0, 0],
                      label="target")
             plt.plot(np.arange(time_plot), presoft[:time_plot, 0, 0],
                      label="predicted")

@@ -55,7 +55,9 @@ def build_model_vanilla(args, dtype=floatX):
         else:
             h = h[-1]
     else:
-        hidden_states.append(h * x_mask)
+        # TODO correct bug
+        # hidden_states.append(h * x_mask)
+        hidden_states.append(h)
         hidden_states[0].name = "hidden_state_0"
         # Note: if we have mask, then updating initial state
         # with last state does not make sence anymore.
