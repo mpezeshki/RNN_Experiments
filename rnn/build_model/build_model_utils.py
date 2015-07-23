@@ -57,10 +57,16 @@ def get_prernn(args):
 
     else:
         x = tensor.tensor3('features', dtype=floatX)
+        if args.used_inputs is not None:
+            x = tensor.set_subtensor(x[args.used_inputs:, :, :],
+                                     tensor.zeros_like(x[args.used_inputs:,
+                                                         :, :],
+                                                       dtype=floatX))
         features = get_output_size(args.dataset)
         forked = Linear(input_dim=features, output_dim=state_dim)
         forked.weights_init = initialization.IsotropicGaussian(0.1)
         forked.biases_init = initialization.Constant(0)
+
         if not has_mask(args.dataset):
             x_mask = tensor.ones_like(x[:, :, 0], dtype=floatX)
 
@@ -97,7 +103,7 @@ def get_presoft(h, args):
     output_layer.weights_init = initialization.IsotropicGaussian(0.1)
     output_layer.biases_init = initialization.Constant(0)
     output_layer.initialize()
-    presoft = output_layer.apply(h[args.context:, :, :])
+    presoft = output_layer.apply(h)
     if not has_indices(args.dataset):
         presoft = Tanh().apply(presoft)
     presoft.name = 'presoft'
@@ -135,23 +141,28 @@ def get_rnn_kwargs(pre_rnn, args):
     return kwargs, inits
 
 
-def get_costs(presoft, mask, args):
+def get_costs(presoft, args):
 
     if has_indices(args.dataset):
         # Targets: (Time X Batch)
         y = tensor.lmatrix('targets')
+        y_mask = tensor.ones_like(y, dtype=floatX)
+        y_mask = tensor.set_subtensor(y_mask[:args.context, :],
+                                      tensor.zeros_like(y_mask[:args.context,
+                                                               :],
+                                                        dtype=floatX))
 
         time, batch, feat = presoft.shape
         cross_entropy = Softmax().categorical_cross_entropy(
-            (y[args.context:, :].flatten() *
-                mask.reshape((batch * time, ))),
+            (y.flatten() *
+                y_mask.reshape((batch * time, ))),
             (presoft.reshape((batch * time, feat)) *
-                mask.reshape((batch * time, 1))))
+                y_mask.reshape((batch * time, 1))))
 
         # renormalization
         renormalized_cross_entropy = cross_entropy * (
-            tensor.sum(tensor.ones_like(mask)) /
-            tensor.sum(mask))
+            tensor.sum(tensor.ones_like(y_mask)) /
+            tensor.sum(y_mask))
 
         # BPC: Bits Per Character
         unregularized_cost = renormalized_cross_entropy / tensor.log(2)
@@ -160,22 +171,30 @@ def get_costs(presoft, mask, args):
     else:
         # Targets: (Time X Batch X Features)
         y = tensor.tensor3('targets', dtype=floatX)
-        # Note: The target are one time step smaller that the features
+        y_mask = tensor.ones_like(y[:, :, 0], dtype=floatX)
+        y_mask = tensor.set_subtensor(y_mask[:args.context, :],
+                                      tensor.zeros_like(y_mask[:args.context, :],
+                                                        dtype=floatX))
 
-        # SquaredError doesnot work on 3D tensor
-        target = (y * mask.dimshuffle(0, 1, 'x'))[args.context:, :, :]
+        if args.used_inputs is not None:
+            y_mask = tensor.set_subtensor(y_mask[:args.used_inputs, :],
+                                          tensor.zeros_like(y_mask[:args.used_inputs, :],
+                                                            dtype=floatX))
+        # SquaredError does not work on 3D tensor
+        target = (y * y_mask.dimshuffle(0, 1, 'x'))
+        values = (presoft[:-1, :, :] * y_mask.dimshuffle(0, 1, 'x'))
+
         target = target.reshape((target.shape[0] * target.shape[1],
                                  target.shape[2]))
 
-        values = (presoft * mask.dimshuffle(0, 1, 'x'))[:-1, :, :]
         values = values.reshape((values.shape[0] * values.shape[1],
                                  values.shape[2]))
 
         unregularized_cost = SquaredError().apply(target, values)
         # renormalization
         unregularized_cost = unregularized_cost * (
-            tensor.sum(tensor.ones_like(mask)) /
-            tensor.sum(mask))
+            tensor.sum(tensor.ones_like(y_mask)) /
+            tensor.sum(y_mask))
         unregularized_cost.name = "mean_squared_error"
 
     # TODO: add regularisation for the cost

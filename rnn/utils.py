@@ -63,6 +63,8 @@ def parse_args():
     parser.add_argument('--save_path', type=str,
                         default="/data/lisatmp3/zablocki/" +
                         "new_toy_4l_5units_simple_noskip_05_40")
+    parser.add_argument('--used_inputs', type=int,
+                        default=None)
 
     # Training options
     parser.add_argument('--learning_rate', type=float,
@@ -108,6 +110,8 @@ def parse_args():
                         default=False)
     parser.add_argument('--local', action="store_true",
                         default=False)
+    parser.add_argument('--hide_all_except', type=int,
+                        default=None)
 
     args = parser.parse_args()
 

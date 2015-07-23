@@ -68,6 +68,6 @@ def build_model_vanilla(args, dtype=floatX):
 
     presoft = get_presoft(h, args)
 
-    cost, unregularized_cost = get_costs(presoft, x_mask, args)
+    cost, unregularized_cost = get_costs(presoft, args)
 
     return cost, unregularized_cost, updates, hidden_states

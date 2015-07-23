@@ -33,6 +33,9 @@ def visualize_generate(cost, hidden_states, updates,
     # state
     givens, f_updates = carry_hidden_state(updates, 1, reset=not(use_indices))
 
+    if args.hide_all_except is not None:
+        pass
+
     # Compile the theano function
     compiled = theano.function(inputs=cg.inputs, outputs=presoft,
                                givens=givens, updates=f_updates)
