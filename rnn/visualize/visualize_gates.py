@@ -8,7 +8,7 @@ import theano
 from theano.compile import Mode
 
 from blocks.graph import ComputationGraph
-from rnn.datasets.dataset import conv_into_char
+from rnn.datasets.dataset import conv_into_char, has_indices
 from rnn.utils import carry_hidden_state
 from rnn.visualize.plot import plot
 
@@ -21,7 +21,8 @@ def visualize_gates_soft(gate_values, hidden_states, updates,
                          args):
 
     # Handle the theano shared variables that allow carrying the hidden state
-    givens, f_updates = carry_hidden_state(updates, 1)
+    givens, f_updates = carry_hidden_state(updates, 1,
+                                           not(has_indices(args.dataset)))
 
     # Compile the function
     compiled = theano.function(inputs=ComputationGraph(gate_values).inputs,
@@ -41,7 +42,8 @@ def visualize_gates_lstm(gate_values, hidden_states, updates,
     forget_gates = gate_values["forget_gates"]
 
     # Handle the theano shared variables that allow carrying the hidden state
-    givens, f_updates = carry_hidden_state(updates, 1)
+    givens, f_updates = carry_hidden_state(updates, 1,
+                                           not(has_indices(args.dataset)))
 
     generate_in = theano.function(inputs=ComputationGraph(in_gates).inputs,
                                   outputs=in_gates,
@@ -70,7 +72,10 @@ def visualize_gates_lstm(gate_values, hidden_states, updates,
         layers = len(last_output_in)
 
         time = last_output_in[0].shape[0]
-        ticks = tuple(conv_into_char(init_[:, 0], args.dataset))
+        if has_indices(args.dataset):
+            ticks = tuple(conv_into_char(init_[:, 0], args.dataset))
+        else:
+            ticks = tuple(np.arange(time))
 
         for i in range(layers):
 

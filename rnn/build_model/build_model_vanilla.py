@@ -45,7 +45,8 @@ def build_model_vanilla(args, dtype=floatX):
     if args.layers > 1:
         # Save all the last states
         for d in range(args.layers):
-            h[d] = h[d] * x_mask
+            # TODO correct bug
+            # h[d] = h[d] * x_mask
             last_states[d] = h[d][-1, :, :]
             h[d].name = "hidden_state_" + str(d)
             hidden_states.append(h[d])

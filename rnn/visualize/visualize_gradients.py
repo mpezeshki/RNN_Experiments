@@ -10,7 +10,7 @@ from theano.compile import Mode
 
 from blocks.filter import VariableFilter
 from blocks.graph import ComputationGraph
-from rnn.datasets.dataset import conv_into_char
+from rnn.datasets.dataset import conv_into_char, has_indices
 from rnn.utils import carry_hidden_state
 
 logging.basicConfig(level='INFO')
@@ -63,7 +63,8 @@ def visualize_gradients(hidden_states, updates,
     logger.info("The computation of the gradients is done")
 
     # Handle the theano shared variables that allow carrying the hidden state
-    givens, f_updates = carry_hidden_state(updates, 1)
+    givens, f_updates = carry_hidden_state(updates, 1,
+                                           reset=not(has_indices(args.dataset)))
 
     # Compile the function
     logger.info("The compilation of the function has started")
@@ -88,7 +89,10 @@ def visualize_gradients(hidden_states, updates,
             assert len(gradients) == args.layers
 
         time = gradients[0].shape[0]
-        ticks = tuple(conv_into_char(init_[:, 0], args.dataset))
+        if has_indices(args.dataset):
+            ticks = tuple(conv_into_char(init_[:, 0], args.dataset))
+        else:
+            ticks = tuple(np.arange(time))
 
         # One row subplot for each variable wrt which we are computing
         # the gradients

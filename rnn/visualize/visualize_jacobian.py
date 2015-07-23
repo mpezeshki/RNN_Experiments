@@ -10,7 +10,7 @@ from theano import tensor
 from theano.compile import Mode
 
 from blocks.graph import ComputationGraph
-from rnn.datasets.dataset import conv_into_char
+from rnn.datasets.dataset import conv_into_char, has_indices
 
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
@@ -89,7 +89,10 @@ def visualize_jacobian(hidden_states, updates,
         gradients = compiled(init_)
 
         time = gradients[0].shape[0]
-        ticks = tuple(conv_into_char(init_[:, 0], args.dataset))
+        if has_indices(args.dataset):
+            ticks = tuple(conv_into_char(init_[:, 0], args.dataset))
+        else:
+            ticks = tuple(np.arange(time))
 
         # One row subplot for each variable wrt which we are computing
         # the gradients

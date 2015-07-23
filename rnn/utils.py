@@ -130,8 +130,8 @@ def carry_hidden_state(updates, mini_batch_size, reset=False):
     # Keep the shared_variables constant
     if reset:
         f_updates = [(x, x) for x in state_vars]
-
     # Update the shared_variables
     else:
         f_updates = [(x, upd) for x, (_, upd) in zip(state_vars, updates)]
+
     return givens, f_updates

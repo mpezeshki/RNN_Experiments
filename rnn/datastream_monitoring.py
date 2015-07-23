@@ -124,7 +124,7 @@ class DatasetEvaluator(object):
 
         givens, f_updates = carry_hidden_state(state_updates,
                                                self.mini_batch_size,
-                                               reset=has_indices(self.dataset))
+                                               reset=not(has_indices(self.dataset)))
 
         if self.theano_buffer.accumulation_updates:
             updates = OrderedDict()

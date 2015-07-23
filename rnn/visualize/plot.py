@@ -3,7 +3,7 @@ import logging
 import numpy as np
 
 import matplotlib.pyplot as plt
-from rnn.datasets.dataset import conv_into_char
+from rnn.datasets.dataset import conv_into_char, has_indices
 
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
@@ -19,7 +19,10 @@ def plot(what, train_stream, compiled, args):
 
         layers = len(values)
         time = values[0].shape[0]
-        ticks = tuple(conv_into_char(init_[:, 0], args.dataset))
+        if has_indices(args.dataset):
+            ticks = tuple(conv_into_char(init_[:, 0], args.dataset))
+        else:
+            ticks = tuple(np.arange(time))
 
         for d in range(layers):
             # Change the subplot

@@ -19,7 +19,7 @@ class GenerateSineWave(object):
                 data[:, i] += sin / (4 * d + 1)
 
         # Normalize the data
-        data /= np.max(np.abs(data), axis=0)
+        # data /= np.max(np.abs(data), axis=0)
 
         data = data[:, :, None]
         return data
@@ -34,7 +34,7 @@ def save(destination, train, valid, test):
 
 
 if __name__ == "__main__":
-    depth = 2
+    depth = 5
     time = 300
     generator = GenerateSineWave(depth, time)
 
@@ -58,5 +58,7 @@ if __name__ == "__main__":
 
     for i in range(batch):
         plt.plot(range(time), train[:, i, 0])
+    axes = plt.gca()
+    axes.set_ylim([-1, 1])
     plt.grid()
     plt.show()
