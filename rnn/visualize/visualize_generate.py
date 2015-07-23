@@ -39,7 +39,9 @@ def visualize_generate(cost, hidden_states, updates,
 
     epoch_iterator = train_stream.get_epoch_iterator()
     for num in range(10):
-        all_sequence = next(epoch_iterator)[0][:, 0:1]
+        all_ = next(epoch_iterator)
+        all_sequence = all_[0][:, 0:1]
+        targets = all_[1][:, 0:1]
 
         # In the case of characters and text
         if use_indices:
@@ -92,7 +94,8 @@ def visualize_generate(cost, hidden_states, updates,
 
             time_plot = presoft.shape[0] - 1
 
-            plt.plot(np.arange(time_plot), all_sequence[2:time_plot + 2, 0, 0],
+            plt.plot(np.arange(time_plot),
+                     targets[args.context:time_plot + args.context, 0, 0],
                      label="target")
             plt.plot(np.arange(time_plot), presoft[:time_plot, 0, 0],
                      label="predicted")

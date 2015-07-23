@@ -14,12 +14,12 @@ class GenerateSineWave(object):
             for d in range(depth):
                 phase = np.random.randn(1)[0]
                 sin = np.sin(phase +
-                             (4 * d + 1 + 0.1 * np.random.randn(1)[0]) *
+                             (2 * d + 1 + 0.1 * np.random.randn(1)[0]) *
                              np.linspace(0, 5 * 2 * np.pi, self.time))
-                data[:, i] += sin / (4 * d + 1)
+                data[:, i] += sin / (2 * d + 1)
 
         # Normalize the data
-        # data /= np.max(np.abs(data), axis=0)
+        data /= np.max(np.abs(data), axis=0)
 
         data = data[:, :, None]
         return data
@@ -34,31 +34,31 @@ def save(destination, train, valid, test):
 
 
 if __name__ == "__main__":
-    depth = 5
+    depth = 10
     time = 300
     generator = GenerateSineWave(depth, time)
 
     # Train
-    batch = 2
+    batch = 500000
     train = generator.generate(batch)
 
-    # # Valid
-    # batch = 10000
-    # valid = generator.generate(batch)
+    # Valid
+    batch = 10000
+    valid = generator.generate(batch)
 
-    # # Test
-    # batch = 10000
-    # test = generator.generate(batch)
+    # Test
+    batch = 10000
+    test = generator.generate(batch)
 
-    # # Save the data
-    # save("/media/win/Users/Eloi/dataset/sine_waves/data_10",
-    #      train,
-    #      valid,
-    #      test)
+    # Save the data
+    save("/media/win/Users/Eloi/dataset/sine_waves/data_10",
+         train,
+         valid,
+         test)
 
-    for i in range(batch):
-        plt.plot(range(time), train[:, i, 0])
-    axes = plt.gca()
-    axes.set_ylim([-1, 1])
-    plt.grid()
-    plt.show()
+    # for i in range(batch):
+    #     plt.plot(range(time), train[:, i, 0])
+    # axes = plt.gca()
+    # axes.set_ylim([-1, 1])
+    # plt.grid()
+    # plt.show()
