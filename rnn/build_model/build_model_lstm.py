@@ -44,8 +44,9 @@ def build_model_lstm(args, dtype=floatX):
     last_cells = {}
     hidden_states = []
     for d in range(args.layers):
-        h[5 * d] = h[5 * d] * x_mask
-        h[5 * d + 1] = h[5 * d + 1] * x_mask
+        # TODO correct bug
+        # h[5 * d] = h[5 * d] * x_mask
+        # h[5 * d + 1] = h[5 * d + 1] * x_mask
 
         last_states[d] = h[5 * d][-1, :, :]
         last_cells[d] = h[5 * d + 1][-1, :, :]

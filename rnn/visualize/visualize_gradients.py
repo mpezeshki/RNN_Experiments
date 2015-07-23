@@ -27,7 +27,7 @@ def visualize_gradients(hidden_states, updates,
     all_states = sorted(all_states, key=lambda var: var.name[-1])
 
     # Get all the hidden_cells
-    filter_cells = VariableFilter(theano_name_regex="hidden_cells_.*")
+    filter_cells = VariableFilter(theano_name_regex="hidden_cell_.*")
     all_cells = filter_cells(hidden_states)
     all_cells = sorted(all_cells, key=lambda var: var.name[-1])
 
