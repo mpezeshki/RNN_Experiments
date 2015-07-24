@@ -65,6 +65,8 @@ def parse_args():
                         "new_toy_4l_5units_simple_noskip_05_40")
     parser.add_argument('--used_inputs', type=int,
                         default=None)
+    parser.add_argument('--orthogonal_init', action="store_true",
+                        default=False)
 
     # Training options
     parser.add_argument('--learning_rate', type=float,
@@ -83,7 +85,7 @@ def parse_args():
     parser.add_argument('--generated_text_lenght', type=int,
                         default=100)
     parser.add_argument('--patience', type=int,
-                        default=20)
+                        default=50)
     parser.add_argument('--monitoring_freq', type=int,
                         default=500)
     parser.add_argument('--train_path', type=str,
@@ -105,7 +107,7 @@ def parse_args():
                                                 "jacobian", "generate"],
                         default="nothing")
     parser.add_argument('--visualize_length', type=int,
-                        default=75)
+                        default=300)
     parser.add_argument('--visualize_cells', action="store_true",
                         default=False)
     parser.add_argument('--local', action="store_true",

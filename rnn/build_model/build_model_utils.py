@@ -206,7 +206,7 @@ def get_costs(presoft, args):
 
 def initialize_rnn(rnn, args):
     # Dont initialize as Orthogonal if we are about to load new parameters
-    if args.load_path is not None:
+    if (args.load_path is not None) and (not args.orthogonal_init):
         rnn.weights_init = initialization.Constant(0)
     else:
         rnn.weights_init = initialization.Orthogonal()

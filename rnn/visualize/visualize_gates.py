@@ -99,7 +99,6 @@ def visualize_gates_lstm(gate_values, hidden_states, updates,
             plt.xticks(range(args.visualize_length), ticks)
             plt.grid(True)
             plt.title("forget_gate of layer " + str(i))
-        plt.tight_layout()
         if args.local:
             plt.show()
         else:

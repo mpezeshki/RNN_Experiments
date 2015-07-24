@@ -143,4 +143,6 @@ def train_model(cost, unregularized_cost, updates,
         algorithm=algorithm,
         extensions=extensions
     )
+
+    # This is where the magic happens!
     main_loop.run()

@@ -29,7 +29,7 @@ def plot(what, train_stream, compiled, args):
             plt.subplot(layers, 1, d + 1)
 
             # print only 5 values of the hiddenstate
-            for j in range(5):
+            for j in range(10):
                 plt.plot(np.arange(time), values[d][:, 0, j])
             # plt.plot(
             #     np.arange(time), np.mean(np.abs(values[d][:, 0, :]), axis=1))
