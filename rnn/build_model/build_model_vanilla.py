@@ -3,12 +3,9 @@ import logging
 import theano
 from theano import tensor
 
-from blocks.bricks import Tanh
-from blocks.bricks.recurrent import SimpleRecurrent, RecurrentStack
-
 from rnn.build_model.build_model_utils import (get_prernn, get_presoft,
                                                get_rnn_kwargs, get_costs,
-                                               initialize_rnn)
+                                               get_rnn)
 
 floatX = theano.config.floatX
 logging.basicConfig(level='INFO')
@@ -22,11 +19,7 @@ def build_model_vanilla(args, dtype=floatX):
     # (Time X Batch X embedding_dim)
     pre_rnn, x_mask = get_prernn(args)
 
-    transitions = [SimpleRecurrent(dim=args.state_dim, activation=Tanh())
-                   for _ in range(args.layers)]
-
-    rnn = RecurrentStack(transitions, skip_connections=args.skip_connections)
-    initialize_rnn(rnn, args)
+    rnn = get_rnn(args)
 
     # Prepare inputs and initial states for the RNN
     kwargs, inits = get_rnn_kwargs(pre_rnn, args)

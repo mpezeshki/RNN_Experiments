@@ -25,6 +25,8 @@ def parse_args():
                         default=False)
     parser.add_argument('--algorithm', choices=['rms_prop', 'adam', 'sgd'],
                         default='adam')
+    parser.add_argument('--non_linearity', choices=["tanh", "relu"],
+                        default="tanh")
 
     # Options for the soft model
     parser.add_argument('--mlp_layers', type=int,
