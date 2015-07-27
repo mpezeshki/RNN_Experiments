@@ -17,10 +17,10 @@ from blocks.main_loop import MainLoop
 from blocks.model import Model
 from blocks.roles import WEIGHT
 
+from rnn.datastream_monitoring import DataStreamMonitoring
 from rnn.extensions import (EarlyStopping, TextGenerationExtension,
                             ResetStates, InteractiveMode)
-
-from rnn.datastream_monitoring import DataStreamMonitoring
+from rnn.fine_tuning import fine_tuning
 
 floatX = theano.config.floatX
 logging.basicConfig(level='INFO')
@@ -80,7 +80,10 @@ def train_model(cost, unregularized_cost, updates,
 
     # Load from a dumped model
     if args.load_path is not None:
-        extensions.append(Load(args.load_path))
+        if args.fine_tuning:
+            cost = fine_tuning(cost, args)
+        else:
+            extensions.append(Load(args.load_path))
 
     # Generation extension
     if args.generate:

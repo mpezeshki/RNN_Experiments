@@ -10,6 +10,7 @@ import theano
 
 from blocks.filter import VariableFilter
 from blocks.graph import ComputationGraph
+
 from rnn.utils import carry_hidden_state
 from rnn.datasets.dataset import has_indices, conv_into_char, get_output_size
 
@@ -32,9 +33,6 @@ def visualize_generate(cost, hidden_states, updates,
     # Handle the theano shared variables that allow carrying the hidden
     # state
     givens, f_updates = carry_hidden_state(updates, 1, reset=not(use_indices))
-
-    if args.hide_all_except is not None:
-        pass
 
     # Compile the theano function
     compiled = theano.function(inputs=cg.inputs, outputs=presoft,
