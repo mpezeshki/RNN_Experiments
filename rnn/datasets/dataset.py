@@ -1,4 +1,5 @@
 import os
+import re
 
 import numpy
 from fuel import config
@@ -8,6 +9,7 @@ from fuel.streams import DataStream
 
 
 def get_data(dataset):
+    m = re.search("sine_(.+)", dataset)
     if dataset == "wikipedia":
         path = os.path.join(config.data_path, 'wikipedia-text',
                             'char_level_enwik8.npz')
@@ -22,9 +24,9 @@ def get_data(dataset):
     elif dataset == "xml":
         path = os.path.join(config.data_path, 'xml_tags',
                             'data.npz')
-    elif dataset == "sine":
+    elif m:
         path = os.path.join(config.data_path, 'sine_waves',
-                            'data_5.npz')
+                            'data_', m.group(1), '.npz')
     else:
         assert False
     return numpy.load(path, 'rb')
@@ -41,7 +43,7 @@ def has_indices(dataset):
         return True
     elif dataset == "xml":
         return True
-    elif dataset == "sine":
+    elif re.match("sine_", dataset):
         return False
     else:
         assert False

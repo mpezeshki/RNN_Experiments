@@ -40,11 +40,11 @@ def parse_args():
                         default="fast_in_slow")
 
     # Experiment options
-    parser.add_argument('--dataset',
-                        choices=['wikipedia', 'penntree',
-                                 'mytext', 'wikipedia_junyoung', 'toy',
-                                 'xml', 'sine'],
-                        default='sine')
+
+    # Choices = ['wikipedia', 'penntree', 'mytext', wikipedia_junyoung', 'toy',
+    # 'xml', 'sine_1', 'sine_2...]
+    parser.add_argument('--dataset', type=str,
+                        default='sine_1')
     parser.add_argument('--time_length', type=int,
                         default=300)
     parser.add_argument('--mini_batch_size', type=int,
