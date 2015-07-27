@@ -104,8 +104,13 @@ def visualize_generate(cost, hidden_states, updates,
                      label="predicted")
             plt.legend()
             plt.grid(True)
-            plt.show()
-
+            if args.local:
+                plt.show()
+            else:
+                plt.savefig((args.save_path +
+                             "/visualize_generate_" + str(num) + ".png"))
+            logger.info("Figure \"visualize_generate_" + str(num) +
+                        ".png\" saved at directory: " + args.save_path)
 
 # python softmax
 def softmax(w):
