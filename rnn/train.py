@@ -107,7 +107,7 @@ def train_model(cost, unregularized_cost, updates,
                              args.dataset,
                              state_updates=updates,
                              prefix='valid',
-                             before_first_epoch=(args.visualize == "nothing"),
+                             before_first_epoch=(args.visualize is None),
                              every_n_batches=args.monitoring_freq)])
 
     # Creating directory for saving model.
@@ -115,7 +115,7 @@ def train_model(cost, unregularized_cost, updates,
         if not os.path.exists(args.save_path):
             os.makedirs(args.save_path)
         elif 'test' in args.save_path:
-            print "Rewriting in " + args.save_path
+            print("Rewriting in " + args.save_path)
         else:
             raise Exception('Directory already exists')
 
