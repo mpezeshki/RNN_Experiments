@@ -24,6 +24,9 @@ def get_data(dataset):
     elif dataset == "xml":
         path = os.path.join(config.data_path, 'xml_tags',
                             'data.npz')
+    elif dataset == "random":
+        path = os.path.join(config.data_path, 'random_signal',
+                            'data.npz')
     elif m:
         path = os.path.join(config.data_path, 'sine_waves',
                             'data_', m.group(1), '.npz')
@@ -43,6 +46,8 @@ def has_indices(dataset):
         return True
     elif dataset == "xml":
         return True
+    elif dataset == "random":
+        return False
     elif re.match("sine_", dataset):
         return False
     else:
