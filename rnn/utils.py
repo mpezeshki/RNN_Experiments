@@ -67,6 +67,8 @@ def parse_args():
                         default=None)
     parser.add_argument('--orthogonal_init', action="store_true",
                         default=False)
+    parser.add_argument('--fine_tuning', action="store_true",
+                        default=False)
 
     # Training options
     parser.add_argument('--learning_rate', type=float,

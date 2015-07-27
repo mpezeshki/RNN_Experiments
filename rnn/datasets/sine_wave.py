@@ -34,7 +34,7 @@ def save(destination, train, valid, test):
 
 
 if __name__ == "__main__":
-    depth = 10
+    depth = 4
     time = 300
     generator = GenerateSineWave(depth, time)
 
@@ -51,7 +51,7 @@ if __name__ == "__main__":
     test = generator.generate(batch)
 
     # Save the data
-    save("/media/win/Users/Eloi/dataset/sine_waves/data_10",
+    save("/media/win/Users/Eloi/dataset/sine_waves/data_4",
          train,
          valid,
          test)
