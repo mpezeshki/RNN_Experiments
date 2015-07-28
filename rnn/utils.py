@@ -25,6 +25,8 @@ def parse_args():
                         default=False)
     parser.add_argument('--algorithm', choices=['rms_prop', 'adam', 'sgd'],
                         default='adam')
+    parser.add_argument('--non_linearity', choices=["tanh", "relu"],
+                        default="tanh")
 
     # Options for the soft model
     parser.add_argument('--mlp_layers', type=int,
@@ -103,13 +105,13 @@ def parse_args():
     # Visualization options
     parser.add_argument('--interactive_mode', action='store_true',
                         default=False)
-    parser.add_argument('--visualize', choices=["nothing", "gates",
+    parser.add_argument('--visualize', choices=["gates",
                                                 "states", "gradients",
                                                 "presoft", "matrices",
                                                 "gradients_flow_pie",
                                                 "trained_singular_values",
                                                 "jacobian", "generate"],
-                        default="nothing")
+                        default=None)
     parser.add_argument('--visualize_length', type=int,
                         default=300)
     parser.add_argument('--visualize_cells', action="store_true",

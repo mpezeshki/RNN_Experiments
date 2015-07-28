@@ -6,12 +6,13 @@ import theano
 from theano import tensor
 
 from blocks import initialization
-from blocks.bricks import Linear, Softmax, FeedforwardSequence, Tanh
+from blocks.bricks import Linear, Softmax, FeedforwardSequence, Tanh, Rectifier
 from blocks.bricks.cost import SquaredError
 from blocks.bricks.parallel import Fork
+from blocks.bricks.recurrent import RecurrentStack, SimpleRecurrent
 from rnn.datasets.dataset import has_indices, has_mask, get_output_size
 
-from rnn.bricks import LookupTable
+from rnn.bricks import LookupTable, LSTM
 
 floatX = theano.config.floatX
 RECURRENTSTACK_SEPARATOR = '#'
@@ -93,7 +94,8 @@ def get_presoft(h, args):
     output_size = get_output_size(args.dataset)
     # If args.skip_connections: dim = args.layers * args.state_dim
     # else: dim = args.state_dim
-    use_all_states = args.skip_connections or args.skip_output or (args.rnn_type in ["clockwork", "soft"])
+    use_all_states = args.skip_connections or args.skip_output or (
+        args.rnn_type in ["clockwork", "soft"])
     output_layer = Linear(
         input_dim=use_all_states * args.layers *
         args.state_dim + (1 - use_all_states) * args.state_dim,
@@ -171,14 +173,16 @@ def get_costs(presoft, args):
         # Targets: (Time X Batch X Features)
         y = tensor.tensor3('targets', dtype=floatX)
         y_mask = tensor.ones_like(y[:, :, 0], dtype=floatX)
-        y_mask = tensor.set_subtensor(y_mask[:args.context, :],
-                                      tensor.zeros_like(y_mask[:args.context, :],
-                                                        dtype=floatX))
+        y_mask = tensor.set_subtensor(
+            y_mask[:args.context, :],
+            tensor.zeros_like(y_mask[:args.context, :],
+                              dtype=floatX))
 
         if args.used_inputs is not None:
-            y_mask = tensor.set_subtensor(y_mask[:args.used_inputs, :],
-                                          tensor.zeros_like(y_mask[:args.used_inputs, :],
-                                                            dtype=floatX))
+            y_mask = tensor.set_subtensor(
+                y_mask[:args.used_inputs, :],
+                tensor.zeros_like(y_mask[:args.used_inputs, :],
+                                  dtype=floatX))
         # SquaredError does not work on 3D tensor
         target = (y * y_mask.dimshuffle(0, 1, 'x'))
         values = (presoft[:-1, :, :] * y_mask.dimshuffle(0, 1, 'x'))
@@ -212,3 +216,24 @@ def initialize_rnn(rnn, args):
         rnn.weights_init = initialization.Orthogonal()
     rnn.biases_init = initialization.Constant(0)
     rnn.initialize()
+
+
+def get_rnn(args):
+    if args.non_linearity == "tanh":
+        activation = Tanh()
+    elif args.non_linearity == "relu":
+        activation = Rectifier()
+    else:
+        assert False
+    if args.rnn_type == "lstm":
+        transitions = [LSTM(dim=args.state_dim, activation=activation)
+                       for _ in range(args.layers)]
+
+    elif args.rnn_type == "simple":
+        transitions = [SimpleRecurrent(dim=args.state_dim,
+                                       activation=activation)
+                       for _ in range(args.layers)]
+
+    rnn = RecurrentStack(transitions, skip_connections=args.skip_connections)
+    initialize_rnn(rnn, args)
+    return rnn

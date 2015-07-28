@@ -50,7 +50,7 @@ if __name__ == "__main__":
         assert(False)
 
     # Train the model
-    if args.visualize == "nothing":
+    if args.visualize is None:
         train_model(cost, unregularized_cost, updates,
                     train_stream, valid_stream,
                     args,
