@@ -12,7 +12,7 @@ def parse_args():
 
     # Model options
     parser.add_argument('--rnn_type', choices=['lstm', 'simple', 'clockwork',
-                                               'soft', 'hard'],
+                                               'clockwork2', 'soft', 'hard'],
                         default='lstm')
 
     parser.add_argument('--layers', type=int,
@@ -38,6 +38,8 @@ def parse_args():
     parser.add_argument('--module_order', choices=["slow_in_fast",
                                                    "fast_in_slow"],
                         default="fast_in_slow")
+    # Number of components in clockwork2
+    parser.add_argument('--cw_n', type=int, default=1)
 
     # Experiment options
 
@@ -124,6 +126,10 @@ def parse_args():
     for arg in vars(args):
         logger.info('\"' + str(arg) + '\" \t: ' + str(vars(args)[arg]))
     logger.info("#" * 40 + "\n")
+
+    # Layers are embeded inside clockwork rnn
+    assert ((args.rnn_type == 'clockwork2') and
+            args.layers == 1)
 
     return args
 
