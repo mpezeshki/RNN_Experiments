@@ -55,7 +55,7 @@ if __name__ == "__main__":
     # Energy decrease when frequence increase:
     energies3 = np.array([1. / depth for d in range(depth)])
 
-    generator = GenerateSineWave(depth, time, energies2)
+    generator = GenerateSineWave(depth, time, energies3)
 
     # Train
     batch = 500000
@@ -70,7 +70,7 @@ if __name__ == "__main__":
     test = generator.generate(batch)
 
     # Save the data
-    save("/data/lisa/data/sine_waves/data_4_reversed",
+    save("/data/lisa/data/sine_waves/data_4_equal",
          train,
          valid,
          test)
