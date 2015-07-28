@@ -1,6 +1,7 @@
 from rnn.build_model.build_model_vanilla import build_model_vanilla
 from rnn.build_model.build_model_lstm import build_model_lstm
 from rnn.build_model.build_model_cw import build_model_cw
+from rnn.build_model.build_model_cw2 import build_model_cw2
 from rnn.build_model.build_model_soft import build_model_soft
 from rnn.build_model.build_model_hard import build_model_hard
 from rnn.datasets.dataset import get_minibatch
@@ -42,6 +43,9 @@ if __name__ == "__main__":
     elif rnn_type == "hard":
         (cost, unregularized_cost, updates,
          hidden_states) = build_model_hard(args)
+    elif rnn_type == "clockwork2":
+        (cost, unregularized_cost, updates,
+         hidden_states) = build_model_cw2(args)
     else:
         assert(False)
 
