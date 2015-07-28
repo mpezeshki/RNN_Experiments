@@ -43,7 +43,7 @@ def save(destination, train, valid, test):
 
 
 if __name__ == "__main__":
-    depth = 6
+    depth = 4
     time = 300
 
     # Energy decrease when frequence increase:
@@ -55,29 +55,29 @@ if __name__ == "__main__":
     # Energy decrease when frequence increase:
     energies3 = np.array([1. / depth for d in range(depth)])
 
-    generator = GenerateSineWave(depth, time, energies3)
+    generator = GenerateSineWave(depth, time, energies2)
 
     # Train
-    batch = 1
+    batch = 500000
     train = generator.generate(batch)
 
-    # # Valid
-    # batch = 10000
-    # valid = generator.generate(batch)
+    # Valid
+    batch = 10000
+    valid = generator.generate(batch)
 
-    # # Test
-    # batch = 10000
-    # test = generator.generate(batch)
+    # Test
+    batch = 10000
+    test = generator.generate(batch)
 
-    # # Save the data
-    # save("/media/win/Users/Eloi/dataset/sine_waves/data_4",
-    #      train,
-    #      valid,
-    #      test)
+    # Save the data
+    save("/data/lisa/data/sine_waves/data_4_reversed",
+         train,
+         valid,
+         test)
 
-    for i in range(batch):
-        plt.plot(range(time), train[:, i, 0])
-    axes = plt.gca()
-    axes.set_ylim([-1, 1])
-    plt.grid()
-    plt.show()
+    # for i in range(batch):
+    #     plt.plot(range(time), train[:, i, 0])
+    # axes = plt.gca()
+    # axes.set_ylim([-1, 1])
+    # plt.grid()
+    # plt.show()
