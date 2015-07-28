@@ -1,5 +1,7 @@
+import theano
 from theano import tensor
 from theano.sandbox.rng_mrg import MRG_RandomStreams
+import numpy as np
 
 from blocks.bricks import Initializable, Tanh, Activation
 from blocks.bricks.base import application, lazy
@@ -8,6 +10,74 @@ from blocks.bricks.recurrent import BaseRecurrent, recurrent
 from blocks.roles import add_role, WEIGHT, BIAS, INITIAL_STATE
 from blocks.utils import (
     check_theano_variable, shared_floatx_nans, shared_floatx_zeros)
+floatX = theano.config.floatX
+
+
+# Code is inspired by Theanets 0.7.0 implementation at:
+# https://github.com/lmjohns3/theanets/blob/5817464b02bfb523
+# b8643533f85f7701cc74d6d6/theanets/layers/recurrent.py#L647
+class ClockworkRecurrent(BaseRecurrent, Initializable):
+    @lazy(allocation=['dim', 'periods'])
+    def __init__(self, dim, periods, activation, **kwargs):
+        super(ClockworkRecurrent, self).__init__(**kwargs)
+        self.dim = dim
+        self.periods = periods
+        n = self.dim // len(self.periods)
+        assert self.dim % len(self.periods) == 0
+        self.children = [activation]
+        # similar to mask but on weights
+        cover = np.zeros((self.dim, self.dim), floatX)
+        _periods = np.zeros((self.dim, ), 'i')
+        for i, T in enumerate(self.periods):
+            cover[i * n:(i + 1) * n, i * n:] = 1
+            _periods[i * n:(i + 1) * n] = T
+        self.cover = theano.shared(cover, name='cover')
+        # self._periods = theano.shared(_periods, name='_periods')
+        self._periods = _periods
+
+    @property
+    def W(self):
+        return self.parameters[0]
+
+    def get_dim(self, name):
+        if name == 'mask':
+            return 0
+        if name in (ClockworkRecurrent.apply.sequences +
+                    ClockworkRecurrent.apply.states):
+            return self.dim
+        return super(ClockworkRecurrent, self).get_dim(name)
+
+    def _allocate(self):
+        self.parameters.append(shared_floatx_nans((self.dim, self.dim),
+                                                  name="W"))
+        add_role(self.parameters[0], WEIGHT)
+        self.parameters.append(shared_floatx_zeros((self.dim,),
+                                                   name="initial_state"))
+        add_role(self.parameters[1], INITIAL_STATE)
+        self.parameters.append(shared_floatx_zeros((1,), name="initial_time"))
+        add_role(self.parameters[2], INITIAL_STATE)
+
+    def _initialize(self):
+        self.weights_init.initialize(self.W, self.rng)
+
+    @recurrent(sequences=['inputs', 'mask'], states=['states', 'time'],
+               outputs=['states', 'time'], contexts=[])
+    def apply(self, inputs=None, states=None, time=None, mask=None):
+        next_states = inputs + tensor.dot(states, self.W * self.cover)
+        next_states = self.children[0].apply(next_states)
+        next_states = tensor.switch(tensor.eq(time[0, 0] % self._periods, 0),
+                                    next_states, states)
+        if mask:
+            next_states = (mask[:, None] * next_states +
+                           (1 - mask[:, None]) * states)
+        time = time + tensor.ones_like(time)
+        return next_states, time
+
+    @application(outputs=apply.states)
+    def initial_states(self, batch_size, *args, **kwargs):
+        return [tensor.repeat(self.parameters[1][None, :], batch_size, 0),
+                self.parameters[2][None, :]]
+
 
 class LookupTable(Initializable):
 
