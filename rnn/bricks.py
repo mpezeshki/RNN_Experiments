@@ -9,6 +9,16 @@ from blocks.roles import add_role, WEIGHT, BIAS, INITIAL_STATE
 from blocks.utils import (
     check_theano_variable, shared_floatx_nans, shared_floatx_zeros)
 
+
+class ClippedRectifier(Activation):
+
+    @application(inputs=['input_'], outputs=['output'])
+    def apply(self, input_):
+        return tensor.switch(input_ > 0,
+                             tensor.switch(input_ < 20, input_, 20),
+                             0)
+
+
 class LookupTable(Initializable):
 
     """Encapsulates representations of a range of integers.
@@ -96,10 +106,11 @@ class ClockworkBase(BaseRecurrent, Initializable):
         return super(ClockworkBase, self).get_dim(name)
 
     def _allocate(self):
-        self.parameters.append(shared_floatx_nans((self.dim, self.dim), name="W"))
+        self.parameters.append(
+            shared_floatx_nans((self.dim, self.dim), name="W"))
         add_role(self.parameters[0], WEIGHT)
         self.parameters.append(shared_floatx_zeros((self.dim,),
-                                               name="initial_state"))
+                                                   name="initial_state"))
         add_role(self.parameters[1], INITIAL_STATE)
 
         self.parameters.append(shared_floatx_zeros((1,), name="initial_time"))
@@ -179,9 +190,9 @@ class SoftGatedRecurrent(BaseRecurrent, Initializable):
 
     def _allocate(self):
         self.parameters.append(shared_floatx_nans((self.dim, self.dim),
-                                              name='state_to_state'))
+                                                  name='state_to_state'))
         self.parameters.append(shared_floatx_zeros((self.dim,),
-                                               name="initial_state"))
+                                                   name="initial_state"))
         add_role(self.parameters[0], WEIGHT)
         add_role(self.parameters[1], INITIAL_STATE)
 
@@ -274,9 +285,9 @@ class HardGatedRecurrent(BaseRecurrent, Initializable):
 
     def _allocate(self):
         self.parameters.append(shared_floatx_nans((self.dim, self.dim),
-                                              name='state_to_state'))
+                                                  name='state_to_state'))
         self.parameters.append(shared_floatx_zeros((self.dim,),
-                                               name="initial_state"))
+                                                   name="initial_state"))
         add_role(self.parameters[0], WEIGHT)
         add_role(self.parameters[1], INITIAL_STATE)
 

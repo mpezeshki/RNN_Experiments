@@ -6,13 +6,13 @@ import theano
 from theano import tensor
 
 from blocks import initialization
-from blocks.bricks import Linear, Softmax, FeedforwardSequence, Tanh, Rectifier
+from blocks.bricks import Linear, Softmax, FeedforwardSequence, Tanh
 from blocks.bricks.cost import SquaredError
 from blocks.bricks.parallel import Fork
 from blocks.bricks.recurrent import RecurrentStack, SimpleRecurrent
 from rnn.datasets.dataset import has_indices, has_mask, get_output_size
 
-from rnn.bricks import LookupTable, LSTM
+from rnn.bricks import LookupTable, LSTM, ClippedRectifier
 
 floatX = theano.config.floatX
 RECURRENTSTACK_SEPARATOR = '#'
@@ -222,7 +222,7 @@ def get_rnn(args):
     if args.non_linearity == "tanh":
         activation = Tanh()
     elif args.non_linearity == "relu":
-        activation = Rectifier()
+        activation = ClippedRectifier()
     else:
         assert False
     if args.rnn_type == "lstm":

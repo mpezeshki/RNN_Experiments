@@ -39,7 +39,7 @@ def parse_args():
     # Options for the clockwork
     parser.add_argument('--module_order', choices=["slow_in_fast",
                                                    "fast_in_slow"],
-                        default="fast_in_slow")
+                        default="slow_in_fast")
 
     # Experiment options
 
@@ -63,8 +63,7 @@ def parse_args():
     parser.add_argument('--load_path', type=str,
                         default=None)
     parser.add_argument('--save_path', type=str,
-                        default="/data/lisatmp3/zablocki/" +
-                        "new_toy_4l_5units_simple_noskip_05_40")
+                        default=None)
     parser.add_argument('--used_inputs', type=int,
                         default=None)
     parser.add_argument('--orthogonal_init', action="store_true",
