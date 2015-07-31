@@ -6,6 +6,7 @@ from fuel import config
 from fuel.datasets import IndexableDataset
 from fuel.schemes import SequentialExampleScheme
 from fuel.streams import DataStream
+from fuel.transformers import Transformer
 
 
 def get_data(dataset):
@@ -148,8 +149,12 @@ def get_stream_raw(dataset, which_set, mini_batch_size):
     return stream
 
 
-def get_minibatch(dataset, mini_batch_size, mini_batch_size_valid,
-                  time_length, total_train_chars=None):
+def get_minibatch(args, total_train_chars=None):
+
+    dataset = args.dataset
+    mini_batch_size = args.mini_batch_size
+    mini_batch_size_valid = args.mini_batch_size_valid
+    time_length = args.time_length
 
     if has_indices(dataset):
         train_stream = get_stream_char(dataset, "train", time_length,
@@ -162,21 +167,64 @@ def get_minibatch(dataset, mini_batch_size, mini_batch_size_valid,
         valid_stream = get_stream_raw(dataset, "valid", mini_batch_size_valid)
     return train_stream, valid_stream
 
+
+def savitzky_golay(y, window_size, order, deriv=0, rate=1):
+    from math import factorial
+    window_size = numpy.abs(numpy.int(window_size))
+    order = numpy.abs(numpy.int(order))
+    if window_size % 2 != 1 or window_size < 1:
+        raise TypeError("window_size size must be a positive odd number")
+    if window_size < order + 2:
+        raise TypeError("window_size is too small for the polynomials order")
+    order_range = range(order + 1)
+    half_window = (window_size - 1) // 2
+    # precompute coefficients
+    b = numpy.mat([[k ** i for i in order_range]
+                   for k in range(-half_window, half_window + 1)])
+    m = numpy.linalg.pinv(b).A[deriv] * rate ** deriv * factorial(deriv)
+    # pad the signal at the extremes with
+    # values taken from the signal itself
+    firstvals = y[0] - numpy.abs(y[1:half_window + 1][::-1] - y[0])
+    lastvals = y[-1] + numpy.abs(y[-half_window - 1:-1][::-1] - y[-1])
+    y = numpy.concatenate((firstvals, y, lastvals))
+    return numpy.convolve(m[::-1], y, mode='valid')
+
+
+class BlurData(Transformer):
+
+    def __init__(self, data_stream, target_source=0, **kwargs):
+
+        super(BlurData, self).__init__(
+            data_stream, **kwargs)
+        self.sources = (self.sources[
+            0] + "_" + str(target_source), "targets_" + str(target_source))
+
+    def get_data(self, request=None):
+        example = next(self.child_epoch_iterator)[0]
+
+        blurred_example = numpy.zeros_like(example)
+        for b in range(example.shape[1]):
+            for f in range(example.shape[2]):
+                blurred_example[:, b, f] = savitzky_golay(
+                    example[:, b, f], 9, 3)
+        target = example - blurred_example
+        return (blurred_example, target)
+
+
 if __name__ == "__main__":
     # Test
-    dataset = "xml"
-    time_length = 7
-    mini_batch_size = 4
-    mini_batch_size_valid = 20
 
-    voc = get_character(dataset)
-    train_stream, valid_stream = get_minibatch(dataset,
-                                               mini_batch_size,
-                                               mini_batch_size_valid,
-                                               time_length)
+    class args(object):
+        dataset = "sine_5"
+        time_length = 300
+        mini_batch_size = 5
+        mini_batch_size_valid = 500
 
-    # print(voc)
-    iterator = train_stream.get_epoch_iterator()
+    train_stream, valid_stream = get_minibatch(args)
+
+    blured = BlurData(train_stream)
+
+    iterator = blured.get_epoch_iterator()
     print(next(iterator))
     print(next(iterator))
     print(next(iterator))

@@ -65,7 +65,7 @@ def parse_args():
     parser.add_argument('--save_path', type=str,
                         default=None)
     parser.add_argument('--used_inputs', type=int,
-                        default=None)
+                        default=50)
     parser.add_argument('--orthogonal_init', action="store_true",
                         default=False)
     parser.add_argument('--fine_tuning', action="store_true",

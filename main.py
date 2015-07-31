@@ -12,19 +12,13 @@ if __name__ == "__main__":
 
     args = parse_args()
 
-    dataset = args.dataset
-    mini_batch_size = args.mini_batch_size
-    mini_batch_size_valid = args.mini_batch_size_valid
-    time_length = args.time_length
     rnn_type = args.rnn_type
 
     # Make sure we don't have skip_connections with only one hidden layer
     assert(not(args.skip_connections and args.layers == 1))
 
     # Prepare data
-    train_stream, valid_stream = get_minibatch(
-        dataset, mini_batch_size, mini_batch_size_valid,
-        time_length, args.tot_num_char)
+    train_stream, valid_stream = get_minibatch(args)
 
     # Build the model
     gate_values = None
