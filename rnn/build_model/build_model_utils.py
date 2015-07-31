@@ -229,7 +229,7 @@ def get_rnn(args):
         transitions = [LSTM(dim=args.state_dim, activation=activation)
                        for _ in range(args.layers)]
 
-    elif args.rnn_type == "simple":
+    elif args.rnn_type == "simple" or args.rnn_type == "residual":
         transitions = [SimpleRecurrent(dim=args.state_dim,
                                        activation=activation)
                        for _ in range(args.layers)]
