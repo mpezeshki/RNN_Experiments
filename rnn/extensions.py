@@ -88,6 +88,7 @@ class EarlyStopping(SimpleExtension):
             raise
 
     def do(self, which_callback, *args):
+        import ipdb; ipdb.set_trace()
         current_value = self.main_loop.log.current_row.get(self.record_name)
         if current_value is None:
             self.counter += 1

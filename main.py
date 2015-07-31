@@ -3,6 +3,7 @@ from rnn.build_model.build_model_lstm import build_model_lstm
 from rnn.build_model.build_model_cw import build_model_cw
 from rnn.build_model.build_model_soft import build_model_soft
 from rnn.build_model.build_model_hard import build_model_hard
+from rnn.build_model.build_model_residual import build_model_residual
 from rnn.datasets.dataset import get_minibatch
 from rnn.train import train_model
 from rnn.utils import parse_args
@@ -36,6 +37,9 @@ if __name__ == "__main__":
     elif rnn_type == "hard":
         (cost, unregularized_cost, updates,
          hidden_states) = build_model_hard(args)
+    elif rnn_type == "residual":
+        (cost, unregularized_cost, updates,
+         hidden_states) = build_model_residual(args)
     else:
         assert(False)
 
