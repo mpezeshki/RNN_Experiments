@@ -41,6 +41,12 @@ def parse_args():
                                                    "fast_in_slow"],
                         default="slow_in_fast")
 
+    # Options for the residual model
+    parser.add_argument('--window_size', type=int,
+                        default=19)
+    parser.add_arguement('--degree', type=int,
+                         default=2)
+
     # Experiment options
 
     # Choices = ['wikipedia', 'penntree', 'mytext', wikipedia_junyoung', 'toy',

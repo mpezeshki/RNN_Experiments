@@ -1,7 +1,7 @@
 import os
 import re
 
-import numpy
+import numpy as np
 from fuel import config
 from fuel.datasets import IndexableDataset
 from fuel.schemes import SequentialExampleScheme
@@ -33,7 +33,7 @@ def get_data(dataset):
                             'data_' + m.group(1) + '.npz')
     else:
         assert False
-    return numpy.load(path, 'rb')
+    return np.load(path, 'rb')
 
 
 def has_indices(dataset):
@@ -97,9 +97,9 @@ def get_stream_char(dataset, which_set, time_length, mini_batch_size,
     dataset = dataset.T
 
     targets_dataset = dataset[1:, :]
-    targets_dataset = numpy.concatenate(
+    targets_dataset = np.concatenate(
         (targets_dataset,
-         numpy.zeros((1, mini_batch_size)).astype(numpy.int64)), axis=0)
+         np.zeros((1, mini_batch_size)).astype(np.int64)), axis=0)
 
     dataset = dataset.reshape(
         nb_mini_batches,
@@ -130,15 +130,15 @@ def get_stream_raw(dataset, which_set, mini_batch_size):
 
     # Cut the dataset into several minibatches
     # dataset is now 4D (nb_mini_batches X Time X mini_batch_size X Features)
-    dataset = numpy.swapaxes(dataset, 0, 1)
-    targets_dataset = numpy.swapaxes(targets_dataset, 0, 1)
-    dataset = numpy.reshape(dataset, (nb_mini_batches, mini_batch_size,
-                                      time, features))
-    targets_dataset = numpy.reshape(targets_dataset, (nb_mini_batches,
-                                                      mini_batch_size,
-                                                      time - 1, features))
-    dataset = numpy.swapaxes(dataset, 1, 2)
-    targets_dataset = numpy.swapaxes(targets_dataset, 1, 2)
+    dataset = np.swapaxes(dataset, 0, 1)
+    targets_dataset = np.swapaxes(targets_dataset, 0, 1)
+    dataset = np.reshape(dataset, (nb_mini_batches, mini_batch_size,
+                                   time, features))
+    targets_dataset = np.reshape(targets_dataset, (nb_mini_batches,
+                                                   mini_batch_size,
+                                                   time - 1, features))
+    dataset = np.swapaxes(dataset, 1, 2)
+    targets_dataset = np.swapaxes(targets_dataset, 1, 2)
 
     # Create fuel dataset
     dataset = IndexableDataset({'features': dataset,
@@ -170,8 +170,8 @@ def get_minibatch(args, total_train_chars=None):
 
 def savitzky_golay(y, window_size, order, deriv=0, rate=1):
     from math import factorial
-    window_size = numpy.abs(numpy.int(window_size))
-    order = numpy.abs(numpy.int(order))
+    window_size = np.abs(np.int(window_size))
+    order = np.abs(np.int(order))
     if window_size % 2 != 1 or window_size < 1:
         raise TypeError("window_size size must be a positive odd number")
     if window_size < order + 2:
@@ -179,34 +179,37 @@ def savitzky_golay(y, window_size, order, deriv=0, rate=1):
     order_range = range(order + 1)
     half_window = (window_size - 1) // 2
     # precompute coefficients
-    b = numpy.mat([[k ** i for i in order_range]
-                   for k in range(-half_window, half_window + 1)])
-    m = numpy.linalg.pinv(b).A[deriv] * rate ** deriv * factorial(deriv)
+    b = np.mat([[k ** i for i in order_range]
+                for k in range(-half_window, half_window + 1)])
+    m = np.linalg.pinv(b).A[deriv] * rate ** deriv * factorial(deriv)
     # pad the signal at the extremes with
     # values taken from the signal itself
-    firstvals = y[0] - numpy.abs(y[1:half_window + 1][::-1] - y[0])
-    lastvals = y[-1] + numpy.abs(y[-half_window - 1:-1][::-1] - y[-1])
-    y = numpy.concatenate((firstvals, y, lastvals))
-    return numpy.convolve(m[::-1], y, mode='valid')
+    firstvals = y[0] - np.abs(y[1:half_window + 1][::-1] - y[0])
+    lastvals = y[-1] + np.abs(y[-half_window - 1:-1][::-1] - y[-1])
+    y = np.concatenate((firstvals, y, lastvals))
+    return np.convolve(m[::-1], y, mode='valid')
 
 
 class BlurData(Transformer):
 
-    def __init__(self, data_stream, target_source=0, **kwargs):
+    def __init__(self, data_stream, target_source=0, window_size=19,
+                 degree=2, **kwargs):
 
         super(BlurData, self).__init__(
             data_stream, **kwargs)
         self.sources = (self.sources[
             0] + "_" + str(target_source), "targets_" + str(target_source))
+        self.window_size = window_size
+        self.degree = degree
 
     def get_data(self, request=None):
         example = next(self.child_epoch_iterator)[0]
 
-        blurred_example = numpy.zeros_like(example)
+        blurred_example = np.zeros_like(example)
         for b in range(example.shape[1]):
             for f in range(example.shape[2]):
                 blurred_example[:, b, f] = savitzky_golay(
-                    example[:, b, f], 9, 3)
+                    example[:, b, f], self.window_size, self.degree)
         target = example - blurred_example
         return (blurred_example, target)
 
@@ -221,10 +224,14 @@ if __name__ == "__main__":
         mini_batch_size_valid = 500
 
     train_stream, valid_stream = get_minibatch(args)
+    us = next(train_stream.get_epoch_iterator())[0]
 
     blured = BlurData(train_stream)
 
     iterator = blured.get_epoch_iterator()
-    print(next(iterator))
-    print(next(iterator))
-    print(next(iterator))
+    ex = next(iterator)[0]
+
+    import matplotlib.pyplot as plt
+    plt.plot(np.arange(ex.shape[0]), ex[:, 0, 0])
+    plt.plot(np.arange(us.shape[0]), us[:, 0, 0])
+    plt.show()
