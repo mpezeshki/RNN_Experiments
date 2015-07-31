@@ -12,7 +12,7 @@ def parse_args():
 
     # Model options
     parser.add_argument('--rnn_type', choices=['lstm', 'simple', 'clockwork',
-                                               'soft', 'hard'],
+                                               'soft', 'hard', 'residual'],
                         default='lstm')
 
     parser.add_argument('--layers', type=int,
