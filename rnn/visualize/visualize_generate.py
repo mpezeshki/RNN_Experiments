@@ -104,7 +104,7 @@ def visualize_generate(cost, hidden_states, updates,
             plt.grid(True)
             if args.local:
                 plt.show()
-            else:
+            elif num == 0:
                 plt.savefig(args.save_path + "/visualize_generate.png")
                 logger.info("Figure \"visualize_generate"
                             ".png\" saved at directory: " + args.save_path)
