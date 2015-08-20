@@ -19,7 +19,7 @@ from utils import plot_signals
 floatX = theano.config.floatX
 
 
-n_epochs = 200
+n_epochs = 30
 x_dim = 1
 h_dim = 10
 o_dim = x_dim
@@ -64,7 +64,6 @@ for brick in (lstm, x_to_h1, h1_to_o):
 
 print 'Bulding training process...'
 algorithm = GradientDescent(
-    on_unused_sources='warn',
     cost=cost,
     parameters=ComputationGraph(cost).parameters,
     step_rule=learning_algorithm(learning_rate=0.01, momentum=0.0,
