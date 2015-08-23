@@ -85,6 +85,73 @@ def sum_of_sines(num_batches, batch_size, num_time_steps,
     return train_stream, valid_stream
 
 
+def sum_of_sines2(num_batches, batch_size, num_time_steps,
+                  depth=1):
+    # Energy decrease when frequence increase:
+    energies = np.array([1. / (2 * d + 1) for d in range(depth)])
+    input_seqs = np.zeros((num_batches, num_time_steps, batch_size),
+                          dtype=floatX)
+    target_seqs = np.zeros((num_batches, num_time_steps, batch_size),
+                           dtype=floatX)
+    for i in range(num_batches):
+        for j in range(batch_size):
+            for d in range(depth):
+                phase = np.random.uniform(low=-np.pi / 2,
+                                          high=np.pi / 2,
+                                          size=1)[0]
+                frequency = np.random.uniform(low=1.2 * d + 0.2,
+                                              high=1.2 * d + 2.0,
+                                              size=1)[0]
+                x = np.linspace(0, 10 * np.pi, num_time_steps)
+
+                energy = energies[d]
+
+                sin = energy * np.sin(phase + frequency * x)
+
+                input_seqs[i, :, j] += sin
+
+    # input_seqs /= np.max(np.abs(input_seqs), axis=0)
+
+    # next step prediction!
+    target_seqs[:, 0:-1, :] = input_seqs[:, 1:, :]
+
+    # S x T x B x F
+    input_seqs = input_seqs[:, :, :, np.newaxis]
+    target_seqs = target_seqs[:, :, :, np.newaxis]
+    target_seqs += 0.0 * np.random.standard_normal(target_seqs.shape)
+
+    train = IterableDataset({'x': input_seqs[:0.8 * num_batches],
+                             'y': target_seqs[:0.8 * num_batches]})
+    train_stream = DataStream(train)
+
+    valid = IterableDataset({'x': input_seqs[0.8 * num_batches:],
+                             'y': target_seqs[0.8 * num_batches:]})
+    valid_stream = DataStream(valid)
+
+    return train_stream, valid_stream
+
+
+def onehot(x, numclasses=None):
+    """ Convert integer encoding for class-labels (starting with 0 !)
+        to one-hot encoding.
+        If numclasses (the number of classes) is not provided, it is assumed
+        to be equal to the largest class index occuring in the labels-array+1.
+        The output is an array who's shape is the shape of the input array plus
+        an extra dimension, containing the 'one-hot'-encoded labels.
+    """
+    if x.shape == ():
+        x = x[None]
+    if numclasses is None:
+        numclasses = x.max() + 1
+    result = np.zeros(list(x.shape) + [numclasses], dtype="int")
+    z = np.zeros(x.shape)
+    for c in range(numclasses):
+        z *= 0
+        z[np.where(x == c)] = 1
+        result[..., c] += z
+    return result
+
+
 def get_stream_char(data, which_set, num_time_steps, batch_size):
     # dataset is one long string containing the whole sequence of indexes
     dataset = data[which_set]

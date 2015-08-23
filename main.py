@@ -10,10 +10,10 @@ from blocks.extensions.monitoring import TrainingDataMonitoring
 from blocks.extensions.monitoring import DataStreamMonitoring
 from blocks.main_loop import MainLoop
 from blocks.extensions import FinishAfter, Printing
-from blocks.bricks.recurrent import LSTM
+from blocks.bricks.recurrent import LSTM, SimpleRecurrent
 from blocks.graph import ComputationGraph
 from utils import learning_algorithm
-from datasets import sum_of_sines
+from datasets import sum_of_sines2
 from utils import plot_signals
 
 floatX = theano.config.floatX
@@ -26,7 +26,7 @@ o_dim = x_dim
 num_batches = 30
 batch_size = 20
 num_time_steps = 150
-depth = 2
+depth = 3
 teacher_force = False
 
 print 'Building model ...'
@@ -36,11 +36,11 @@ y = tensor.tensor3('y', dtype=floatX)
 
 x_to_h1 = Linear(name='x_to_h1',
                  input_dim=x_dim,
-                 output_dim=4 * h_dim)
+                 output_dim=h_dim)
 pre_rnn = x_to_h1.apply(x)
-lstm = LSTM(activation=Tanh(),
-            dim=h_dim, name="lstm")
-h1, c1 = lstm.apply(pre_rnn)
+lstm = SimpleRecurrent(activation=Tanh(),
+                       dim=h_dim, name="lstm")
+h1 = lstm.apply(pre_rnn)
 h1_to_o = Linear(name='h1_to_o',
                  input_dim=h_dim,
                  output_dim=o_dim)
@@ -68,7 +68,7 @@ algorithm = GradientDescent(
     step_rule=learning_algorithm(learning_rate=0.01, momentum=0.0,
                                  clipping_threshold=100, algorithm='adam'))
 
-train_stream, valid_stream = sum_of_sines(
+train_stream, valid_stream = sum_of_sines2(
     num_batches, batch_size, num_time_steps, depth=depth)
 
 monitor_train_cost = TrainingDataMonitoring([cost],
