@@ -4,7 +4,7 @@ from blocks.algorithms import (Adam, CompositeRule,
                                Momentum, RMSProp, StepClipping,
                                RemoveNotFinite)
 import matplotlib
-matplotlib.use('Agg')
+# matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 floatX = theano.config.floatX
@@ -40,21 +40,22 @@ def plot_signals(input_seq, target_seq, output_seq):
     plt.figure()
 
     # Graph 1
-    ax1 = plt.subplot(211)
-    plt.plot(input_seq[:, 0, :])
+    plt.subplot(211)
+    inputs, = plt.plot(input_seq[:, 0, :], label='input')
     plt.grid()
-    ax1.set_title('Input sequence')
+    plt.legend(handles=[inputs])
 
     # Graph 2
-    ax2 = plt.subplot(212)
-    true_targets = plt.plot(target_seq[:, 0, :])
+    plt.subplot(212)
+    true_targets, = plt.plot(target_seq[:, 0, :], label='target')
 
-    guessed_targets = plt.plot(output_seq[:, 0, :], linestyle='--')
+    guessed_targets, = plt.plot(output_seq[:, 0, :], color='r', label='output')
+    plt.legend(handles=[true_targets, guessed_targets])
     plt.grid()
-    for i, x in enumerate(guessed_targets):
-        x.set_color(true_targets[i].get_color())
-    ax2.set_title('solid: true output, dashed: model output')
+    # for i, x in enumerate(guessed_targets):
+    #    x.set_color(true_targets[i].get_color())
 
     # Save as a file
-    plt.savefig('RNN_seq.png')
+    plt.show()
+    # plt.savefig('RNN_seq.png')
     print("Figure is saved as a .png file.")

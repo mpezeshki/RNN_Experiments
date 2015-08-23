@@ -1,31 +1,33 @@
 import theano
+import numpy as np
 from theano import tensor
 from blocks.model import Model
-from blocks.bricks import Linear, Tanh, Logistic
+from blocks.bricks import Linear, Tanh
 from blocks.bricks.cost import SquaredError
 from blocks.initialization import IsotropicGaussian, Constant
-from fuel.datasets import IterableDataset
-from fuel.streams import DataStream
 from blocks.algorithms import GradientDescent
 from blocks.extensions.monitoring import TrainingDataMonitoring
+from blocks.extensions.monitoring import DataStreamMonitoring
 from blocks.main_loop import MainLoop
 from blocks.extensions import FinishAfter, Printing
 from blocks.bricks.recurrent import LSTM
 from blocks.graph import ComputationGraph
 from utils import learning_algorithm
-from datasets import random_signal_lag
+from datasets import sum_of_sines
 from utils import plot_signals
 
 floatX = theano.config.floatX
 
 
-n_epochs = 30
+n_epochs = 40
 x_dim = 1
-h_dim = 10
+h_dim = 3
 o_dim = x_dim
-num_batches = 10
-batch_size = 15
-num_time_steps = 20
+num_batches = 30
+batch_size = 20
+num_time_steps = 150
+depth = 2
+teacher_force = False
 
 print 'Building model ...'
 # T x B x F
@@ -42,10 +44,7 @@ h1, c1 = lstm.apply(pre_rnn)
 h1_to_o = Linear(name='h1_to_o',
                  input_dim=h_dim,
                  output_dim=o_dim)
-pre_Logistic = h1_to_o.apply(h1)
-# sigm = Logistic()
-y_hat = pre_Logistic
-# y_hat = sigm.apply(pre_Logistic)
+y_hat = h1_to_o.apply(h1)
 y_hat.name = 'y_hat'
 
 # generation function
@@ -68,21 +67,23 @@ algorithm = GradientDescent(
     parameters=ComputationGraph(cost).parameters,
     step_rule=learning_algorithm(learning_rate=0.01, momentum=0.0,
                                  clipping_threshold=100, algorithm='adam'))
-monitor_cost = TrainingDataMonitoring([cost],
-                                      prefix="train",
-                                      after_epoch=True)
 
-# S x T x B x F
-input_seqs, target_seqs = random_signal_lag(
-    num_batches, batch_size, num_time_steps)
-print 'Bulding DataStream ...'
-dataset = IterableDataset({'x': input_seqs,
-                           'y': target_seqs})
-stream = DataStream(dataset)
+train_stream, valid_stream = sum_of_sines(
+    num_batches, batch_size, num_time_steps, depth=depth)
+
+monitor_train_cost = TrainingDataMonitoring([cost],
+                                            prefix="train",
+                                            after_epoch=True)
+
+monitor_valid_cost = DataStreamMonitoring([cost],
+                                          data_stream=valid_stream,
+                                          prefix="valid",
+                                          after_epoch=True)
 
 model = Model(cost)
-main_loop = MainLoop(data_stream=stream, algorithm=algorithm,
-                     extensions=[monitor_cost,
+main_loop = MainLoop(data_stream=train_stream, algorithm=algorithm,
+                     extensions=[monitor_train_cost,
+                                 monitor_valid_cost,
                                  FinishAfter(after_n_epochs=n_epochs),
                                  Printing()],
                      model=model)
@@ -90,9 +91,21 @@ main_loop = MainLoop(data_stream=stream, algorithm=algorithm,
 print 'Starting training ...'
 main_loop.run()
 
-batch = main_loop.data_stream.get_epoch_iterator().next()
-sample_input_seq = batch[1]
-sample_target_seq = batch[0]
-sample_output_seq = generate(sample_input_seq)
+it = valid_stream.get_epoch_iterator()
+for num in range(5):
+    batch = it.next()
+    sample_input_seq = batch[1][:, num:num + 1, :]
+    sample_target_seq = batch[0][:, num:num + 1, :]
 
-plot_signals(sample_input_seq, sample_target_seq, sample_output_seq)
+    if not teacher_force:
+        sample_output_seq = generate(sample_input_seq)
+    else:
+        input_copy = sample_input_seq.copy()
+        last = generate(input_copy[:30])[-1]
+        input_copy[30] = last
+        for i in np.arange(31, input_copy.shape[0]):
+            last = generate(input_copy[:i])[-1]
+            input_copy[i] = last
+        sample_output_seq = generate(input_copy)
+
+    plot_signals(sample_input_seq, sample_target_seq, sample_output_seq)
